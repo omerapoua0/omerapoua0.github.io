@@ -5,13 +5,15 @@
   if (!ctx) return;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const count = innerWidth < 760 ? 4200 : 11500;
-  const names = ['Possibility', 'Mathematics', 'Compute', 'Intelligence', 'Quantum'];
+  const names = ['Topology', 'Mathematics', 'Compute', 'Robotics', 'Quantum'];
+  const descriptions = ['MÖBIUS STRIP · ONE SURFACE. ONE CONTINUOUS EDGE.', 'FROM ABSTRACT IDEAS TO USEFUL SYSTEMS.', 'THE ARCHITECTURE BEHIND INTELLIGENCE.', 'MOVE YOUR CURSOR TO MEET THE ROBOT.', 'EXPLORING WHAT COMPUTATION COULD BECOME.'];
   const controls = [...document.querySelectorAll('[data-shape]')];
   const pause = document.querySelector('.motion-toggle');
   let width = 1, height = 1, scale = 1, active = 0, paused = motion.matches;
   let frame = 0, last = 0, elapsed = 0, phase = 0, visible = true;
   let pointer = { x: -9999, y: -9999 }, rotation = { x: .12, y: -.3 }, desiredRotation = {...rotation};
-  let morphAge=0,departing=-1,departureStrength=0;
+  let morphAge=0,departing=-1,departureStrength=0,robotSceneVisible=false;
+  function publishState(){document.dispatchEvent(new CustomEvent('hero:state',{detail:{index:active,paused,visible:visible&&!document.hidden}}));}
   const sample = document.createElement('canvas');
   sample.width = sample.height = 500;
   const pen = sample.getContext('2d', {willReadFrequently: true});
@@ -137,15 +139,26 @@
     const x=Math.cos(a)*r, y=Math.sin(a)*.36*r;
     quantum.push({x:x*Math.cos(b)-y*Math.sin(b)+rand(-.015,.015),y:x*Math.sin(b)+y*Math.cos(b)+rand(-.015,.015),z:Math.sin(a)*.5*r});
   }
-  const knot=[];
-  for(let i=0;i<count;i++){
-    const u=(i%180)/180*Math.PI*2,v=Math.floor(i/180)/Math.ceil(count/180)*Math.PI*2;
-    const center=t=>({x:(1.55+.56*Math.cos(3*t))*Math.cos(2*t),y:(1.55+.56*Math.cos(3*t))*Math.sin(2*t),z:.56*Math.sin(3*t)});
-    const c=center(u),next=center(u+.001),tx=next.x-c.x,ty=next.y-c.y,tz=next.z-c.z,len=Math.hypot(tx,ty,tz),t={x:tx/len,y:ty/len,z:tz/len};
-    const nl=Math.hypot(t.x,t.y),n={x:-t.y/nl,y:t.x/nl,z:0},bin={x:-t.z*n.y,y:t.z*n.x,z:t.x*n.y-t.y*n.x};
-    const r=.19,nx=n.x*Math.cos(v)+bin.x*Math.sin(v),ny=n.y*Math.cos(v)+bin.y*Math.sin(v),nz=n.z*Math.cos(v)+bin.z*Math.sin(v);knot.push({x:(c.x+r*nx)*.52,y:(c.y+r*ny)*.52,z:(c.z+r*nz)*.52,nx,ny,nz,material:0});
+  // A genuine non-orientable surface: the band reconnects after a half-twist.
+  // Analytic tangents supply continuous lighting across its single boundary.
+  const topology=[],topologyFaces=[];
+  function mobius(u,v){
+    const c=Math.cos(u),s=Math.sin(u),h=Math.cos(u/2),k=Math.sin(u/2),r=.91+v*h;
+    const a=[-r*s-v*.5*k*c,r*c-v*.5*k*s,v*.5*h],b=[h*c,h*s,k];
+    const n=[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],len=Math.hypot(...n);
+    return {p:[r*c,r*s,v*k],n:n.map(x=>x/len)};
   }
-  const sources=[knot,maths,chip,robot,quantum];
+  for(let i=0;i<220;i++)for(let j=0;j<=54;j++){
+    const u=i/220*Math.PI*2,v=(j/54-.5)*.72,p=mobius(u,v);
+    point(topology,...p.p,...p.n,j<2||j>52?1:0);
+  }
+  for(let i=0;i<160;i++)for(let j=0;j<32;j++){
+    const u=i/160*Math.PI*2,v=(j/32-.5)*.72,du=Math.PI*2/160,dv=.72/32;
+    const points=[mobius(u,v),mobius(u+du,v),mobius(u+du,v+dv),mobius(u,v+dv)];
+    face(topologyFaces,points.map(p=>p.p),points[0].n,j===0||j===31?1:0);
+    topologyFaces[topologyFaces.length-1].normals=points.map(p=>p.n);
+  }
+  const sources=[topology,maths,chip,robot,quantum];
   // A small GPU material pass supplies continuous studio reflections. The
   // canvas renderer below remains the fallback when WebGL is unavailable.
   function createSurfaceRenderer(){
@@ -160,7 +173,7 @@
       vec3 rotate(vec3 p){float cy=cos(angles.y),sy=sin(angles.y),cx=cos(angles.x),sx=sin(angles.x);vec3 r=vec3(p.x*cy+p.z*sy,p.y,-p.x*sy+p.z*cy);return vec3(r.x,r.y*cx-r.z*sx,r.y*sx+r.z*cx);}
       void main(){vec3 p=rotate(position);float depth=3.6/(3.6-p.z);gl_Position=vec4(.04+2.0*p.x*scale*depth/viewport.x,.08-2.0*p.y*scale*depth/viewport.y,-p.z*.2,1.0);vNormal=rotate(normal);vPosition=p;vMaterial=material;}`;
     const fragment=`precision mediump float;varying vec3 vNormal;varying vec3 vPosition;varying float vMaterial;uniform float lightTheme;
-      void main(){vec3 n=normalize(vNormal);vec3 view=normalize(vec3(0.0,0.0,3.6)-vPosition);vec3 key=normalize(vec3(-.6,-.8,1.0));vec3 h=normalize(key+view);
+      void main(){vec3 n=normalize(vNormal);vec3 view=normalize(vec3(0.0,0.0,3.6)-vPosition);if(dot(n,view)<0.0)n=-n;vec3 key=normalize(vec3(-.6,-.8,1.0));vec3 h=normalize(key+view);
       float diffuse=max(dot(n,key),0.0);float broad=pow(max(dot(n,h),0.0),18.0);float sharp=pow(max(dot(n,normalize(vec3(-.1,-.6,1.0))),0.0),95.0);float rim=pow(1.0-max(dot(n,view),0.0),3.0);
       vec3 base=vec3(.43,.41,.38);float metal=.7;
       if(vMaterial>.5&&vMaterial<1.5){base=vec3(.47,.27,.12);metal=.95;}
@@ -175,7 +188,7 @@
       if(!gl.getProgramParameter(program,gl.LINK_STATUS))return null;
       const positions=gl.getAttribLocation(program,'position'),normals=gl.getAttribLocation(program,'normal'),materials=gl.getAttribLocation(program,'material');
       const uniforms=Object.fromEntries(['angles','viewport','scale','lightTheme'].map(n=>[n,gl.getUniformLocation(program,n)]));
-      const meshes=[chipFaces,robotFaces].map(faces=>{const data=[];
+      const meshes=[chipFaces,robotFaces,topologyFaces].map(faces=>{const data=[];
         for(const f of faces)for(let j=1;j<f.vertices.length-1;j++)for(const i of [0,j,j+1])data.push(...f.vertices[i],...(f.normals?.[i]||f.normal),f.material);
         const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);return {buffer,count:data.length/7};
       });
@@ -217,8 +230,10 @@
     controls.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
     controls.forEach(b=>b.style.setProperty('--progress','0%'));
     document.getElementById('shape-name').textContent=names[index];
+    const description=document.getElementById('shape-description');if(description)description.textContent=descriptions[index];
     document.getElementById('shape-number').textContent='0'+(index+1)+' / 05';
     if(paused){particles.forEach((p,i)=>Object.assign(p,targets[active][i],{ox:0,oy:0}));origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));morphAge=3.2;pose={x:index===2?.55:index===0?.42:.03,y:index===2?-.38:0};render(0);}
+    publishState();
   }
   function render(dt){
     const light=document.documentElement.dataset.theme==='light';
@@ -237,7 +252,7 @@
     const surfaceProgress=paused?1:Math.max(0,Math.min(1,(morphAge-1.7)/1.5));
     const surfaceOpacity=surfaceProgress*surfaceProgress*(3-2*surfaceProgress);
     const departureProgress=Math.max(0,1-morphAge/.85),departureOpacity=paused?0:departureStrength*departureProgress*departureProgress;
-    const solidOnly=(active===2||active===3)&&(paused||morphAge>3.5);
+    const solidOnly=(active===0||active===2||active===3)&&(paused||morphAge>3.5);
     if(!solidOnly){
     for(let i=0;i<count;i++){
       const p=particles[i],t=targets[active][i];
@@ -261,15 +276,15 @@
     // Painter's order gives overlapping layers and the visor real depth.
     projected.sort((a,b)=>a.z-b.z);
     for(const q of projected){
-      const cover=Math.max((active===2||active===3)?surfaceOpacity:0,(departing===2||departing===3)?departureOpacity:0);
+      const cover=Math.max((active===0||active===2||active===3)?surfaceOpacity:0,(departing===0||departing===2||departing===3)?departureOpacity:0);
       if(cover===1)continue;
       ctx.globalAlpha=q.alpha*(1-cover*.90);ctx.fillStyle=palettes[light?1:0][q.material][q.light];
       ctx.fillRect(q.x,q.y,q.size,q.size);
     }
     }
     function drawSurface(shape,opacity){
-      if((shape!==2&&shape!==3)||opacity<=0)return;
-      const surfaceFrame=surfaceRenderer?.draw(shape-2,width,height,scale,angleX,angleY,light);
+      if((shape!==0&&shape!==2&&shape!==3)||opacity<=0)return;
+      const surfaceFrame=surfaceRenderer?.draw(shape===0?2:shape-2,width,height,scale,angleX,angleY,light);
       if(surfaceFrame){ctx.globalAlpha=opacity;ctx.drawImage(surfaceFrame,0,0,width,height);return;}
       // Without GPU support, retain a still material view while the particle
       // transitions remain animated. Do not repeatedly rasterize thousands of faces.
@@ -277,10 +292,11 @@
       if(surfaceFallbacks.has(cacheKey)){ctx.globalAlpha=opacity;ctx.drawImage(surfaceFallbacks.get(cacheKey),0,0,width,height);return;}
       const fallback=document.createElement('canvas');fallback.width=Math.round(width);fallback.height=Math.round(height);
       const ink=fallback.getContext('2d');
-      const faces=shape===2?chipFaces:robotFaces,drawFaces=[];
+      const faces=shape===0?topologyFaces:shape===2?chipFaces:robotFaces,drawFaces=[];
       for(const f of faces){
-        const [a,b,c]=f.normal,nx=a*cy+c*sy,nz=-a*sy+c*cy,ny=b*cx-nz*sx,nzz=b*sx+nz*cx;
-        if(nzz<-.025)continue;
+        const [a,b,c]=f.normal,nz=-a*sy+c*cy;let nx=a*cy+c*sy,ny=b*cx-nz*sx,nzz=b*sx+nz*cx;
+        if(shape!==0&&nzz<-.025)continue;
+        if(shape===0&&nzz<0){nx=-nx;ny=-ny;nzz=-nzz;}
         const vertices=f.vertices.map(([x,y,z])=>{
           const rx=x*cy+z*sy,rz=-x*sy+z*cy,ry=y*cx-rz*sx,zz=y*sx+rz*cx,depth=3.6/(3.6-zz);
           return [width*.52+rx*scale*depth,height*.46+ry*scale*depth,zz];
@@ -306,17 +322,18 @@
     const dt=last?Math.min((now-last)/1000,.04):.016;last=now;elapsed+=dt;phase+=dt;
     if(phase>11)choose((active+1)%5);
     controls[active]?.style.setProperty('--progress',(phase/11*100)+'%');
-    render(dt);frame=requestAnimationFrame(tick);
+    if(!robotSceneVisible||active!==3)render(dt);frame=requestAnimationFrame(tick);
   }
   function start(){if(!frame&&!paused&&visible&&!document.hidden){last=0;frame=requestAnimationFrame(tick)}}
-  function syncPause(){pause.textContent=paused?'▷':'Ⅱ';pause.setAttribute('aria-label',paused?'Play animation':'Pause animation');pause.setAttribute('aria-pressed',String(paused));if(paused){cancelAnimationFrame(frame);frame=0;render(0)}else start()}
+  function syncPause(){pause.textContent=paused?'▷':'Ⅱ';pause.setAttribute('aria-label',paused?'Play animation':'Pause animation');pause.setAttribute('aria-pressed',String(paused));if(paused){cancelAnimationFrame(frame);frame=0;render(0)}else start();publishState()}
   controls.forEach(b=>b.addEventListener('click',()=>choose(Number(b.dataset.shape))));
   pause.addEventListener('click',()=>{paused=!paused;syncPause()});
   canvas.addEventListener('pointermove',e=>{const b=canvas.getBoundingClientRect();pointer={x:e.clientX-b.left,y:e.clientY-b.top};desiredRotation.y=-.3+(pointer.x/width-.5)*.26;desiredRotation.x=.12+(pointer.y/height-.5)*.14});
   canvas.addEventListener('pointerleave',()=>{pointer={x:-9999,y:-9999};desiredRotation={x:.12,y:-.3}});
   new ResizeObserver(resize).observe(canvas);
-  new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible)start();else{cancelAnimationFrame(frame);frame=0}},{threshold:0}).observe(canvas);
-  document.addEventListener('visibilitychange',start);
+  new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible)start();else{cancelAnimationFrame(frame);frame=0}publishState()},{threshold:0}).observe(canvas);
+  document.addEventListener('visibilitychange',()=>{publishState();start()});
+  document.addEventListener('hero:robot',e=>{robotSceneVisible=e.detail.visible;if(robotSceneVisible)phase=0;});
   document.addEventListener('themechange',()=>{if(paused)render(0)});
   motion.addEventListener('change',e=>{paused=e.matches;syncPause()});
   if(paused)particles.forEach((p,i)=>Object.assign(p,targets[0][i]));
