@@ -15,24 +15,8 @@
   let pointer = { x: -9999, y: -9999 }, rotation = { x: .12, y: -.3 }, desiredRotation = {...rotation};
   let morphAge=0,departing=-1,departureStrength=0,robotSceneVisible=false,robotLoading=true;
   function publishState(){document.dispatchEvent(new CustomEvent('hero:state',{detail:{index:active,paused,visible:visible&&!document.hidden}}));}
-  const sample = document.createElement('canvas');
-  sample.width = sample.height = 500;
-  const pen = sample.getContext('2d', {willReadFrequently: true});
   const rand = (min, max) => min + Math.random() * (max - min);
-  function mask(draw) {
-    pen.clearRect(0,0,500,500); pen.fillStyle = '#fff'; pen.strokeStyle = '#fff'; draw(pen);
-    const pixels = pen.getImageData(0,0,500,500).data, points = [];
-    for(let y=25;y<475;y+=3) for(let x=25;x<475;x+=3) if(pixels[(y*500+x)*4+3]>100) points.push({x:(x-250)/190,y:(y-250)/190,z:rand(-.08,.08)});
-    return points;
-  }
-  const maths = mask(p => {
-    p.textAlign='center';p.textBaseline='middle';p.font='italic 40px Georgia';
-    p.fillText('iℏ ∂ψ/∂t = Ĥψ',250,100);
-    p.font='30px Georgia';p.fillText('P(θ | D) ∝ P(D | θ) P(θ)',250,205);
-    p.fillText('∂V/∂t + ½σ²S² ∂²V/∂S²',250,300);
-    p.fillText('+ rS ∂V/∂S − rV = 0',250,346);
-    p.font='italic 32px Georgia';p.fillText('eⁱπ + 1 = 0',250,425);
-  });
+  const maths=[];
   // Sample actual volumes, not 2D icon masks. Each point carries its material
   // and surface normal so the same lighting model survives every transition.
   const chip = [], robot = [], chipFaces=[],robotFaces=[];
@@ -67,76 +51,25 @@
     }
     for(let i=0;i<=steps;i++){const t=i/steps;point(out,a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t,0,0,1,material);}
   }
-  // Substrate, floating interposer and tiled silicon die, with routed contacts.
-  box(chip,0,0,-.20,1.70,1.70,.12,45,2);
-  box(chip,0,0,-.04,1.32,1.32,.12,40,0);
-  box(chip,0,0,.13,.91,.91,.17,34,0);
-  for(let x=0;x<4;x++)for(let y=0;y<4;y++){
-    box(chip,-.324+x*.216,-.324+y*.216,.24,.188,.188,.035,7,2);
-    for(let route=0;route<4;route++)line(chip,[-.40+x*.216,-.385+y*.216+route*.038,.261],[-.25+x*.216,-.385+y*.216+route*.038,.261],6,1);
+  // A packaged accelerator: graphite substrate, nickel heat spreader,
+  // exposed silicon, memory modules and gold edge contacts.
+  box(chip,0,0,-.22,1.76,1.76,.17,42,2);
+  box(chip,0,0,-.10,1.58,1.58,.055,36,1);
+  box(chip,0,0,-.035,1.54,1.54,.07,36,0);
+  box(chip,0,0,.045,1.15,1.18,.085,34,2);
+  box(chip,0,0,.12,.67,.83,.065,36,3);
+  for(const side of [-1,1])for(let i=0;i<3;i++){
+    box(chip,side*.47,-.36+i*.36,.12,.16,.27,.055,8,0);
+    for(let j=0;j<5;j++)line(chip,[side*.41,-.43+i*.36+j*.035,.151],[side*.52,-.43+i*.36+j*.035,.151],7,2);
   }
-  for(let edge=0;edge<4;edge++)for(let i=0;i<18;i++){
-    const t=-.74+i*.087,turn=([x,y,z])=>edge===0?[x,y,z]:edge===1?[-y,x,z]:edge===2?[-x,-y,z]:[y,-x,z];
-    line(chip,turn([t,.71,-.125]),turn([t,.94,-.125]),10,1);
-    line(chip,turn([t*.68,.49,.03]),turn([t,.71,-.125]),10,1);
-    box(chip,...turn([t,.96,-.18]),edge%2?.065:.025,edge%2?.025:.065,.065,2,1);
+  for(let group=0;group<4;group++)for(let lane=0;lane<18;lane++){
+    const y=-.37+group*.19+lane*.008;
+    line(chip,[-.29,y,.154],[.29-(lane%4)*.028,y,.154],12,2);
   }
-  // An industrial android: curved ceramic shell, recessed optical visor,
-  // machined temples and a ribbed neck. No cartoon mouth or antenna.
-  for(let row=0;row<=105;row++)for(let col=0;col<165;col++){
-    const v=.06+row/105*(Math.PI-.12),u=col/165*Math.PI*2;
-    const ny=-Math.cos(v),r=Math.sin(v),front=Math.sin(u);
-    const jaw=ny>.28?1-(ny-.28)*.35:1;
-    const x=.60*r*Math.cos(u)*jaw,y=-.36+ny*.77,z=.48*r*front;
-    const visor=ny>-.22&&ny<.12&&front>.40;
-    const seam=Math.abs(Math.cos(u))<.018&&front<0;
-    if(!seam)point(robot,x,y,visor?z-.045:z,Math.cos(u)*r,ny,front*r,visor?3:0);
-  }
-  // One continuous optical light follows the curvature of the visor.
-  for(let i=0;i<340;i++){
-    const u=.43+i/339*(Math.PI-.86);
-    for(let j=0;j<3;j++)point(robot,.568*Math.cos(u),-.405+j*.006,.457*Math.sin(u),Math.cos(u),0,Math.sin(u),4);
-  }
-  for(const side of [-1,1])for(let i=0;i<100;i++)for(let j=0;j<14;j++){
-    const a=i/100*Math.PI*2,r=.105+j*.003;
-    point(robot,side*(.562+j*.001),-.31+Math.cos(a)*r,Math.sin(a)*r,side,0,0,j<3?1:2);
-  }
-  for(let row=0;row<30;row++)for(let i=0;i<80;i++){
-    const a=i/80*Math.PI*2,r=.21+(row%6<2?.018:0);
-    point(robot,Math.cos(a)*r,.34+row*.01,Math.sin(a)*r,Math.cos(a),0,Math.sin(a),row%6<2?1:2);
-  }
-  for(let row=0;row<35;row++)for(let col=0;col<125;col++){
-    const u=col/124*Math.PI,v=row/34,w=.31+.62*Math.sin(v*Math.PI/2);
-    point(robot,Math.cos(u)*w,.62+v*.42,Math.sin(u)*(.29+v*.05),Math.cos(u)*.7,-.4,Math.sin(u),v<.07?1:0);
-  }
-  function shell(v,u){
-    const ny=-Math.cos(v),r=Math.sin(v),front=Math.sin(u),jaw=ny>.28?1-(ny-.28)*.35:1;
-    const visor=ny>-.22&&ny<.12&&front>.4;
-    return {p:[.60*r*Math.cos(u)*jaw,-.36+ny*.77,.48*r*front-(visor?.045:0)],n:[Math.cos(u)*r,ny,front*r],m:visor?3:0};
-  }
-  for(let row=0;row<48;row++)for(let col=0;col<80;col++){
-    const v=.06+row/48*(Math.PI-.12),u=col/80*Math.PI*2,dv=(Math.PI-.12)/48,du=Math.PI*2/80;
-    const a=shell(v,u),b=shell(v+dv,u),c=shell(v+dv,u+du),d=shell(v,u+du),mid=shell(v+dv/2,u+du/2);
-    face(robotFaces,[a.p,b.p,c.p,d.p],mid.n,mid.m);
-    robotFaces[robotFaces.length-1].normals=[a.n,b.n,c.n,d.n];
-  }
-  for(let i=0;i<100;i++){
-    const u=.43+i/100*(Math.PI-.86),v=.43+(i+1)/100*(Math.PI-.86);
-    face(robotFaces,[[.568*Math.cos(u),-.409,.457*Math.sin(u)],[.568*Math.cos(v),-.409,.457*Math.sin(v)],[.568*Math.cos(v),-.395,.457*Math.sin(v)],[.568*Math.cos(u),-.395,.457*Math.sin(u)]],[Math.cos(u),0,Math.sin(u)],4);
-  }
-  for(let row=0;row<20;row++)for(let col=0;col<48;col++){
-    const vertex=(r,c)=>{const u=c/48*Math.PI,v=r/20;return [Math.cos(u)*(.31+.62*Math.sin(v*Math.PI/2)),.62+v*.42,Math.sin(u)*(.29+v*.05)];};
-    const u=(col+.5)/48*Math.PI;
-    face(robotFaces,[vertex(row,col),vertex(row+1,col),vertex(row+1,col+1),vertex(row,col+1)],[Math.cos(u)*.7,-.4,Math.sin(u)],row===0?1:0);
-    robotFaces[robotFaces.length-1].normals=[col,col,col+1,col+1].map(c=>[Math.cos(c/48*Math.PI)*.7,-.4,Math.sin(c/48*Math.PI)]);
-  }
-  for(let row=0;row<15;row++)for(let col=0;col<48;col++){
-    const u=col/48*Math.PI*2,v=(col+1)/48*Math.PI*2,r=.21+(row%3===0?.018:0),y=.34+row*.02;
-    face(robotFaces,[[Math.cos(u)*r,y,Math.sin(u)*r],[Math.cos(v)*r,y,Math.sin(v)*r],[Math.cos(v)*r,y+.02,Math.sin(v)*r],[Math.cos(u)*r,y+.02,Math.sin(u)*r]],[Math.cos(u),0,Math.sin(u)],row%3===0?1:2);
-  }
-  for(const side of [-1,1])for(let i=0;i<64;i++){
-    const u=i/64*Math.PI*2,v=(i+1)/64*Math.PI*2;
-    face(robotFaces,[[side*.594,-.31,0],[side*.594,-.31+Math.cos(u)*.145,Math.sin(u)*.145],[side*.594,-.31+Math.cos(v)*.145,Math.sin(v)*.145]],[side,0,0],2);
+  for(let edge=0;edge<4;edge++)for(let i=0;i<22;i++){
+    const t=-.78+i*.074,turn=([x,y,z])=>edge===0?[x,y,z]:edge===1?[-y,x,z]:edge===2?[-x,-y,z]:[y,-x,z];
+    box(chip,...turn([t,.83,-.13]),edge%2?.08:.028,edge%2?.028:.08,.022,2,1);
+    line(chip,turn([t*.82,.63,.005]),turn([t,.79,-.09]),8,1);
   }
   const quantum=[];
   for(let i=0;i<count;i++){
@@ -184,11 +117,13 @@
     const fragment=`precision mediump float;varying vec3 vNormal;varying vec3 vPosition;varying float vMaterial;varying vec2 vParam;uniform float lightTheme;
       void main(){vec3 n=normalize(vNormal);vec3 view=normalize(vec3(0.0,0.0,3.6)-vPosition);if(dot(n,view)<0.0)n=-n;vec3 key=normalize(vec3(-.6,-.8,1.0));vec3 h=normalize(key+view);
       float diffuse=max(dot(n,key),0.0);float broad=pow(max(dot(n,h),0.0),18.0);float sharp=pow(max(dot(n,normalize(vec3(-.1,-.6,1.0))),0.0),95.0);float rim=pow(1.0-max(dot(n,view),0.0),3.0);
-      vec3 base=vec3(.43,.41,.38);float metal=.7;
+      vec3 base=vec3(.53,.59,.64);float metal=.9;
       if(vMaterial>.5&&vMaterial<1.5){base=vec3(.47,.27,.12);metal=.95;}
       if(vMaterial>1.5&&vMaterial<2.5){base=vec3(.085,.095,.12);metal=.85;}
-      if(vMaterial>2.5&&vMaterial<3.5){base=vec3(.008,.012,.018);metal=.8;}
+      if(vMaterial>2.5&&vMaterial<3.5){base=vec3(.012,.055,.068);metal=1.0;}
       vec3 color=base*(.16+diffuse*.72)+mix(vec3(1.0),base,.45)*broad*.55+vec3(1.0,.94,.83)*sharp*.55+vec3(.30,.35,.43)*rim*metal*.48;
+      if(vMaterial<.5){float reflection=pow(max(0.0,1.0-abs(n.x*.7+n.y*.6-.15)),14.0);color+=vec3(.63,.77,.89)*reflection*.26;}
+      if(vMaterial>2.5&&vMaterial<3.5){float sheen=pow(max(0.0,1.0-abs(n.x-n.y*.6)),8.0);color+=vec3(.09,.29,.36)*sheen;}
       if(vMaterial>3.5&&vMaterial<4.5)color=vec3(.96,.72,.40);
       if(vMaterial>4.5){float k=(vMaterial-5.0)/96.0*3.0;vec3 red=vec3(.94,.07,.12),green=vec3(.03,.82,.35),blue=vec3(.04,.29,1.0);vec3 spectral=k<1.0?mix(red,green,k):k<2.0?mix(green,blue,k-1.0):mix(blue,red,k-2.0);color=spectral*(.28+diffuse*.82)+vec3(1.0)*broad*.22+spectral*rim*.35;}
       if(vMaterial>4.5){vec2 grid=abs(fract(vParam*vec2(72.0,8.0)+.5)-.5);float wire=1.0-smoothstep(.008,.045,min(grid.x,grid.y));color=mix(color,vec3(.015,.035,.06),wire*.6);}
@@ -216,7 +151,7 @@
   let surfaceRenderer;
   try{surfaceRenderer=createSurfaceRenderer();}catch{surfaceRenderer=null;}
   const surfaceFallbacks=new Map();
-  const targets=sources.map(points=>Array.from({length:count},(_,i)=>points[Math.floor(i*points.length/count)]));
+  const targets=sources.map(points=>Array.from({length:count},(_,i)=>points.length?points[Math.floor(i*points.length/count)]:{x:0,y:0,z:0}));
   const particles=Array.from({length:count},(_,i)=>({x:targets[active][i].x,y:targets[active][i].y,z:targets[active][i].z,ox:0,oy:0,size:rand(.85,1.35),tone:i%8}));
   const projected=Array.from({length:count},()=>({}));
   let pose={x:.03,y:0};
@@ -239,6 +174,13 @@
   function choose(index){
     departing=active;const settled=Math.max(0,Math.min(1,(morphAge-1.7)/1.5));departureStrength=settled*settled*(3-2*settled);
     origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));morphAge=0;active=index;phase=0;
+    // A scene has one visual owner. Never carry an obsolete model into it.
+    departing=-1;departureStrength=0;morphAge=3.5;
+    particles.forEach((p,i)=>Object.assign(p,targets[active][i],{ox:0,oy:0}));
+    origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));
+    document.querySelector('.particle-stage')?.setAttribute('data-scene',String(index));
+    render(0);
+    if(!paused&&index!==1&&index!==3){canvas.getAnimations?.().forEach(a=>a.cancel());canvas.animate?.([{opacity:0},{opacity:1}],{duration:650,easing:'ease-out'});}
     controls.forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.shape)===index)));
     controls.forEach(b=>b.style.setProperty('--progress','0%'));
     document.getElementById('shape-name').textContent=names[index];
@@ -250,6 +192,7 @@
   function render(dt){
     const light=document.documentElement.dataset.theme==='light';
     ctx.clearRect(0,0,width,height);
+    if(active===1||active===3)return;
     const glow=ctx.createRadialGradient(width*.51,height*.48,0,width*.51,height*.48,scale*1.7);
     glow.addColorStop(0,light?'rgba(189,108,68,.07)':'rgba(173,102,68,.06)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
     ctx.fillStyle=light?'#8e786633':'#c7a88644';

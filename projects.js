@@ -3,6 +3,7 @@
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const fine=matchMedia('(hover: hover) and (pointer: fine)');
  const states=[];
+ document.querySelectorAll('.project-feature').forEach(card=>{const target=card.querySelector('h3 a');if(!target)return;const link=document.createElement('a');link.href=target.getAttribute('href');link.className='case-link';link.textContent='Explore my contribution ↗';card.querySelector('.project-summary').append(link)});
  document.querySelectorAll('.project-cinema').forEach(card=>{
   const video=card.querySelector('video'),button=card.querySelector('.project-film-control');if(!video||!button)return;
   const state={card,video,button,visible:false,userPaused:false,manualPlay:false};states.push(state);

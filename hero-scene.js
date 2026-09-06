@@ -22,7 +22,7 @@
     document.dispatchEvent(new CustomEvent('hero:robot-status',{detail:{pending:!ready&&!failed}}));
     setShown(selected&&ready&&settled);
     status.hidden=!hint();
-    if(hint())status.textContent=failed?'3D scene unavailable · showing the particle sculpture':'Loading the interactive robot…';
+    if(hint())status.textContent=failed?'The 3D robot is unavailable. Explore Mathematics or Topology below.':'Loading the interactive robot…';
     if(!app||!ready)return;
     if(shown&&state.visible&&!state.paused&&!document.hidden)app.play();else app.stop();
   }
@@ -63,6 +63,7 @@
   }
   document.addEventListener('hero:state',e=>{
     const first=state.index===-1,changed=state.index!==e.detail.index;state=e.detail;
+    stage.setAttribute('data-scene',String(state.index));
     if(changed){
       clearTimeout(timer);settled=false;
       if(state.index===3){

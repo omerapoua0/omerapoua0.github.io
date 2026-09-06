@@ -9,9 +9,15 @@
 .particle-caption #shape-description{max-width:320px;line-height:1.8}
 .robot-status{position:absolute;left:28%;right:12%;bottom:12%;z-index:4;color:var(--muted);font:12px/1.5 var(--sans);text-align:center;pointer-events:none}
 .robot-status[hidden]{display:none}
+.atelier-home .particle-stage[data-scene="1"] #particle-engine,.atelier-home .particle-stage[data-scene="3"] #particle-engine{visibility:hidden!important;opacity:0!important;pointer-events:none}
+.atelier-home .particle-stage .robot-scene{transition:none}
+.atelier-home .particle-stage.robot-visible .robot-scene{animation:scene-arrive .7s ease-out both}
+.atelier-home .particle-stage:not([data-scene="3"]) .robot-scene{display:none}
+.atelier-home .particle-stage:not([data-scene="1"]) .equation-scene{display:none}
+@keyframes scene-arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .equation-scene{position:absolute;inset:15% 9% 17% 27%;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:30px;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(18px);transition:opacity .7s,transform 1.1s cubic-bezier(.22,1,.36,1),visibility .7s}
 .atelier-home .equations-visible #particle-engine{opacity:.08;transition-delay:.6s}
-.equations-visible .equation-scene{opacity:1;visibility:visible;transform:none;transition-delay:.65s}
+.equations-visible .equation-scene{opacity:1;visibility:visible;transform:none;transition:none;animation:scene-arrive .65s ease-out both}
 .equation-row{padding-bottom:22px;border-bottom:1px solid var(--border)}
 .equation-row>span{display:block;font:10px/1.5 var(--mono);letter-spacing:1.5px;color:var(--muted);margin-bottom:16px}
 .equation-row math{font-size:clamp(23px,2.6vw,42px);color:var(--fg);math-style:normal}
@@ -31,4 +37,5 @@
 @media(prefers-reduced-motion:reduce){
  .atelier-home .particle-stage #particle-engine,.atelier-home .particle-stage .robot-scene{transition:none;transform:none}
  .equation-scene,.equations-visible .equation-scene,.atelier-home .equations-visible #particle-engine{transition:none;transition-delay:0s;transform:none}
+ .atelier-home .particle-stage .robot-scene,.equations-visible .equation-scene{animation:none}
 }
