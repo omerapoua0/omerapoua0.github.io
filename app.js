@@ -4,6 +4,12 @@ if (!document.querySelector('link[href="subpages.css"]')) {
   extraStyles.href = 'subpages.css';
   document.head.append(extraStyles);
 }
+if (!document.querySelector('link[href="enhancements.css"]')) {
+  const enhancementStyles = document.createElement('link');
+  enhancementStyles.rel = 'stylesheet';
+  enhancementStyles.href = 'enhancements.css';
+  document.head.append(enhancementStyles);
+}
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const glow = document.querySelector('.cursor-glow');
