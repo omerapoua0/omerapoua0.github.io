@@ -191,6 +191,7 @@
   }
   let surfaceRenderer;
   try{surfaceRenderer=createSurfaceRenderer();}catch{surfaceRenderer=null;}
+  const surfaceFallbacks=new Map();
   const targets=sources.map(points=>Array.from({length:count},(_,i)=>points[Math.floor(i*points.length/count)]));
   const particles=Array.from({length:count},(_,i)=>({x:targets[0][i].x*1.10,y:targets[0][i].y*1.10,z:targets[0][i].z+.1,ox:0,oy:0,size:rand(.85,1.35),tone:i%8}));
   const projected=Array.from({length:count},()=>({}));
@@ -236,6 +237,8 @@
     const surfaceProgress=paused?1:Math.max(0,Math.min(1,(morphAge-1.7)/1.5));
     const surfaceOpacity=surfaceProgress*surfaceProgress*(3-2*surfaceProgress);
     const departureProgress=Math.max(0,1-morphAge/.85),departureOpacity=paused?0:departureStrength*departureProgress*departureProgress;
+    const solidOnly=(active===2||active===3)&&(paused||morphAge>3.5);
+    if(!solidOnly){
     for(let i=0;i<count;i++){
       const p=particles[i],t=targets[active][i];
       if(!paused){
@@ -259,13 +262,21 @@
     projected.sort((a,b)=>a.z-b.z);
     for(const q of projected){
       const cover=Math.max((active===2||active===3)?surfaceOpacity:0,(departing===2||departing===3)?departureOpacity:0);
+      if(cover===1)continue;
       ctx.globalAlpha=q.alpha*(1-cover*.90);ctx.fillStyle=palettes[light?1:0][q.material][q.light];
       ctx.fillRect(q.x,q.y,q.size,q.size);
+    }
     }
     function drawSurface(shape,opacity){
       if((shape!==2&&shape!==3)||opacity<=0)return;
       const surfaceFrame=surfaceRenderer?.draw(shape-2,width,height,scale,angleX,angleY,light);
       if(surfaceFrame){ctx.globalAlpha=opacity;ctx.drawImage(surfaceFrame,0,0,width,height);return;}
+      // Without GPU support, retain a still material view while the particle
+      // transitions remain animated. Do not repeatedly rasterize thousands of faces.
+      const cacheKey=[shape,width,height,light].join(':');
+      if(surfaceFallbacks.has(cacheKey)){ctx.globalAlpha=opacity;ctx.drawImage(surfaceFallbacks.get(cacheKey),0,0,width,height);return;}
+      const fallback=document.createElement('canvas');fallback.width=Math.round(width);fallback.height=Math.round(height);
+      const ink=fallback.getContext('2d');
       const faces=shape===2?chipFaces:robotFaces,drawFaces=[];
       for(const f of faces){
         const [a,b,c]=f.normal,nx=a*cy+c*sy,nz=-a*sy+c*cy,ny=b*cx-nz*sx,nzz=b*sx+nz*cx;
@@ -278,12 +289,14 @@
         const lighting=Math.min(1,.12+diffuse*.65+spec*.53);
         drawFaces.push({vertices,z:vertices.reduce((sum,p)=>sum+p[2],0)/vertices.length,color:palettes[light?1:0][f.material][Math.round(lighting*63)],material:f.material});
       }
-      drawFaces.sort((a,b)=>a.z-b.z);ctx.globalAlpha=opacity;
+      drawFaces.sort((a,b)=>a.z-b.z);
       for(const f of drawFaces){
-        ctx.beginPath();f.vertices.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();
-        ctx.fillStyle=f.color;ctx.strokeStyle=f.color;ctx.lineWidth=.6;ctx.fill();ctx.stroke();
-        if(shape===2&&f.material!==1){ctx.strokeStyle=light?'#c5b49c55':'#f3ddbb44';ctx.lineWidth=.7;ctx.stroke();}
+        ink.beginPath();f.vertices.forEach((p,i)=>i?ink.lineTo(p[0],p[1]):ink.moveTo(p[0],p[1]));ink.closePath();
+        ink.fillStyle=f.color;ink.strokeStyle=f.color;ink.lineWidth=.6;ink.fill();ink.stroke();
+        if(shape===2&&f.material!==1){ink.strokeStyle=light?'#c5b49c55':'#f3ddbb44';ink.lineWidth=.7;ink.stroke();}
       }
+      if(surfaceFallbacks.size>4)surfaceFallbacks.clear();surfaceFallbacks.set(cacheKey,fallback);
+      ctx.globalAlpha=opacity;ctx.drawImage(fallback,0,0,width,height);
     }
     drawSurface(departing,departureOpacity);drawSurface(active,surfaceOpacity);
     ctx.globalAlpha=1;
