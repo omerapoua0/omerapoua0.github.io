@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="innovation.css" />
+    <link rel="stylesheet" href="systems.css" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -23,6 +25,7 @@
           <a href="work.html">Selected work</a>
           <a href="tutoring.html">Tutoring</a>
           <a href="automations.html">Automations</a>
+          <a href="research.html">Researches</a>
         </div>
         <a class="nav-contact" href="#connect">Let’s talk <i>↗</i></a>
       </nav>
@@ -39,11 +42,13 @@
             <a class="button button-text" href="tutoring.html">Learn with me <span>↗</span></a>
           </div>
         </div>
-        <div class="hero-art reveal" aria-label="Animated abstract network visual">
-          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div>
-          <div class="signal signal-a"></div><div class="signal signal-b"></div><div class="signal signal-c"></div>
-          <div class="hero-mark"><span>O</span><small>01 / 04</small></div>
-          <p class="art-caption">Pattern / probability / progress</p>
+        <div class="hero-art evolution-art reveal" aria-label="Animated evolution from mathematical ideas to intelligent systems">
+          <div class="evolution-noise"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div>
+          <div class="evolution-stage active" data-evolution="0"><div class="particle-cluster"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><strong>Signal</strong><small>probability / pattern</small></div>
+          <div class="evolution-stage" data-evolution="1"><div class="formula-grid">∫<span>∇</span><b>Σ</b></div><strong>Model</strong><small>mathematics / optimisation</small></div>
+          <div class="evolution-stage" data-evolution="2"><div class="chip"><i></i><i></i><i></i><i></i><b>OA</b></div><strong>Compute</strong><small>silicon / software</small></div>
+          <div class="evolution-stage" data-evolution="3"><div class="robot-face"><i></i><i></i><b>⌁</b></div><strong>Autonomy</strong><small>reasoning / action</small></div>
+          <div class="evolution-index"><span>01</span><i></i><span id="evolution-count">04</span></div><p class="art-caption" id="evolution-label">From signal to system</p>
         </div>
         <div class="hero-foot reveal"><span>Scroll to enter</span><div class="scroll-line"></div><span>London, UK · 2026</span></div>
       </section>
@@ -80,6 +85,25 @@
         <p class="principle-note reveal">My work sits at the intersection of mathematical thinking, product judgement and precise execution.</p>
       </section>
 
+      <section class="research-teaser section-pad">
+        <div class="research-orbit"><span>Q</span><i></i><b>⊗</b></div><div class="research-copy"><p class="eyebrow">04 / Researches</p><h2>Questions worth<br /><em>staying with.</em></h2><p>Quantitative finance, quantum computing, optimisation and how AI changes learning — a living notebook, not a static list.</p><a class="button button-primary magnetic" href="research.html">Enter the research lab <span>↗</span></a></div>
+      </section>
+
+      <section class="systems-map section-pad">
+        <div class="systems-intro"><p class="eyebrow">05 / Systems map</p><h2>Maths in the model.<br /><em>Engineering in the loop.</em></h2><p>A working stack built from first principles, production habits and a bias toward useful systems.</p></div>
+        <div class="skill-meters reveal">
+          <div class="skill-meter" style="--level:92%"><div><b>Python + data systems</b><span>92</span></div><i><em></em></i><small>NumPy · Pandas · SciPy · FastAPI</small></div>
+          <div class="skill-meter" style="--level:87%"><div><b>Machine learning + statistics</b><span>87</span></div><i><em></em></i><small>Bayesian inference · forecasting · features</small></div>
+          <div class="skill-meter" style="--level:89%"><div><b>Mathematical modelling</b><span>89</span></div><i><em></em></i><small>Optimisation · probability · linear algebra</small></div>
+          <div class="skill-meter" style="--level:82%"><div><b>Automation + product systems</b><span>82</span></div><i><em></em></i><small>RAG · LangGraph · SQL · workflows</small></div>
+        </div>
+        <div class="tech-cloud reveal"><span>PYTHON</span><span>SQL</span><span>QISKIT</span><span>FASTAPI</span><span>POSTGRES</span><span>LANGGRAPH</span><span>DOCKER</span><span>JAVASCRIPT</span><span>GIT</span><span>LATEX</span></div>
+      </section>
+
+      <section class="trajectory section-pad">
+        <div class="trajectory-title"><p class="eyebrow">06 / Trajectory</p><h2>Learning on<br /><em>purpose.</em></h2></div><div class="trajectory-line"><article class="trajectory-item active"><span>NOW</span><h3>BSc Computer Science & Mathematics</h3><p>Birkbeck, University of London · targeting First Class Honours.</p></article><article class="trajectory-item"><span>2027</span><h3>Fintech research placement</h3><p>Optimisation and machine learning applied to credit-scoring models.</p></article><article class="trajectory-item"><span>NEXT</span><h3>Research-led MSc / PhD</h3><p>Developing toward doctoral research across quantitative systems, optimisation and AI.</p></article></div>
+      </section>
+
       <section id="tutoring" class="tutoring section-pad">
         <div class="tutor-grid">
           <div class="tutor-copy reveal"><div class="section-label"><span>02</span><p>Private tutoring</p></div><h2>Make the hard<br />parts <em>click.</em></h2><p>I teach A-level and GCSE Higher/Foundation Maths, Science and Physics online. No generic worksheets: each session is built around the way you think, the gaps that matter, and the grade you’re working towards.</p><div class="tutor-facts"><div><strong>A-level</strong><span>Maths & sciences</span></div><div><strong>GCSE</strong><span>Higher & foundation</span></div><div><strong>Online</strong><span>1:1, focused sessions</span></div></div></div>
@@ -104,7 +128,7 @@
       </section>
 
       <section class="about section-pad">
-        <div class="about-pulse reveal"><span>◉</span><p>Currently<br />building</p></div>
+        <div class="about-profile reveal"><img src="omar-aboelella.jpg" alt="Omar Aboelella" /><span>OMAR / LONDON / 2026</span><i>✦</i></div>
         <div class="about-copy reveal"><p class="eyebrow">A little context</p><h2>Computer Science & Mathematics at Birkbeck. Building for the point where <em>possibility becomes useful.</em></h2><p>My background moves between product, research, data and teaching. I’m especially interested in optimisation, machine learning and the decision systems hidden inside complex organisations.</p><a class="button button-text" href="mailto:omerapoua0@gmail.com?subject=Portfolio%20enquiry">Get in touch <span>↗</span></a></div>
       </section>
     </main>

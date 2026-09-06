@@ -30,6 +30,16 @@ const observer = new IntersectionObserver((entries) => entries.forEach((entry) =
   if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
 }), { threshold: .12 });
 document.querySelectorAll('.reveal').forEach((item) => observer.observe(item));
+const evolutionStages = [...document.querySelectorAll('.evolution-stage')];
+if (evolutionStages.length && !reduceMotion) {
+  const evolutionLabel = document.getElementById('evolution-label');
+  const evolutionCount = document.getElementById('evolution-count');
+  const labels = ['From signal to system', 'Mathematics becomes model', 'Model becomes compute', 'Compute becomes autonomy'];
+  let evolution = 0;
+  setInterval(() => { evolution = (evolution + 1) % evolutionStages.length; evolutionStages.forEach((stage, index) => stage.classList.toggle('active', index === evolution)); if (evolutionLabel) evolutionLabel.textContent = labels[evolution]; if (evolutionCount) evolutionCount.textContent = `0${evolution + 1}`; }, 2800);
+}
+const meterObserver = new IntersectionObserver((entries) => entries.forEach((entry) => { if (entry.isIntersecting) { entry.target.classList.add('charged'); meterObserver.unobserve(entry.target); } }), { threshold:.35 });
+document.querySelectorAll('.skill-meter').forEach((meter) => meterObserver.observe(meter));
 const year = document.getElementById('year');
 if (year) year.textContent = new Date().getFullYear();
 
@@ -75,7 +85,15 @@ if (form) form.addEventListener('submit', async (event) => {
   } catch {
     const subject = encodeURIComponent(`Tutoring enquiry — ${data.subject} (${data.level})`);
     const body = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\nSubject: ${data.subject}\nLevel: ${data.level}\n\n${data.message}`);
-    status.textContent = 'Opening your email app to send the request…';
-    window.location.href = `mailto:omerapoua0@gmail.com?subject=${subject}&body=${body}`;
+    const sheet = document.getElementById('success-sheet');
+    const emailBrief = document.getElementById('email-brief');
+    if (sheet && emailBrief) {
+      emailBrief.href = `mailto:omerapoua0@gmail.com?subject=${subject}&body=${body}`;
+      sheet.classList.add('show'); sheet.setAttribute('aria-hidden', 'false');
+      document.querySelector('.success-close')?.addEventListener('click', () => { sheet.classList.remove('show'); sheet.setAttribute('aria-hidden', 'true'); }, { once: true });
+    } else {
+      status.textContent = 'Opening your email app to send the request…';
+      window.location.href = `mailto:omerapoua0@gmail.com?subject=${subject}&body=${body}`;
+    }
   }
 });
