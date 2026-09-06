@@ -4,8 +4,8 @@
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  const count = innerWidth < 760 ? 2100 : 4600;
-  const names = ['Mathematics', 'Compute', 'Intelligence', 'Quantum'];
+  const count = innerWidth < 760 ? 2600 : 5400;
+  const names = ['Possibility', 'Mathematics', 'Compute', 'Intelligence', 'Quantum'];
   const controls = [...document.querySelectorAll('[data-shape]')];
   const pause = document.querySelector('.motion-toggle');
   let width = 1, height = 1, scale = 1, active = 0, paused = motion.matches;
@@ -50,7 +50,15 @@
     const x=Math.cos(a)*r, y=Math.sin(a)*.36*r;
     quantum.push({x:x*Math.cos(b)-y*Math.sin(b)+rand(-.015,.015),y:x*Math.sin(b)+y*Math.cos(b)+rand(-.015,.015),z:Math.sin(a)*.5*r});
   }
-  const sources=[maths,chip,robot,quantum];
+  const knot=[];
+  for(let i=0;i<count;i++){
+    const u=(i%180)/180*Math.PI*2,v=Math.floor(i/180)/Math.ceil(count/180)*Math.PI*2;
+    const center=t=>({x:(1.55+.56*Math.cos(3*t))*Math.cos(2*t),y:(1.55+.56*Math.cos(3*t))*Math.sin(2*t),z:.56*Math.sin(3*t)});
+    const c=center(u),next=center(u+.001),tx=next.x-c.x,ty=next.y-c.y,tz=next.z-c.z,len=Math.hypot(tx,ty,tz),t={x:tx/len,y:ty/len,z:tz/len};
+    const nl=Math.hypot(t.x,t.y),n={x:-t.y/nl,y:t.x/nl,z:0},bin={x:-t.z*n.y,y:t.z*n.x,z:t.x*n.y-t.y*n.x};
+    const r=.19;knot.push({x:(c.x+r*(n.x*Math.cos(v)+bin.x*Math.sin(v)))*.52,y:(c.y+r*(n.y*Math.cos(v)+bin.y*Math.sin(v)))*.52,z:(c.z+r*(n.z*Math.cos(v)+bin.z*Math.sin(v)))*.52});
+  }
+  const sources=[knot,maths,chip,robot,quantum];
   const targets=sources.map(points=>Array.from({length:count},(_,i)=>points[Math.floor(i*points.length/count)]));
   const particles=Array.from({length:count},(_,i)=>({x:targets[0][i].x*1.45,y:targets[0][i].y*1.45,z:targets[0][i].z+.4,ox:0,oy:0,size:rand(.8,1.7),tone:i%8}));
   let origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));
@@ -64,19 +72,19 @@
     origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));morphAge=0;active=index;phase=0;
     controls.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
     document.getElementById('shape-name').textContent=names[index];
-    document.getElementById('shape-number').textContent='0'+(index+1)+' / 04';
+    document.getElementById('shape-number').textContent='0'+(index+1)+' / 05';
     if(paused){particles.forEach((p,i)=>Object.assign(p,targets[active][i],{vx:0,vy:0,vz:0}));render(0);}
   }
   function render(dt){
     const light=document.documentElement.dataset.theme==='light';
     ctx.clearRect(0,0,width,height);
     const glow=ctx.createRadialGradient(width*.51,height*.48,0,width*.51,height*.48,scale*1.7);
-    glow.addColorStop(0,light?'rgba(98,155,45,.10)':'rgba(117,190,45,.08)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
-    ctx.fillStyle=light?'#6d924455':'#a9de6655';
+    glow.addColorStop(0,light?'rgba(189,108,68,.07)':'rgba(173,102,68,.06)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
+    ctx.fillStyle=light?'#8e786633':'#c7a88644';
     dust.forEach(d=>{const x=d.x*width,y=(d.y*height+elapsed*2)%height;ctx.fillRect(x,y,d.r,d.r)});
     const smoothing=1-Math.exp(-dt*3.5);
     rotation.x+=(desiredRotation.x-rotation.x)*smoothing;rotation.y+=(desiredRotation.y-rotation.y)*smoothing;
-    const angleY=rotation.y+(paused?0:Math.sin(elapsed*.16)*.10),angleX=rotation.x;
+    const angleY=rotation.y+(paused?0:Math.sin(elapsed*.16)*.18),angleX=rotation.x+(active===0?.42:0);
     const cy=Math.cos(angleY),sy=Math.sin(angleY),cx=Math.cos(angleX),sx=Math.sin(angleX);
     morphAge+=dt;
     for(let i=0;i<count;i++){
@@ -93,7 +101,7 @@
       const dx=x-pointer.x,dy=y-pointer.y,dist=Math.hypot(dx,dy);
       if(!paused){const force=dist<110&&dist>1?Math.pow(1-dist/110,2)*24:0;const k=1-Math.exp(-dt*7);p.ox+=(dx/Math.max(dist,1)*force-p.ox)*k;p.oy+=(dy/Math.max(dist,1)*force-p.oy)*k;}
       ctx.globalAlpha=Math.max(.25,Math.min(1,.72+z*.3));
-      ctx.fillStyle=light?(p.tone<2?'#1e5e41':'#4f821d'):(p.tone===0?'#eefbde':p.tone===1?'#7adfc2':p.tone<5?'#bafa72':'#6aab36');
+      ctx.fillStyle=light?(p.tone<2?'#72659c':p.tone<5?'#a54c29':'#c17951'):(p.tone===0?'#f9e7cb':p.tone===1?'#bba6e0':p.tone<5?'#f4ac80':'#ad755b');
       const size=p.size*depth*(width<500?.83:1);ctx.fillRect(x+p.ox,y+p.oy,size,size);
     }
     ctx.globalAlpha=1;
@@ -101,8 +109,8 @@
   function tick(now){
     frame=0;if(paused||!visible||document.hidden)return;
     const dt=last?Math.min((now-last)/1000,.04):.016;last=now;elapsed+=dt;phase+=dt;
-    if(phase>9)choose((active+1)%4);
-    controls[active]?.style.setProperty('--progress',(phase/9*100)+'%');
+    if(phase>11)choose((active+1)%5);
+    controls[active]?.style.setProperty('--progress',(phase/11*100)+'%');
     render(dt);frame=requestAnimationFrame(tick);
   }
   function start(){if(!frame&&!paused&&visible&&!document.hidden){last=0;frame=requestAnimationFrame(tick)}}
