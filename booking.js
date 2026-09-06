@@ -10,7 +10,7 @@
     document.getElementById('booking-step-label').textContent='Step '+(step+1)+' of 4';
     document.getElementById('booking-next-label').textContent=step===3?'Review my enquiry':'Continue';
     error.textContent='';
-    if(focus){steps[step].querySelector('legend').focus({preventScroll:true});const r=form.getBoundingClientRect();if(r.top<0)form.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'})}
+    if(focus){steps[step].querySelector('legend').focus({preventScroll:true});const r=form.getBoundingClientRect();if(r.top<96)form.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'})}
   }
   form.addEventListener('change',()=>{
     const data=values();document.getElementById('lesson-subject').textContent=data.subject||'Your choice';document.getElementById('lesson-level').textContent=data.level||'Your starting point';document.getElementById('lesson-time').textContent=data.days&&data.time?data.days+' · '+data.time:'Let’s find a time';
