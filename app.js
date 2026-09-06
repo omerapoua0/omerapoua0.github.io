@@ -73,27 +73,47 @@ resize(); draw(); addEventListener('resize', resize);
 }
 
 const form = document.getElementById('tutoring-form');
-if (form) form.addEventListener('submit', async (event) => {
-  const status = form.querySelector('.form-status');
-  event.preventDefault();
-  const data = Object.fromEntries(new FormData(form));
-  status.textContent = 'Sending your request…';
-  try {
-    const response = await fetch('/api/tutoring', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (!response.ok) throw new Error('Form endpoint unavailable');
-    form.reset(); status.textContent = 'Request received — Omar will be in touch shortly.';
-  } catch {
-    const subject = encodeURIComponent(`Tutoring enquiry — ${data.subject} (${data.level})`);
-    const body = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\nSubject: ${data.subject}\nLevel: ${data.level}\n\n${data.message}`);
-    const sheet = document.getElementById('success-sheet');
-    const emailBrief = document.getElementById('email-brief');
-    if (sheet && emailBrief) {
-      emailBrief.href = `mailto:omerapoua0@gmail.com?subject=${subject}&body=${body}`;
-      sheet.classList.add('show'); sheet.setAttribute('aria-hidden', 'false');
-      document.querySelector('.success-close')?.addEventListener('click', () => { sheet.classList.remove('show'); sheet.setAttribute('aria-hidden', 'true'); }, { once: true });
-    } else {
-      status.textContent = 'Opening your email app to send the request…';
-      window.location.href = `mailto:omerapoua0@gmail.com?subject=${subject}&body=${body}`;
-    }
+if (form) {
+  const sheet = document.getElementById('success-sheet');
+  const emailBrief = document.getElementById('email-brief');
+  const closeButton = sheet?.querySelector('.success-close');
+  let lastFocus;
+  const close = () => {
+    sheet?.classList.remove('show');
+    sheet?.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    lastFocus?.focus();
+  };
+  if (sheet) {
+    sheet.setAttribute('role','dialog');
+    sheet.setAttribute('aria-modal','true');
+    sheet.setAttribute('aria-label','Your study brief is ready');
+    closeButton?.addEventListener('click',close);
+    sheet.addEventListener('click',e=>{if(e.target===sheet)close()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('show'))close()});
+    sheet.addEventListener('keydown',e=>{
+      if(e.key==='Tab'){
+        const items=[...sheet.querySelectorAll('button,a[href]')];
+        const first=items[0],last=items[items.length-1];
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+      }
+    });
   }
-});
+  form.addEventListener('submit',event=>{
+    event.preventDefault();
+    const data=Object.fromEntries(new FormData(form));
+    const status=form.querySelector('.form-status');
+    if(!data.subject||!data.level){status.textContent='Choose a subject and level before preparing your brief.';return}
+    if(!form.reportValidity())return;
+    const subject=encodeURIComponent('Tutoring enquiry — '+data.subject+' ('+data.level+')');
+    const body=encodeURIComponent('Name: '+data.name+'\nEmail: '+data.email+'\nSubject: '+data.subject+'\nLevel: '+data.level+'\n\n'+data.message);
+    if(sheet&&emailBrief){
+      lastFocus=document.activeElement;
+      emailBrief.href='mailto:omerapoua0@gmail.com?subject='+subject+'&body='+body;
+      sheet.classList.add('show');sheet.setAttribute('aria-hidden','false');
+      document.body.style.overflow='hidden';requestAnimationFrame(()=>closeButton.focus());
+      status.textContent='Your brief is ready. Open your email app to send it.';
+    }
+  });
+}
