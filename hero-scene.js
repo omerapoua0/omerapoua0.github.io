@@ -6,7 +6,8 @@
   const scene='https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode';
   const runtime='https://unpkg.com/@splinetool/runtime@1.10.22/build/runtime.js';
   let app=null,loading=null,failed=false,ready=false,shown=false,settled=false;
-  let state={index:0,paused:motion.matches,visible:true},timer=0,loadTimer=0;
+  const equations=document.getElementById('equation-scene');
+  let state={index:-1,paused:motion.matches,visible:true},timer=0,loadTimer=0;
   const hint=()=>state.index===3&&!ready;
   function setShown(value){
     if(shown===value)return;
@@ -16,6 +17,9 @@
   }
   function sync(){
     const selected=state.index===3;
+    stage.classList.toggle('equations-visible',state.index===1);
+    equations?.setAttribute('aria-hidden',String(state.index!==1));
+    document.dispatchEvent(new CustomEvent('hero:robot-status',{detail:{pending:!ready&&!failed}}));
     setShown(selected&&ready&&settled);
     status.hidden=!hint();
     if(hint())status.textContent=failed?'3D scene unavailable · showing the particle sculpture':'Loading the interactive robot…';
@@ -58,11 +62,11 @@
     return loading;
   }
   document.addEventListener('hero:state',e=>{
-    const changed=state.index!==e.detail.index;state=e.detail;
+    const first=state.index===-1,changed=state.index!==e.detail.index;state=e.detail;
     if(changed){
       clearTimeout(timer);settled=false;
       if(state.index===3){
-        settled=state.paused||motion.matches;
+        settled=first||state.paused||motion.matches;
         if(!settled)timer=setTimeout(()=>{settled=true;sync()},2500);
       }
     }

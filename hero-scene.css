@@ -9,7 +9,20 @@
 .particle-caption #shape-description{max-width:320px;line-height:1.8}
 .robot-status{position:absolute;left:28%;right:12%;bottom:12%;z-index:4;color:var(--muted);font:12px/1.5 var(--sans);text-align:center;pointer-events:none}
 .robot-status[hidden]{display:none}
+.equation-scene{position:absolute;inset:15% 9% 17% 27%;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:30px;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(18px);transition:opacity .7s,transform 1.1s cubic-bezier(.22,1,.36,1),visibility .7s}
+.atelier-home .equations-visible #particle-engine{opacity:.08;transition-delay:.6s}
+.equations-visible .equation-scene{opacity:1;visibility:visible;transform:none;transition-delay:.65s}
+.equation-row{padding-bottom:22px;border-bottom:1px solid var(--border)}
+.equation-row>span{display:block;font:10px/1.5 var(--mono);letter-spacing:1.5px;color:var(--muted);margin-bottom:16px}
+.equation-row math{font-size:clamp(23px,2.6vw,42px);color:var(--fg);math-style:normal}
+.equation-quantum math{font-size:clamp(36px,4vw,62px);color:#78d8ab}
+.equation-bayes math{color:#80b4ff}
+.equation-finance math{font-size:clamp(19px,2vw,30px);color:#f78991}
+.equation-signature{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted)}
+.equation-signature math{font-size:23px}.equation-signature>span{font:9px var(--mono);letter-spacing:1px;max-width:170px;line-height:1.8}
+[data-theme=light] .equation-quantum math{color:#096640}[data-theme=light] .equation-bayes math{color:#235ca8}[data-theme=light] .equation-finance math{color:#b12b40}
 @media(max-width:760px){
+ .equation-scene{inset:-5% 18% 20%;gap:12px}.equation-row{padding-bottom:10px}.equation-row>span{font-size:9px;letter-spacing:.8px;margin-bottom:6px}.equation-row math{font-size:25px}.equation-quantum math{font-size:34px}.equation-finance math{font-size:18px}.equation-signature math{font-size:20px}.equation-signature>span{font-size:8px}
  .atelier-home .particle-stage .robot-scene{inset:0 14% 17%;}
  .atelier-home .particle-caption{bottom:5%;left:24%;}
  .atelier-home .particle-caption #shape-description{display:block;font-size:9px;max-width:260px;letter-spacing:.8px}
@@ -17,4 +30,5 @@
 }
 @media(prefers-reduced-motion:reduce){
  .atelier-home .particle-stage #particle-engine,.atelier-home .particle-stage .robot-scene{transition:none;transform:none}
+ .equation-scene,.equations-visible .equation-scene,.atelier-home .equations-visible #particle-engine{transition:none;transition-delay:0s;transform:none}
 }
