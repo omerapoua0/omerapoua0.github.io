@@ -10,7 +10,8 @@
   const pause = document.querySelector('.motion-toggle');
   let width = 1, height = 1, scale = 1, active = 0, paused = motion.matches;
   let frame = 0, last = 0, elapsed = 0, phase = 0, visible = true;
-  let pointer = { x: -9999, y: -9999 }, rotation = { x: .12, y: -.3 };
+  let pointer = { x: -9999, y: -9999 }, rotation = { x: .12, y: -.3 }, desiredRotation = {...rotation};
+  let morphAge=0;
   const sample = document.createElement('canvas');
   sample.width = sample.height = 500;
   const pen = sample.getContext('2d', {willReadFrequently: true});
@@ -23,7 +24,7 @@
   }
   const maths = mask(p => {
     p.textAlign='center';p.textBaseline='middle';p.font='280px Georgia';p.fillText('∑',250,255);
-    p.font='42px Georgia';p.fillText('∫  ∇  ∞',250,431);p.font='30px Georgia';p.fillText('f(x) = intelligence',250,60);
+    p.font='42px Georgia';p.fillText('∫  ∇  ∞',250,431);p.font='30px Georgia';p.fillText('P(A | B) ∝ P(B | A) P(A)',250,60);
   });
   const chip = [];
   for(let i=0;i<count;i++){
@@ -51,7 +52,8 @@
   }
   const sources=[maths,chip,robot,quantum];
   const targets=sources.map(points=>Array.from({length:count},(_,i)=>points[Math.floor(i*points.length/count)]));
-  const particles=Array.from({length:count},(_,i)=>({x:rand(-2,2),y:rand(-1.5,1.5),z:rand(-2,2),vx:0,vy:0,vz:0,size:rand(.6,1.55),tone:i%8}));
+  const particles=Array.from({length:count},(_,i)=>({x:targets[0][i].x*1.45,y:targets[0][i].y*1.45,z:targets[0][i].z+.4,ox:0,oy:0,size:rand(.8,1.7),tone:i%8}));
+  let origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));
   const dust=Array.from({length:90},()=>({x:Math.random(),y:Math.random(),r:rand(.3,1)}));
   function resize(){
     const box=canvas.getBoundingClientRect(); width=box.width;height=box.height;scale=Math.min(width*.31,height*.34);
@@ -59,7 +61,7 @@
     if(paused) render(0);
   }
   function choose(index){
-    active=index;phase=0;
+    origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));morphAge=0;active=index;phase=0;
     controls.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
     document.getElementById('shape-name').textContent=names[index];
     document.getElementById('shape-number').textContent='0'+(index+1)+' / 04';
@@ -72,37 +74,43 @@
     glow.addColorStop(0,light?'rgba(98,155,45,.10)':'rgba(117,190,45,.08)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
     ctx.fillStyle=light?'#6d924455':'#a9de6655';
     dust.forEach(d=>{const x=d.x*width,y=(d.y*height+elapsed*2)%height;ctx.fillRect(x,y,d.r,d.r)});
-    const angleY=rotation.y+(paused?0:Math.sin(elapsed*.22)*.14),angleX=rotation.x;
+    const smoothing=1-Math.exp(-dt*3.5);
+    rotation.x+=(desiredRotation.x-rotation.x)*smoothing;rotation.y+=(desiredRotation.y-rotation.y)*smoothing;
+    const angleY=rotation.y+(paused?0:Math.sin(elapsed*.16)*.10),angleX=rotation.x;
     const cy=Math.cos(angleY),sy=Math.sin(angleY),cx=Math.cos(angleX),sx=Math.sin(angleX);
-    const step=Math.min(dt*60,2);
+    morphAge+=dt;
     for(let i=0;i<count;i++){
       const p=particles[i],t=targets[active][i];
       if(!paused){
-        p.vx=(p.vx+(t.x-p.x)*.028*step)*Math.pow(.84,step);p.vy=(p.vy+(t.y-p.y)*.028*step)*Math.pow(.84,step);p.vz=(p.vz+(t.z-p.z)*.028*step)*Math.pow(.84,step);
-        p.x+=p.vx*step;p.y+=p.vy*step;p.z+=p.vz*step;
+        const u=Math.max(0,Math.min(1,(morphAge-(i%17)*.014)/2.5)),e=u*u*u*(u*(u*6-15)+10),o=origins[i];
+        const arc=Math.sin(Math.PI*e)*.22;
+        p.x=o.x+(t.x-o.x)*e+arc*Math.sin(i*.13);
+        p.y=o.y+(t.y-o.y)*e+arc*Math.cos(i*.13);
+        p.z=o.z+(t.z-o.z)*e+arc;
       }
       const rx=p.x*cy+p.z*sy,rz=-p.x*sy+p.z*cy,ry=p.y*cx-rz*sx,z=p.y*sx+rz*cx,depth=3.6/(3.6-z);
       const x=width*.52+rx*scale*depth,y=height*.46+ry*scale*depth;
       const dx=x-pointer.x,dy=y-pointer.y,dist=Math.hypot(dx,dy);
-      if(!paused&&dist<85&&dist>1){p.vx+=dx/dist*.018*(1-dist/85);p.vy+=dy/dist*.018*(1-dist/85);}
+      if(!paused){const force=dist<110&&dist>1?Math.pow(1-dist/110,2)*24:0;const k=1-Math.exp(-dt*7);p.ox+=(dx/Math.max(dist,1)*force-p.ox)*k;p.oy+=(dy/Math.max(dist,1)*force-p.oy)*k;}
       ctx.globalAlpha=Math.max(.25,Math.min(1,.72+z*.3));
       ctx.fillStyle=light?(p.tone<2?'#1e5e41':'#4f821d'):(p.tone===0?'#eefbde':p.tone===1?'#7adfc2':p.tone<5?'#bafa72':'#6aab36');
-      const size=p.size*depth*(width<500?.83:1);ctx.fillRect(x,y,size,size);
+      const size=p.size*depth*(width<500?.83:1);ctx.fillRect(x+p.ox,y+p.oy,size,size);
     }
     ctx.globalAlpha=1;
   }
   function tick(now){
     frame=0;if(paused||!visible||document.hidden)return;
     const dt=last?Math.min((now-last)/1000,.04):.016;last=now;elapsed+=dt;phase+=dt;
-    if(phase>6.5)choose((active+1)%4);
+    if(phase>9)choose((active+1)%4);
+    controls[active]?.style.setProperty('--progress',(phase/9*100)+'%');
     render(dt);frame=requestAnimationFrame(tick);
   }
   function start(){if(!frame&&!paused&&visible&&!document.hidden){last=0;frame=requestAnimationFrame(tick)}}
   function syncPause(){pause.textContent=paused?'▷':'Ⅱ';pause.setAttribute('aria-label',paused?'Play animation':'Pause animation');pause.setAttribute('aria-pressed',String(paused));if(paused){cancelAnimationFrame(frame);frame=0;render(0)}else start()}
   controls.forEach(b=>b.addEventListener('click',()=>choose(Number(b.dataset.shape))));
   pause.addEventListener('click',()=>{paused=!paused;syncPause()});
-  canvas.addEventListener('pointermove',e=>{const b=canvas.getBoundingClientRect();pointer={x:e.clientX-b.left,y:e.clientY-b.top};rotation.y=-.3+(pointer.x/width-.5)*.38;rotation.x=.12+(pointer.y/height-.5)*.2});
-  canvas.addEventListener('pointerleave',()=>{pointer={x:-9999,y:-9999}});
+  canvas.addEventListener('pointermove',e=>{const b=canvas.getBoundingClientRect();pointer={x:e.clientX-b.left,y:e.clientY-b.top};desiredRotation.y=-.3+(pointer.x/width-.5)*.26;desiredRotation.x=.12+(pointer.y/height-.5)*.14});
+  canvas.addEventListener('pointerleave',()=>{pointer={x:-9999,y:-9999};desiredRotation={x:.12,y:-.3}});
   new ResizeObserver(resize).observe(canvas);
   new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible)start();else{cancelAnimationFrame(frame);frame=0}},{threshold:0}).observe(canvas);
   document.addEventListener('visibilitychange',start);
