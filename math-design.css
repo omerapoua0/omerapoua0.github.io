@@ -1,28 +1,24 @@
-/* One mathematical study; the existing background film remains untouched. */
+/* Mathematics as a lit, continuous surface. Keep the existing hero atmosphere. */
 .atelier-home .engine-film{display:block;opacity:.15;filter:grayscale(.55);mask-image:linear-gradient(90deg,transparent 12%,#0009 48%,#000);pointer-events:none}
-.atelier-home .math-composition{inset:10% 8% 13% 28%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;isolation:isolate;overflow:hidden;perspective:none}
-.math-composition .math-orbit{display:block;width:min(100%,480px);height:auto;max-height:70%;flex-shrink:1;overflow:visible;color:var(--lime)}
-.orbit-guide{stroke:var(--fg);stroke-opacity:.25;stroke-width:.8}
-.orbit-axis{stroke:var(--fg);stroke-opacity:.08;stroke-width:.65}
-.orbit-centre{fill:var(--fg);fill-opacity:.4}
-.orbit-arc{stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
-.orbit-radius{stroke:currentColor;stroke-width:.7;stroke-opacity:.4}
-.orbit-point{fill:var(--fg)}
-.orbit-phase{transform-origin:200px 150px;animation:complex-phase 28s linear infinite;animation-delay:-4s}
-@keyframes complex-phase{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
-.math-composition .math-equation{width:100%;flex-shrink:0;text-align:center;padding:0 0 8px;color:var(--fg)}
-.math-composition .math-equation math{font-family:"STIX Two Math","Cambria Math",math;display:block;white-space:nowrap;font-size:clamp(28px,3.2vw,48px);font-weight:400;line-height:1.5;letter-spacing:0}
-.math-composition.math-still .orbit-phase{animation-play-state:paused}
+.atelier-home .math-composition{inset:3% 2% 8% 19%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;isolation:isolate;overflow:hidden;perspective:none}
+.math-sculpture{position:relative;width:100%;flex:1;min-height:0}
+.math-sculpture #math-surface,.math-surface-still{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.math-sculpture #math-surface{opacity:0;transition:opacity .7s ease}
+.math-surface-still{opacity:1;transition:opacity .7s ease}
+.surface-ready #math-surface{opacity:1}.surface-ready .math-surface-still{opacity:0}
+.math-composition .math-equation{display:flex;align-items:center;justify-content:center;gap:22px;width:100%;flex-shrink:0;padding:8px 0 20px;color:var(--muted)}
+.math-equation>span{font:12px/1.5 var(--mono);letter-spacing:.14em}
+.math-composition .math-equation math{font-family:"STIX Two Math","Cambria Math",math;white-space:nowrap;font-size:24px;color:var(--lime);font-weight:400;line-height:1.5}
 .atelier-home .particle-stage[data-scene="1"] .particle-caption{display:none}
 .atelier-home .equations-visible .math-composition{animation:none;transform:none;transition:opacity .8s ease,visibility .8s ease}
 @media(max-width:760px){
- .atelier-home .math-composition{inset:0 14% 5%;gap:12px}
- .math-composition .math-orbit{width:290px;max-width:95%;max-height:72%}
- .math-composition .math-equation math{font-size:clamp(24px,6.5vw,34px)}
+ .atelier-home .math-composition{inset:-2% 13% 0%;gap:0}
+ .math-composition .math-equation{gap:18px;padding:0 0 8px}
+ .math-equation>span{font-size:12px}
+ .math-composition .math-equation math{font-size:21px}
  .atelier-home .engine-film{opacity:.12;mask-image:linear-gradient(180deg,transparent 10%,#0005 45%,#000)}
 }
 @media(prefers-reduced-motion:reduce){
  .atelier-home .engine-film{display:none}
- .math-composition .orbit-phase{animation:none;transform:rotate(-52deg)}
- .atelier-home .equations-visible .math-composition{transition:none}
+ .atelier-home .equations-visible .math-composition,.math-sculpture #math-surface,.math-surface-still{transition:none}
 }

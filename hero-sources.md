@@ -1,5 +1,12 @@
 # Hero scene sources
 
+## Sculptural mathematics / v18
+
+- Replaces the v17 unit-circle diagram with a directly computed Enneper minimal surface. Reference parametrisation: https://mathworld.wolfram.com/EnnepersMinimalSurface.html. The circular parameter domain has radius 1.4; x = u − u³/3 + uv², y = −v + v³/3 − vu², z = u² − v², uniformly scaled by 0.58.
+- Analytic tangent vectors produce smooth vertex normals. A lightweight, dependency-free WebGL renderer uses two-sided studio shading and restrained pearl/emerald lighting. Numerical checks confirm zero mean curvature, matching the small H = 0 caption.
+- Slow angular movement and damped cursor response stop with the existing hero pause control, reduced-motion, data-saving and hidden/offscreen states. GPU resources are created only when the maths scene is selected. A 900×900 transparent WebP fallback is rasterised from the same geometry; no image generation is used.
+- Checked: numerical geometry, finite coordinates, normal lengths, GPU API setup via mocks, lifecycle controls, context-loss fallback/recovery and standalone fallback rendering. These are not browser visual-QA claims. Existing robot, topology, compute, quantum, clouds, background film, projects and skills are preserved.
+
 ## Simplified mathematics / v17
 
 The former four tilted equations and dense animated canvas field have been replaced with a single native MathML Euler formula, e^(iθ) = cos θ + i sin θ, and its unit-circle geometry. One point and a radius rotate anticlockwise on the unit circle over 28 seconds. No numbered teaching panels, text parallax, equation collage or additional drawing loop remain. The background film and cloud atmosphere are unchanged. Shared pause, reduced motion and offscreen/hidden-tab states stop the phase animation. Source and mocked lifecycle checks passed; no new browser visual QA was performed for this release.
