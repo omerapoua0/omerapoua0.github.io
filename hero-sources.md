@@ -1,5 +1,12 @@
 # Hero scene sources
 
+## Reference-led equations + preserved geometry / v19
+
+- User supplied a screenshot of a dark, blue-lit mathematical environment. The reference informs equation depth, cool lighting and spatial composition only; desktop icons, labels and the screenshot itself are not published.
+- Mathematics is now its own layered MathML scene: Gaussian density, Schrödinger equation, Fourier transform, Bayes' theorem, Black–Scholes PDE, Euler's identity, exponential series and gradient descent. These are actual typeset formulas, not text baked into generated artwork. CSS perspective, low-amplitude cursor response and slow depth motion provide the spatial effect.
+- The v18 Enneper surface and renderer are preserved as a separate Geometry scene. Order: Robot → Mathematics → Geometry → Topology → Compute → Quantum. The particle canvas stays blank in the externally owned Robot, Mathematics and Geometry scenes, preventing overlap.
+- Both new scene controllers share the existing pause/visibility state and respect reduced motion. Existing backgrounds and all portfolio content are unchanged.
+
 ## Sculptural mathematics / v18
 
 - Replaces the v17 unit-circle diagram with a directly computed Enneper minimal surface. Reference parametrisation: https://mathworld.wolfram.com/EnnepersMinimalSurface.html. The circular parameter domain has radius 1.4; x = u − u³/3 + uv², y = −v + v³/3 − vu², z = u² − v², uniformly scaled by 0.58.

@@ -9,8 +9,12 @@
 .math-composition .math-equation{display:flex;align-items:center;justify-content:center;gap:22px;width:100%;flex-shrink:0;padding:8px 0 20px;color:var(--muted)}
 .math-equation>span{font:12px/1.5 var(--mono);letter-spacing:.14em}
 .math-composition .math-equation math{font-family:"STIX Two Math","Cambria Math",math;white-space:nowrap;font-size:24px;color:var(--lime);font-weight:400;line-height:1.5}
-.atelier-home .particle-stage[data-scene="1"] .particle-caption{display:none}
-.atelier-home .equations-visible .math-composition{animation:none;transform:none;transition:opacity .8s ease,visibility .8s ease}
+.geometry-scene{position:absolute;z-index:3;opacity:0;visibility:hidden;pointer-events:none}
+.atelier-home .geometry-visible .geometry-scene{opacity:1;visibility:visible}
+.atelier-home .particle-stage:not([data-scene="5"]) .geometry-scene{display:none}
+.atelier-home .particle-stage[data-scene="5"] #particle-engine{visibility:hidden!important;opacity:0!important;pointer-events:none}
+.atelier-home .particle-stage[data-scene="5"] .particle-caption{display:none}
+.atelier-home .geometry-visible .math-composition{animation:none;transform:none;transition:opacity .8s ease,visibility .8s ease}
 @media(max-width:760px){
  .atelier-home .math-composition{inset:-2% 13% 0%;gap:0}
  .math-composition .math-equation{gap:18px;padding:0 0 8px}
@@ -20,5 +24,5 @@
 }
 @media(prefers-reduced-motion:reduce){
  .atelier-home .engine-film{display:none}
- .atelier-home .equations-visible .math-composition,.math-sculpture #math-surface,.math-surface-still{transition:none}
+ .atelier-home .geometry-visible .math-composition,.math-sculpture #math-surface,.math-surface-still{transition:none}
 }

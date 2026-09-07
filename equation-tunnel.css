@@ -1,0 +1,35 @@
+/* The reference's luminous equations, typeset as real maths in layered space. */
+.atelier-home .equation-tunnel{inset:0 -1% 4% 5%;display:block;overflow:hidden;perspective:650px;perspective-origin:54% 48%;isolation:isolate;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 93%,transparent)}
+.atelier-home .equations-visible .equation-tunnel{animation:none;transform:none;transition:opacity 1s ease,visibility 1s ease}
+.equation-tunnel:before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 55% 50%,#7cbdec0c,transparent 66%)}
+.formula-space{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateY(var(--math-y,0deg)) rotateX(var(--math-x,0deg));transition:transform 1.8s cubic-bezier(.2,.7,.2,1)}
+.formula-plane{position:absolute;color:#a9cde2;white-space:nowrap;width:max-content;max-width:none;transform-style:preserve-3d;animation:formula-travel var(--duration,24s) ease-in-out infinite alternate;animation-delay:var(--delay,0s);opacity:var(--ink,.5);filter:drop-shadow(0 0 9px #90cced25)}
+.formula-plane math{font-family:"STIX Two Math","Cambria Math",math;font-size:var(--size,32px);font-weight:400;line-height:1.4;math-style:normal}
+.formula-plane.front{--ink:.96;--size:clamp(32px,3.7vw,56px);left:16%;top:40%;--depth:30px;--turn:-9deg;--delay:-5s;color:#ddedf5}
+.formula-plane.quantum{--ink:.7;--size:clamp(25px,3vw,42px);left:33%;top:13%;--depth:-90px;--turn:14deg;--delay:-13s;--duration:31s}
+.formula-plane.fourier{--ink:.62;--size:clamp(23px,2.5vw,36px);left:14%;top:75%;--depth:-35px;--turn:-15deg;--delay:-9s;--duration:28s}
+.formula-plane.inference{--ink:.35;--size:30px;left:46%;top:63%;--depth:-145px;--turn:18deg;--delay:-3s;--duration:35s}
+.formula-plane.finance{--ink:.3;--size:30px;left:7%;top:28%;--depth:-210px;--turn:20deg;--delay:-18s;--duration:32s}
+.formula-plane.euler{--ink:.26;--size:42px;left:64%;top:84%;--depth:-155px;--turn:-17deg;--delay:-12s}
+.formula-plane.series{--ink:.25;--size:35px;left:8%;top:3%;--depth:-165px;--turn:-16deg;--delay:-7s;--duration:30s}
+.formula-plane.gradient{--ink:.32;--size:32px;left:-3%;top:61%;--depth:-160px;--turn:24deg;--delay:-16s;--duration:33s}
+.formula-rules{position:absolute;inset:5% 9%;opacity:.14;transform:translateZ(-190px) rotateY(-18deg);background:linear-gradient(90deg,transparent 13%,#8cbfd7 13.1%,transparent 13.25%,transparent 84%,#8cbfd7 84.1%,transparent 84.25%),linear-gradient(transparent 20%,#8cbfd7 20.1%,transparent 20.3%,transparent 77%,#8cbfd7 77.1%,transparent 77.3%);pointer-events:none}
+@keyframes formula-travel{from{transform:translate3d(0,5px,var(--depth)) rotateY(var(--turn))}to{transform:translate3d(-9px,-9px,calc(var(--depth) + 24px)) rotateY(var(--turn))}}
+.tunnel-still .formula-plane{animation-play-state:paused}
+.tunnel-still .formula-space{transition:none}
+.atelier-home .particle-stage[data-scene="1"] .particle-caption{display:none}
+[data-theme=light] .formula-plane{color:#396e89;filter:none}[data-theme=light] .formula-plane.front{color:#214f67}
+@media(max-width:1100px){.hero-bottom .scroll-cue{display:none}.hero-bottom .stage-controls{gap:16px;flex-wrap:wrap}}
+@media(max-width:760px){
+ .atelier-home .equation-tunnel{inset:-4% 12% 0%;perspective:500px;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+ .formula-plane.front{left:7%;top:39%;--size:30px;--depth:0px}
+ .formula-plane.quantum{left:30%;top:8%;--size:31px;--depth:-80px}
+ .formula-plane.fourier{left:4%;top:77%;--size:25px;--depth:-40px}
+ .formula-plane.finance{left:-12%;top:25%;--size:26px;--depth:-195px}
+ .formula-plane.inference{left:38%;top:64%;--size:26px;--depth:-150px}
+ .formula-plane.series{left:-8%;top:0%;--size:30px}
+ .formula-plane.gradient{left:-10%;top:64%;--size:26px}
+ .formula-plane.euler{left:64%;top:87%;--size:28px}
+ .hero-bottom .stage-controls{gap:4px 8px}
+}
+@media(prefers-reduced-motion:reduce){.formula-plane{animation:none;transform:translateZ(var(--depth)) rotateY(var(--turn))}.formula-space,.atelier-home .equations-visible .equation-tunnel{transition:none}}

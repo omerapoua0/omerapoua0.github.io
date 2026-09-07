@@ -5,9 +5,9 @@
   if (!ctx) return;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const count = innerWidth < 760 ? 4200 : 11500;
-  const names = ['Topology', 'Mathematics', 'Compute', 'Robotics', 'Quantum'];
-  const descriptions = ['TREFOIL KNOT · T(2, 3) · GEOMETRY IN THREE DIMENSIONS.', 'QUANTUM MECHANICS · INFERENCE · QUANTITATIVE FINANCE.', 'THE ARCHITECTURE BEHIND INTELLIGENCE.', 'MOVE YOUR CURSOR TO MEET THE ROBOT.', 'EXPLORING WHAT COMPUTATION COULD BECOME.'];
-  const sequence=[3,1,0,2,4];
+  const names = ['Topology', 'Mathematics', 'Compute', 'Robotics', 'Quantum', 'Geometry'];
+  const descriptions = ['TREFOIL KNOT · T(2, 3) · GEOMETRY IN THREE DIMENSIONS.', 'QUANTUM MECHANICS · INFERENCE · QUANTITATIVE FINANCE.', 'THE ARCHITECTURE BEHIND INTELLIGENCE.', 'MOVE YOUR CURSOR TO MEET THE ROBOT.', 'EXPLORING WHAT COMPUTATION COULD BECOME.', 'MINIMAL SURFACES · FORM FROM MATHEMATICS.'];
+  const sequence=[3,1,5,0,2,4];
   const controls = [...document.querySelectorAll('[data-shape]')];
   const pause = document.querySelector('.motion-toggle');
   let width = 1, height = 1, scale = 1, active = 3, paused = motion.matches;
@@ -100,7 +100,7 @@
     topologyFaces[topologyFaces.length-1].normals=points.map(p=>p.n);
     topologyFaces[topologyFaces.length-1].uvs=[[i/240,j/32],[(i+1)/240,j/32],[(i+1)/240,(j+1)/32],[i/240,(j+1)/32]];
   }
-  const sources=[topology,maths,chip,robot,quantum];
+  const sources=[topology,maths,chip,robot,quantum,[]];
   // A small GPU material pass supplies continuous studio reflections. The
   // canvas renderer below remains the fallback when WebGL is unavailable.
   function createSurfaceRenderer(){
@@ -180,19 +180,19 @@
     origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));
     document.querySelector('.particle-stage')?.setAttribute('data-scene',String(index));
     render(0);
-    if(!paused&&index!==1&&index!==3){canvas.getAnimations?.().forEach(a=>a.cancel());canvas.animate?.([{opacity:0},{opacity:1}],{duration:650,easing:'ease-out'});}
+    if(!paused&&index!==1&&index!==3&&index!==5){canvas.getAnimations?.().forEach(a=>a.cancel());canvas.animate?.([{opacity:0},{opacity:1}],{duration:650,easing:'ease-out'});}
     controls.forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.shape)===index)));
     controls.forEach(b=>b.style.setProperty('--progress','0%'));
     document.getElementById('shape-name').textContent=names[index];
     const description=document.getElementById('shape-description');if(description)description.textContent=descriptions[index];
-    document.getElementById('shape-number').textContent='0'+(sequence.indexOf(index)+1)+' / 05';
+    document.getElementById('shape-number').textContent='0'+(sequence.indexOf(index)+1)+' / 0'+sequence.length;
     if(paused){particles.forEach((p,i)=>Object.assign(p,targets[active][i],{ox:0,oy:0}));origins=particles.map(p=>({x:p.x,y:p.y,z:p.z}));morphAge=3.2;pose={x:index===2?.55:index===0?.42:.03,y:index===2?-.38:0};render(0);}
     publishState();
   }
   function render(dt){
     const light=document.documentElement.dataset.theme==='light';
     ctx.clearRect(0,0,width,height);
-    if(active===1||active===3)return;
+    if(active===1||active===3||active===5)return;
     const glow=ctx.createRadialGradient(width*.51,height*.48,0,width*.51,height*.48,scale*1.7);
     glow.addColorStop(0,light?'rgba(189,108,68,.07)':'rgba(173,102,68,.06)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
     ctx.fillStyle=light?'#8e786633':'#c7a88644';

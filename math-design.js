@@ -2,7 +2,7 @@
  const sheet=document.querySelector('link[href^="math-design.css"]');
  if(sheet)document.head.append(sheet);
  addEventListener('DOMContentLoaded',()=>{if(sheet)document.head.append(sheet)});
- const layer=document.getElementById('equation-scene'),canvas=document.getElementById('math-surface'),stage=document.querySelector('.particle-stage');
+ const layer=document.getElementById('geometry-scene'),canvas=document.getElementById('math-surface'),stage=document.querySelector('.particle-stage');
  if(!layer||!canvas||!window.OmarMathSurface)return;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let active=false,paused=true,visible=false,renderer=null,attempted=false,lost=false,frame=0,last=0,time=0,width=0,height=0;
@@ -28,10 +28,11 @@
   const ease=1-Math.exp(-dt*2.8);tiltX+=(aimX-tiltX)*ease;tiltY+=(aimY-tiltY)*ease;paint();frame=requestAnimationFrame(tick);
  }
  function sync(){
+  stage?.classList.toggle('geometry-visible',active);layer.setAttribute('aria-hidden',String(!active));
   layer.classList.toggle('math-still',!moving());cancelAnimationFrame(frame);frame=0;last=0;
   if(active){resize();if(moving()&&renderer)frame=requestAnimationFrame(tick)}
  }
- document.addEventListener('hero:state',e=>{active=e.detail.index===1;paused=e.detail.paused;visible=e.detail.visible;sync()});
+ document.addEventListener('hero:state',e=>{active=e.detail.index===5;paused=e.detail.paused;visible=e.detail.visible;sync()});
  document.addEventListener('visibilitychange',sync);reduced.addEventListener('change',sync);
  document.addEventListener('themechange',paint);new ResizeObserver(resize).observe(canvas);
  stage?.addEventListener('pointermove',e=>{if(!moving())return;const r=stage.getBoundingClientRect();aimX=((e.clientY-r.top)/r.height-.5)*.22;aimY=((e.clientX-r.left)/r.width-.5)*.35});
