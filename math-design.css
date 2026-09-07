@@ -1,27 +1,28 @@
-/* Equations as a spatial composition, not a stack of information panels. */
+/* One mathematical study; the existing background film remains untouched. */
 .atelier-home .engine-film{display:block;opacity:.15;filter:grayscale(.55);mask-image:linear-gradient(90deg,transparent 12%,#0009 48%,#000);pointer-events:none}
-.atelier-home .math-composition{inset:6% 6% 9% 20%;display:block;isolation:isolate;overflow:visible;perspective:1000px}
-#math-atmosphere{position:absolute;inset:0;width:100%;height:100%;z-index:-1;opacity:.8;pointer-events:none}
-.math-composition .equation-row,.math-composition .equation-signature{position:absolute;padding:0;margin:0;border:0;display:block;width:max-content;max-width:95%;transform:translate3d(0,0,0) rotate(var(--angle,0deg));animation:equation-drift var(--duration,14s) ease-in-out infinite alternate;animation-delay:var(--delay,0s);will-change:transform;filter:drop-shadow(0 2px 16px var(--bg))}
-.math-composition math{font-family:"STIX Two Math","Cambria Math",serif;white-space:nowrap}
-.math-composition .equation-quantum{left:39%;top:11%;--angle:9deg;--duration:13s;opacity:.8}
-.math-composition .equation-quantum math{font-size:clamp(26px,3vw,44px);color:#c7dcf3}
-.math-composition .equation-bayes{left:2%;top:66%;--angle:-8deg;--duration:17s;--delay:-5s;opacity:.55}
-.math-composition .equation-bayes math{font-size:clamp(20px,2.1vw,32px);color:#8fb9dc}
-.math-composition .equation-finance{left:30%;top:88%;--angle:5deg;--duration:19s;--delay:-8s;opacity:.4}
-.math-composition .equation-finance math{font-size:clamp(15px,1.3vw,21px);color:#9cd3c1}
-.math-composition .equation-signature{left:10%;top:36%;--angle:-8deg;--duration:15s;--delay:-3s}
-.math-composition .equation-signature math{font-size:clamp(54px,6.8vw,108px);color:#e0f6ea;letter-spacing:-.025em}
+.atelier-home .math-composition{inset:10% 8% 13% 28%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;isolation:isolate;overflow:hidden;perspective:none}
+.math-composition .math-orbit{display:block;width:min(100%,480px);height:auto;max-height:70%;flex-shrink:1;overflow:visible;color:var(--lime)}
+.orbit-guide{stroke:var(--fg);stroke-opacity:.25;stroke-width:.8}
+.orbit-axis{stroke:var(--fg);stroke-opacity:.08;stroke-width:.65}
+.orbit-centre{fill:var(--fg);fill-opacity:.4}
+.orbit-arc{stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.orbit-radius{stroke:currentColor;stroke-width:.7;stroke-opacity:.4}
+.orbit-point{fill:var(--fg)}
+.orbit-phase{transform-origin:200px 150px;animation:complex-phase 28s linear infinite;animation-delay:-4s}
+@keyframes complex-phase{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+.math-composition .math-equation{width:100%;flex-shrink:0;text-align:center;padding:0 0 8px;color:var(--fg)}
+.math-composition .math-equation math{font-family:"STIX Two Math","Cambria Math",math;display:block;white-space:nowrap;font-size:clamp(28px,3.2vw,48px);font-weight:400;line-height:1.5;letter-spacing:0}
+.math-composition.math-still .orbit-phase{animation-play-state:paused}
 .atelier-home .particle-stage[data-scene="1"] .particle-caption{display:none}
-.math-composition.math-still .equation-row,.math-composition.math-still .equation-signature{animation-play-state:paused}
-@keyframes equation-drift{from{transform:translate3d(calc(var(--mx,0px)*.5),calc(var(--my,0px)*.5 - 8px),0) rotate(var(--angle))}to{transform:translate3d(calc(var(--mx,0px)*.5 + 9px),calc(var(--my,0px)*.5 + 9px),0) rotate(calc(var(--angle) + 2deg))}}
-[data-theme=light] .math-composition .equation-signature math{color:#205846}[data-theme=light] .math-composition .equation-quantum math{color:#365f85}[data-theme=light] .math-composition .equation-bayes math{color:#42699a}[data-theme=light] .math-composition .equation-finance math{color:#3f7264}
+.atelier-home .equations-visible .math-composition{animation:none;transform:none;transition:opacity .8s ease,visibility .8s ease}
 @media(max-width:760px){
- .atelier-home .math-composition{inset:-2% 14% 9%;}
- .math-composition .equation-signature{left:9%;top:35%}.math-composition .equation-signature math{font-size:clamp(48px,12vw,70px)}
- .math-composition .equation-quantum{left:48%;top:0%}.math-composition .equation-quantum math{font-size:25px}
- .math-composition .equation-bayes{left:3%;top:68%}.math-composition .equation-bayes math{font-size:21px}
- .math-composition .equation-finance{left:25%;top:91%;opacity:.4}.math-composition .equation-finance math{font-size:12px}
- .atelier-home .engine-film{opacity:.12;mask-image:linear-gradient(180deg,transparent 10%,#0005 45%,#000);}
+ .atelier-home .math-composition{inset:0 14% 5%;gap:12px}
+ .math-composition .math-orbit{width:290px;max-width:95%;max-height:72%}
+ .math-composition .math-equation math{font-size:clamp(24px,6.5vw,34px)}
+ .atelier-home .engine-film{opacity:.12;mask-image:linear-gradient(180deg,transparent 10%,#0005 45%,#000)}
 }
-@media(prefers-reduced-motion:reduce){.atelier-home .engine-film{display:none}.math-composition .equation-row,.math-composition .equation-signature{animation:none;will-change:auto}}
+@media(prefers-reduced-motion:reduce){
+ .atelier-home .engine-film{display:none}
+ .math-composition .orbit-phase{animation:none;transform:rotate(-52deg)}
+ .atelier-home .equations-visible .math-composition{transition:none}
+}

@@ -1,5 +1,9 @@
 # Hero scene sources
 
+## Simplified mathematics / v17
+
+The former four tilted equations and dense animated canvas field have been replaced with a single native MathML Euler formula, e^(iθ) = cos θ + i sin θ, and its unit-circle geometry. One point and a radius rotate anticlockwise on the unit circle over 28 seconds. No numbered teaching panels, text parallax, equation collage or additional drawing loop remain. The background film and cloud atmosphere are unchanged. Shared pause, reduced motion and offscreen/hidden-tab states stop the phase animation. Source and mocked lifecycle checks passed; no new browser visual QA was performed for this release.
+
 ## Cloud atmosphere / skills release
 
 - Original cloud artwork created with built-in imagegen, then encoded as a 1536×1024 WebP (18,698 bytes) at `hero-clouds.webp`. Prompt: “Photorealistic cinematic wispy volumetric cloud/fog background, dark charcoal void, mostly black left half for copy, airy illuminated wisps right and bottom, faint desaturated emerald and blue rim light, restrained contrast. No text, objects, robots, stars, logos, watermark, UI, borders, scenery, or hard shapes.”
