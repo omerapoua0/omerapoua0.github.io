@@ -1,0 +1,46 @@
+/* Atmospheric depth behind the existing film; content stays in the foreground. */
+.hero-atmosphere{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;opacity:0;transition:opacity 1.8s ease;mask-image:linear-gradient(90deg,transparent 4%,#0005 45%,#000 85%)}
+.hero-atmosphere.clouds-ready{opacity:.48}
+.hero-clouds{position:absolute;inset:-8%;width:116%;height:116%;max-width:none;object-fit:cover;mix-blend-mode:screen;animation:cloud-current 46s ease-in-out infinite alternate;will-change:transform}
+.hero-atmosphere.atmosphere-paused .hero-clouds{animation-play-state:paused;will-change:auto}
+.engine-copy .engine-actions{flex-wrap:wrap}.engine-copy .engine-actions .primary-link{gap:16px;max-width:100%}
+@keyframes cloud-current{from{transform:translate3d(-1.8%,1%,0) scale(1.015)}to{transform:translate3d(2.8%,-2%,0) scale(1.065)}}
+[data-theme=light] .hero-atmosphere.clouds-ready{opacity:.16;mix-blend-mode:multiply}
+.capability-library .section-heading{align-items:flex-end;gap:28px}
+.capability-library .skills-intro{font-size:16px;line-height:1.8;color:var(--muted);max-width:610px;margin:24px 0 0}
+.skills-overview{display:flex;flex-wrap:wrap;gap:12px 28px;padding:26px 0;margin:10px 0 28px;border-block:1px solid var(--border)}
+.skills-overview>span{font-size:clamp(16px,1.6vw,22px);font-weight:500;letter-spacing:-.035em;color:var(--fg)}
+.capability-library .skill-slider{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;overflow:visible;padding:0;scroll-snap-type:none}
+.capability-library .capability-card{min-width:0;width:auto;display:flex;flex-direction:column;padding:30px;border-radius:14px;background:linear-gradient(145deg,var(--surface),var(--bg));border:1px solid var(--border);transition:transform .5s ease,border-color .5s ease}
+.capability-library .capability-card:hover,.capability-library .capability-card:focus-within{transform:translateY(-4px);border-color:var(--lime)}
+.capability-library .card-number{font:12px/1.5 var(--mono);color:var(--lime);letter-spacing:.08em;margin-bottom:28px}
+.capability-library .capability-card h3{font-size:clamp(23px,2vw,29px);line-height:1.25;letter-spacing:-.045em;margin:0 0 18px}
+.capability-library .capability-card>p{font-size:16px;line-height:1.75;color:var(--muted);margin:0 0 24px}
+.capability-library .stack-tags{gap:8px;margin-top:auto;padding-bottom:28px}
+.capability-library .stack-tags span{font-size:13px;line-height:1.4;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px}
+.skill-evidence{border-top:1px solid var(--border);padding-top:20px;font-size:14px;line-height:1.65;color:var(--fg);display:block;position:relative;padding-right:18px}
+.skill-evidence>span{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}
+.skill-evidence b{position:absolute;right:0;bottom:0;font-weight:400;color:var(--lime)}
+.skill-evidence:focus-visible{outline:2px solid var(--lime);outline-offset:5px}
+.skills-mobile-tools{display:none}
+.skills-invitation{display:flex;align-items:center;justify-content:space-between;gap:32px;padding:32px 0 0;margin-top:28px;border-top:1px solid var(--border)}
+.skills-invitation h3{font-weight:500;font-size:24px;letter-spacing:-.035em;margin:0 0 10px}
+.skills-invitation p{font-size:16px;line-height:1.7;color:var(--muted);max-width:570px;margin:0}
+.skills-invitation .primary-link{flex-shrink:0;font-size:14px}
+@media(min-width:761px) and (max-width:1100px){.capability-library .skill-slider{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ .hero-atmosphere{mask-image:linear-gradient(180deg,transparent 16%,#0004 46%,#000 85%)}
+ .hero-atmosphere.clouds-ready{opacity:.4}
+ .hero-clouds{object-position:65% center}
+ .engine-copy .engine-actions{flex-wrap:wrap;gap:18px}.engine-copy .engine-intro{font-size:16px;line-height:1.65}
+ .atelier-home .engine-hero{display:flex;flex-direction:column;min-height:0;height:auto}
+ .atelier-home .particle-stage{position:relative;top:auto;right:auto;width:130%;margin:24px -15% 0;height:325px;flex-shrink:0}
+ .atelier-home .hero-bottom{position:relative;left:auto;right:auto;margin-top:8px}
+ .capability-library .section-heading{display:block}.capability-library .section-heading>.quiet-link{display:inline-flex;margin-top:24px}
+ .skills-overview{gap:14px 22px;padding:22px 0;margin-bottom:20px}.skills-overview>span{font-size:18px}
+ .skills-mobile-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.skills-mobile-tools p{font-size:14px;color:var(--muted);max-width:150px;line-height:1.5}
+ .capability-library .skill-slider{display:flex;overflow-x:auto;gap:20px;scroll-snap-type:x mandatory;padding:5px 3px 20px;scrollbar-width:thin;scrollbar-color:var(--lime) var(--surface)}
+ .capability-library .capability-card{flex:0 0 90%;padding:25px;scroll-snap-align:start}.capability-library .capability-card h3{font-size:27px}
+ .skills-invitation{display:block}.skills-invitation .primary-link{margin-top:24px;display:inline-flex}
+}
+@media(prefers-reduced-motion:reduce){.hero-clouds{animation:none;will-change:auto}.hero-atmosphere{transition:none}.capability-library .capability-card{transition:none}.capability-library .capability-card:hover{transform:none}}
