@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="690" viewBox="0 0 1000 690" role="img" aria-labelledby="title description">
+  <title id="title">INOS &amp; OctiMind</title>
+  <desc id="description">Research &amp; development. DIGIS SQUARED. Original typographic portfolio plate, not a product screenshot.</desc>
+  <!-- Original typesetting. Embedded company marks are unchanged supplied brand assets. -->
+  <rect width="1000" height="690" fill="#151515"/>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#eeeae4">
+    <text x="60" y="75" font-size="26" font-weight="400">03</text>
+    <text x="126" y="75" font-size="24" font-weight="400" letter-spacing="1">RESEARCH &amp; DEVELOPMENT</text>
+    <path d="M60 110H940" fill="none" stroke="#eeeae4" stroke-width="1"/>
+    
+    <text x="56" y="310" font-size="146" font-weight="700" letter-spacing="-7">INOS</text>
+    <text x="61" y="408" font-size="89" font-weight="400" letter-spacing="-4">&amp; OctiMind</text>
+    <text x="64" y="486" font-size="27" font-weight="400" fill="#b7b2ac">Network testing and optimisation</text>
+    <path d="M60 558H940" fill="none" stroke="#eeeae4" stroke-width="1"/>
+    <path d="M60 558H188" fill="none" stroke="#713640" stroke-width="6"/>
+    <text x="60" y="613" font-size="25" font-weight="400">DIGIS SQUARED</text>
+    <text x="940" y="650" text-anchor="end" font-size="24" font-weight="400" fill="#b7b2ac">2024 / 2025</text>
+  </g>
+</svg>

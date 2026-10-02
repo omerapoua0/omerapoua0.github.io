@@ -1,0 +1,38 @@
+---
+import OmarLayout from './OmarLayout.astro';
+import FilmHero from '../components/FilmHero.astro';
+import WorksWheel from '../components/ui/works-wheel';
+const works = [
+ {title:'KATANA',image:'/work-covers/katana.svg',href:'/work.html#katana',category:'AI product engineering · Digis Squared',description:'Technical strategy, MAPE-K reasoning and LangGraph workflows for a network-autonomy programme progressing towards Level 4.'},
+ {title:'NOOKBASE',image:'/work-covers/nookbase.svg',href:'/work.html#nookbase',category:'Founder · In development',description:'A multi-agent learning product for web and mobile. Building a system around understanding, not just answers.'},
+ {title:'INOS & OctiMind',image:'/work-covers/inos.svg',href:'/work.html#inos',category:'R&D · Network systems',description:'My hardware and software R&D contribution to the wider network-testing and optimisation work at Digis Squared.'},
+ {title:'Bitget',image:'/work-covers/bitget.svg',href:'/work.html#project-2',category:'AI product internship · 2026',description:'Exchange telemetry, time-series feature engineering and predictive modelling with the platform and operations teams.'},
+ {title:'bp',image:'/work-covers/bp.svg',href:'/work.html#project-3',category:'Market intelligence · 2024',description:'Offshore-wind modelling and a weekly competitor-research pipeline connecting data, Excel and useful reporting.'},
+ {title:'Mathematical optimisation',image:'/work-covers/mathematics.svg',href:'/research.html#optimisation',category:'Independent study · Research direction',description:'Questions I am exploring across optimisation, learning and intelligent systems. A research direction, not a published result.'},
+];
+const toolkit = [
+ {title:'Agentic systems',copy:'LangGraph · Multi-agent orchestration · RAG · Tool integration · MAPE-K · Bayesian reasoning'},
+ {title:'Engineering',copy:'Python · FastAPI · Docker · SQL · PostgreSQL · Git · CI/CD'},
+ {title:'Modelling & analysis',copy:'NumPy · Pandas · SciPy · Time-series features · Excel · LaTeX'},
+ {title:'Product & delivery',copy:'AI product management · Technical strategy · Workflow design · Security & TCO planning · Jira'},
+];
+---
+<OmarLayout title="AI systems. Human intent." home description="Omar Aboelella: AI product engineer and founder. Agentic systems, machine learning, mathematics, quantitative-finance interests and online maths & science tutoring.">
+ <FilmHero />
+ <nav class="nocturne-paths" aria-label="Choose your next step"><span>FIND WHAT YOU NEED</span><a href="/work.html">Selected projects <span aria-hidden="true">↗</span></a><a href="/automations.html">AI & automation <span aria-hidden="true">↗</span></a><a href="/tutoring.html">Enquire about lessons <span aria-hidden="true">↗</span></a><a href="/cv.html">Experience & CV <span aria-hidden="true">↗</span></a></nav>
+ <section class="nocturne-section nocturne-work" id="selected" aria-labelledby="selected-heading">
+  <div class="nocturne-heading"><div><p class="eyebrow">01 / SELECTED WORK</p><h2 id="selected-heading">Engineering.<br/>In context.</h2></div><p>Network autonomy. Multi-agent learning. Market intelligence. Explore the systems, the decisions and my contribution to each.</p></div>
+  <WorksWheel client:visible items={works} label="Selected work" action="View my contribution" />
+  <div class="nocturne-work-note"><p>Each project separates my contribution, the wider product and its current stage.</p><a href="/work.html">All project details ↗</a></div>
+ </section>
+ <section class="nocturne-section nocturne-evidence" aria-labelledby="experience-heading">
+  <div><p class="eyebrow">02 / EXPERIENCE</p><h2 id="experience-heading">Across technology,<br/>analysis & education.</h2><p>AI product engineering at Digis Squared. Time-series modelling at Bitget. Market research at bp. Maths and physics at Southfields Academy.</p><a class="text-link" href="/cv.html">Experience, education & CV ↗</a></div>
+  <div class="nocturne-companies" aria-label="Selected organisations in my experience"><a href="/cv.html#experience"><img class="company-digis" src="/logo-digis.svg" alt="Digis Squared" width="120" height="36" loading="lazy"/><small>AI PRODUCT ENGINEERING</small></a><a href="/work.html#project-2"><img src="/logo-bitget.svg" alt="Bitget" width="120" height="36" loading="lazy"/><small>AI PRODUCT INTERNSHIP</small></a><a href="/work.html#project-3"><img class="company-bp" src="/logo-bp.svg" alt="bp" width="45" height="50" loading="lazy"/><small>MARKET INTELLIGENCE</small></a><a href="/cv.html#experience"><img class="company-southfields" src="/logo-southfields.png" alt="Southfields Academy" width="120" height="36" loading="lazy"/><small>MATHS & PHYSICS EDUCATION</small></a></div>
+ </section>
+ <section class="nocturne-section nocturne-modes" aria-labelledby="modes-heading">
+  <div class="nocturne-heading"><div><p class="eyebrow">03 / WORK WITH ME</p><h2 id="modes-heading">A practical way<br/>forward.</h2></div><p>Tell me what you are trying to achieve. We can start with an AI workflow, a product challenge or a difficult mathematical idea.</p></div>
+  <div class="nocturne-mode-list"><a class="nocturne-mode" href="/automations.html"><span>01</span><h3>AI & business automation</h3><p>Connected tools, agentic workflows and practical systems designed around your team, with people in control.</p><span aria-hidden="true">↗</span></a><a class="nocturne-mode" href="/work.html"><span>02</span><h3>Product & engineering</h3><p>Explore the technical reasoning, delivery decisions and product work behind my selected projects.</p><span aria-hidden="true">↗</span></a><a class="nocturne-mode" href="/tutoring.html"><span>03</span><h3>Maths & science lessons</h3><p>Online A level and GCSE Foundation & Higher tutoring. Start with your goals; build understanding at your pace.</p><span aria-hidden="true">↗</span></a></div>
+ </section>
+ <section class="nocturne-section nocturne-study" aria-labelledby="study-heading"><div><p class="eyebrow">04 / THE QUESTIONS BEHIND THE WORK</p><h2 id="study-heading">Mathematics is<br/><em>my foundation.</em></h2><p>I am studying Computer Science & Mathematics at Birkbeck, University of London. Alongside engineering, I am exploring optimisation, quantitative finance and quantum computing: how mathematical structure can help us understand complex systems.</p><a class="text-link" href="/research.html">Explore my research interests ↗</a></div><aside><div><p class="eyebrow">CURRENTLY STUDYING</p><h3>BSc Computer Science & Mathematics</h3><p>Birkbeck · Expected 2028<br/>Linear algebra, calculus, discrete mathematics, data and systems.</p></div><div><p class="eyebrow">LONG-TERM DIRECTION</p><h3>Research, with depth.</h3><p>A future PhD is an aspiration: intelligent systems, optimisation and quantitative methods. My current research is exploratory, not published work.</p></div><div><p class="eyebrow">INDEPENDENT EXPLORATION</p><h3>Probability. Markets. Quantum.</h3><p>Time-series modelling, stochastic ideas and Qiskit study. Curiosity, without claims of trading performance.</p></div></aside></section>
+ <section class="nocturne-section nocturne-skills" aria-labelledby="skills-heading"><div><p class="eyebrow">05 / CAPABILITIES</p><h2 id="skills-heading">The tools.<br/>The thinking.</h2><a class="text-link" href="/cv.html#skills">Skills & experience ↗</a></div><div class="nocturne-tool-groups">{toolkit.map(group=><div><h3>{group.title}</h3><p>{group.copy}</p></div>)}</div></section>
+</OmarLayout>

@@ -1,0 +1,30 @@
+# Omar Aboelella
+
+> London-based AI product engineer, Computer Science and Mathematics student, and maths and science tutor.
+
+## Work and study
+
+- AI product engineering at Digis Squared, including technical strategy, MAPE-K reasoning, Bayesian inference and LangGraph workflows for KATANA.
+- Previous experience includes predictive modelling at Bitget and competitor-research reporting automation at bp.
+- Founder of NOOKBASE, an in-development multi-agent learning product with a public early-access list and interactive demos. The product is not yet generally available.
+- Computer Science and Mathematics at Birkbeck, University of London, with expected graduation in 2028.
+- Mathematics and Physics Teaching Assistant at Southfields Academy.
+- Research interests include AI and learning, optimisation, quantitative finance and quantum computing. These are exploratory interests, not claims of published results or doctoral enrolment.
+
+## Contact and documents
+
+- Email: mailto:omerapoua0@gmail.com
+- GitHub: https://github.com/omerapoua0
+- CV: /Omar-Aboelella-CV.pdf
+
+Lesson and project enquiries are conversations, not confirmed bookings. Availability and pricing are agreed directly with Omar.
+
+## Website attribution
+
+The homepage uses an edited 20-second live-action film of computing hardware,
+mathematical study, programming and London. Footage is licensed from Mixkit;
+it is not footage of Omar, his projects or his workplace.
+Its Selected Work wheel adapts the user-supplied CrafterUI Works Wheel under
+MIT, retaining its ring-to-drum geometry with accessible production controls.
+Earlier workspace/template source remains recoverable but is not rendered.
+See /THIRD-PARTY-NOTICES.txt for provenance, retained source notices and font terms.

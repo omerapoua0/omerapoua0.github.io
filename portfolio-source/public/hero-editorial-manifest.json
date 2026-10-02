@@ -1,0 +1,95 @@
+{
+  "name": "Structure, practice, possibility",
+  "kind": "Edited live-action editorial stock footage",
+  "created": "2026-10-02",
+  "chapters": [
+    "Physical computing",
+    "Mathematical study",
+    "Software engineering",
+    "London and finance"
+  ],
+  "edit": {
+    "shotSeconds": 5.5,
+    "dissolveSeconds": 0.5,
+    "circularReturn": true,
+    "duration": 20
+  },
+  "portrayal": "Editorial stock footage illustrating subject interests. Not footage of Omar, his workplace or his own projects.",
+  "license": {
+    "name": "Mixkit Stock Video Free License",
+    "url": "https://mixkit.co/license/modal/videoFree/",
+    "scope": "Free commercial and noncommercial use, modification, distribution and public performance. Source pages individually label these clips Free License, not Restricted License.",
+    "portrayal": "Editorial stock footage illustrating subject interests. Not footage of Omar, his workplace or his own projects."
+  },
+  "sources": [
+    {
+      "id": "chip-2381",
+      "title": "Circuit board",
+      "creator": "Ruben Velasco (@rubenvelasco)",
+      "source": "https://mixkit.co/free-stock-video/circuit-board-2381/",
+      "download": "https://assets.mixkit.co/videos/2381/2381-1080.mp4",
+      "originalPublication": "2019-11-07",
+      "inputSHA256": "a4aff9a6d6bd564b21852fca0ef27e8bad0b1d88d5e38a2397f89e41545d2a8f"
+    },
+    {
+      "id": "maths-50113",
+      "title": "A young student with a black pen draws a mathematical",
+      "creator": "Ruben Velasco (@rubenvelasco)",
+      "source": "https://mixkit.co/free-stock-video/a-young-student-with-a-black-pen-draws-a-mathematical-50113/",
+      "download": "https://assets.mixkit.co/videos/50113/50113-1080.mp4",
+      "speed": 0.5,
+      "zoom": 1.15,
+      "mobileZoom": 1.2,
+      "inputSHA256": "2d22415fb52fbc1b4d5c407790fc6cdb36f4c6df2b37d83b44cdede49992b043"
+    },
+    {
+      "id": "hands-41652",
+      "title": "Hands of a programmer working on a desk",
+      "creator": "Mixkit (@mixkit)",
+      "source": "https://mixkit.co/free-stock-video/hands-of-a-programmer-working-on-a-desk-41652/",
+      "download": "https://assets.mixkit.co/videos/41652/41652-1080.mp4",
+      "originalPublication": "2021-10-04",
+      "inputSHA256": "0c9cbb667fbd00fef207f387100dce3325f20ac59135c7c9c1df3dfc759eb356"
+    },
+    {
+      "id": "london-4495",
+      "title": "Floor of London's financial district",
+      "creator": "Dubassy (@dubassy)",
+      "source": "https://mixkit.co/free-stock-video/floor-of-londons-financial-district-4495/",
+      "download": "https://assets.mixkit.co/videos/4495/4495-1080.mp4",
+      "inputSHA256": "059f0eb8db9bc4caf6729820e5f1ace33b9a235751328a94963f8cd567be7a0f"
+    }
+  ],
+  "desktop": {
+    "file": "/hero-editorial.mp4",
+    "poster": "/hero-editorial-poster.jpg",
+    "width": 1280,
+    "height": 800,
+    "duration": 20,
+    "fps": 24,
+    "frames": 480,
+    "codec": "h264",
+    "pixelFormat": "yuv420p",
+    "audio": false,
+    "bytes": 3330008,
+    "sha256": "f9087713735dab41768c0dc7ea087954ee6c57ce2ff2271c69e43a1965b396f2",
+    "fastStart": true,
+    "decode": "pass"
+  },
+  "mobile": {
+    "file": "/hero-editorial-mobile.mp4",
+    "poster": "/hero-editorial-poster-mobile.jpg",
+    "width": 640,
+    "height": 800,
+    "duration": 20,
+    "fps": 24,
+    "frames": 480,
+    "codec": "h264",
+    "pixelFormat": "yuv420p",
+    "audio": false,
+    "bytes": 1492630,
+    "sha256": "03e01ab4f08e7ef1377eac89e940aadac299a279b8067d234758fa2276d4b165",
+    "fastStart": true,
+    "decode": "pass"
+  }
+}

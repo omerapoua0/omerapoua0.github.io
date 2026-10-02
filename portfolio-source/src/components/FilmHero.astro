@@ -1,0 +1,49 @@
+---
+---
+<section class="film-hero" aria-labelledby="hero-heading" data-film-hero>
+ <div class="film-art" aria-hidden="true">
+  <video class="film-video" data-hero-video data-mp4="/hero-editorial.mp4" data-mobile="/hero-editorial-mobile.mp4" muted loop playsinline preload="none" poster="/hero-editorial-poster.jpg" tabindex="-1"></video>
+  <div class="film-shade"></div>
+ </div>
+ <div class="film-topline"><span>LONDON, UK</span><span>PRODUCT / SYSTEMS / MATHEMATICS</span></div>
+ <div class="film-copy">
+  <p class="film-eyebrow">AI product engineer & founder</p>
+  <h1 id="hero-heading"><span>AI systems.</span><span>Human intent.</span></h1>
+  <p>Agentic workflows, machine learning and product engineering. Grounded in mathematics. Built for people.</p>
+  <div class="film-actions"><a class="film-primary" href="#selected">Explore the work <span aria-hidden="true">↗</span></a><a class="film-contact" href="/contact.html">Start a conversation <span aria-hidden="true">↗</span></a></div>
+ </div>
+ <div class="film-bottom"><a class="film-scroll" href="#selected"><span aria-hidden="true">↓</span> Selected work</a><div class="film-caption"><span>TECHNOLOGY / THOUGHT / CONTEXT</span><span>Editorial film · Licensed footage</span></div><button class="film-pause" data-film-toggle type="button" aria-label="Play hero video" aria-pressed="false" hidden><span data-film-control>Play film</span><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5 3h2v10H5zm4 0h2v10H9z" fill="currentColor"/></svg></button></div>
+ <p class="sr-only" data-film-status role="status" aria-live="polite"></p>
+</section>
+<script>
+ const video=document.querySelector<HTMLVideoElement>('[data-hero-video]');
+ const toggle=document.querySelector<HTMLButtonElement>('[data-film-toggle]');
+ const status=document.querySelector<HTMLElement>('[data-film-status]');
+ const hero=document.querySelector<HTMLElement>('[data-film-hero]');
+ if(video && toggle && hero){
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
+  const connection=(navigator as Navigator & {connection?:{saveData?:boolean}}).connection;
+  const mobile=window.matchMedia('(max-width: 720px)').matches;
+  if(mobile)video.poster='/hero-editorial-poster-mobile.jpg';
+  let explicitlyPaused=false;
+  let inView=true;
+  let loaded=false;
+  let failed=false;
+  const sources:HTMLSourceElement[]=[];
+  const failedSources=new Set<HTMLSourceElement>();
+  const fallback=()=>{if(!loaded)return;failed=true;video.pause();hero.dataset.filmError='true';toggle.hidden=true;if(status)status.textContent='Showing the film still. All portfolio links are available.'};
+  const label=()=>{const playing=!video.paused;toggle.setAttribute('aria-label',playing?'Pause hero video':'Play hero video');toggle.setAttribute('aria-pressed',String(playing));toggle.querySelector('[data-film-control]')!.textContent=playing?'Pause film':'Play film';toggle.querySelector('path')?.setAttribute('d',playing?'M5 3h2v10H5zm4 0h2v10H9z':'M5 3l8 5-8 5z');hero.dataset.filmPlaying=String(playing)};
+  // An empty <source> can emit errors before IntersectionObserver runs in WebKit.
+  // Create valid sources only when playback is wanted, with MP4 as the baseline.
+  const load=()=>{if(loaded)return;loaded=true;const url=mobile?video.dataset.mobile:video.dataset.mp4;if(!url){fallback();return}const source=document.createElement('source');source.src=url;source.type='video/mp4';source.addEventListener('error',()=>{failedSources.add(source);if(failedSources.size===sources.length)fallback()});sources.push(source);video.append(source);video.load()};
+  const play=async(explicit=false)=>{if(failed)return;if(!explicit && (reduce.matches || connection?.saveData || explicitlyPaused || !inView || document.hidden))return;load();try{await video.play();if(explicit && status)status.textContent='Hero film playing.'}catch{if(status && explicit)status.textContent='Playback is unavailable. You can still explore the portfolio.'}label()};
+  toggle.hidden=false;
+  toggle.addEventListener('click',()=>{if(video.paused){explicitlyPaused=false;void play(true)}else{explicitlyPaused=true;video.pause();if(status)status.textContent='Hero film paused.'}label()});
+  video.addEventListener('play',label);video.addEventListener('pause',label);
+  video.addEventListener('error',fallback);
+  reduce.addEventListener('change',()=>{if(reduce.matches)video.pause();else void play();label()});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)video.pause();else void play()});
+  if('IntersectionObserver' in window){const observer=new IntersectionObserver(([entry])=>{inView=entry.isIntersecting;if(inView)void play();else video.pause()},{threshold:.1});observer.observe(hero)}else void play();
+  label();
+ }
+</script>
