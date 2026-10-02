@@ -1,0 +1,29 @@
+# Omar Aboelella
+
+> London-based AI product engineer, Computer Science & Mathematics student at Birkbeck, and online maths & science tutor.
+
+## Work and study
+
+- AI Product Engineer at Digis Squared (Jan 2026 – present): technical strategy for the KATANA network-autonomy programme, closed-loop MAPE-K reasoning with Bayesian inference, TCO modelling, security auditing, sprint planning and LangGraph workflows. Level 4 autonomy is the programme's direction, not a completed deployment.
+- Founder of NOOKBASE, an agentic study platform for iOS, Android and web with a conversational tutoring agent. Pre-launch, around 150 beta users; not yet generally available.
+- AI Product Intern at Bitget (Feb – May 2026): exchange telemetry and predictive models of Bitcoin price movement. No claim of trading performance.
+- Market Intelligence Research Intern at BP (Jun – Sep 2024): automated weekly competitor-intelligence pipeline for offshore-wind market intelligence.
+- R&D Engineering Trainee at Digis Squared (Sep 2024 – Mar 2025): network systems, hardware/software integration, part of wider R&D on INOS and OctiMind.
+- Mathematics & Physics Teaching Assistant at Southfields Academy (Mar 2026 – present).
+- BSc (Hons) Computer Science & Mathematics, Birkbeck, University of London, expected 2028, targeting First Class Honours. Access to HE Engineering (Distinction). Certifications: IBM Data Science, Google Mathematics for Machine Learning, Microsoft Fabric.
+- Incoming: Santander Fintech Research Placement, Optimisation & ML, Summer 2027 (upcoming, not completed).
+- Independent research, AI in Higher Education (2026 – present, unpublished). Further interests in optimisation, quantitative modelling and quantum computing are exploratory; a PhD is a longer-term aspiration.
+
+## Lessons
+
+Online maths and science lessons for GCSE Foundation, GCSE Higher and A-level. Enhanced DBS checked, free 15-minute intro call, reply within one working day, parents welcome to sit in. Enquiries prepare an email the visitor sends themselves; nothing is booked or paid on the website.
+
+## Contact and documents
+
+- Email: mailto:omerapoua0@gmail.com
+- GitHub: https://github.com/omerapoua0
+- CV: /Omar-Aboelella-CV.pdf
+
+## Website attribution
+
+The homepage film is an edited, colour-graded 20-second montage of licensed Mixkit stock footage (computing hardware, mathematical study, programming, London). It is not footage of Omar, his projects or his workplace. Project images and videos are concept visuals, not product footage. See /THIRD-PARTY-NOTICES.txt for credits and licences.
