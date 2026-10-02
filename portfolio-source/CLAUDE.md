@@ -13,39 +13,38 @@ Preserve user changes. Do not reset, clean, or delete unrelated work. Inspect
 before editing; use small, reviewable changes. No Supabase or paid service is
 required. This is a static portfolio, not a hosted backend.
 
-## Active architecture
+## Active architecture ("Proof" redesign, October 2026)
 
-- Astro 7, React 19, TypeScript strict. Node >=22.13; pnpm 11.11.0.
+- Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React and three remain
+  declared for lockfile stability but no page ships a React island.
 - Seven pages: index, work, automations, research, cv, tutoring, contact.
-- `src/layouts/OmarLayout.astro`: metadata, navigation, footer, fonts, shared CSS.
-- `src/layouts/OmarHome.astro`: home sections and the React work wheel.
-- `src/components/FilmHero.astro`: actual photographed, edited 20-second video.
-- `src/components/ui/works-wheel.tsx`: supplied CrafterUI ring-to-drum geometry,
-  adapted under MIT. Keep its full notice and accessibility features.
-- CSS order: omar.css, nocturne.css, editorial.css; works-wheel.css is scoped to
-  its component. Editorial overrides define charcoal, ivory and oxblood.
-- `src/scripts/site.ts`: theme, menu, reveals and project-video behaviour.
-- `src/scripts/forms.ts`: validated, editable enquiry drafts.
+- `src/data/*.ts`: the single typed source of facts (projects, experience,
+  capabilities, site/status vocabulary). Change facts here, not in markup.
+- `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer.
+- `src/styles/tokens.css`, `base.css`, `layout.css`, `forms.css`; component
+  styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt.
+- `src/components/FilmHero.astro` + `src/scripts/film.ts`: the licensed film
+  with chapter rail. `ProjectIndex`, `CaseStudy`, `ProjectMedia` (duotone
+  plates), `CapabilityMatrix`, `Timeline`, `Figure` (explanatory schematics).
+- `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
+  (enquiry engine), `project-index.ts`, `previews.ts`.
 
-No old Three.js desk, robotic hero, abstract film, cube scene or generated body
-is included or mounted in this clean handoff. Historic dependencies remain in
-the exact lockfile for reproducibility; they do not make the current hero 3D.
-Avoid unnecessary framework migrations or replacing actual footage with shapes.
+The CrafterUI wheel was replaced at the user's request for a full redesign;
+keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
 ## Important behaviour
 
-The hero chooses one MP4 before loading: desktop 1280x800, phone 640x800.
-Both are 20 seconds, 24fps, H.264/yuv420p, silent and progressive-download ready.
+The hero chooses one edition before loading: desktop 1280x800, phone 640x800,
+H.264 MP4 first with a VP9 WebM fallback. All are 20 seconds, 24fps, silent.
 Keep visible pause/play, offscreen pause, explicit-pause persistence, and static
 posters for reduced motion, save-data, disabled JavaScript or failed media.
 
-The project wheel must not hijack ordinary page scrolling. Preserve keyboard
-controls, horizontal touch intent, mobile page scrolling, reduced-motion and
-server-rendered links, hidden-card focus safety, and idle/offscreen suspension.
-Keep direct navigation to each case study; do not make all information require
-discovering an interaction.
+The project index must keep server-rendered links that work without JS,
+keyboard focus parity with hover, and no scroll hijacking. Concept visuals stay
+labelled "Concept visual, not product footage".
 
-Enquiry forms validate and prepare an editable `mailto:` email. They do not
+Enquiry forms validate and prepare an editable `mailto:` email (with copy and
+Gmail fallbacks and a length guard). They do not
 send, store, authenticate, reserve a lesson, or confirm a booking. Never show
 "Sent" or a confirmed booking unless a real service has actually succeeded.
 
@@ -56,7 +55,11 @@ clients, achievements, publications, qualifications, returns or testimonials.
 Omar studies BSc Computer Science & Mathematics at Birkbeck, expected 2028.
 A PhD, optimisation, quantitative finance and quantum computing are research
 interests/aspirations, not completed degrees or published research. NOOKBASE is
-in development. KATANA's Level 4 autonomy is a programme direction, not a
+in development: pre-launch with around 150 beta users (user-approved, from the
+CV). The user confirmed the tutoring promises shown (enhanced DBS, free 15-minute
+intro call, reply within one working day, parents may sit in). The site links the
+personal GitHub `omerapoua0`; the CV's separate work GitHub stays in the PDF only.
+No phone number on pages. KATANA's Level 4 autonomy is a programme direction, not a
 completed individual achievement. INOS contributions are part of wider R&D.
 Do not claim trading performance or provide investment recommendations.
 
@@ -80,19 +83,19 @@ If Corepack is unavailable, use `npx pnpm@11.11.0` for the same commands.
 `dist/` is the static output. All personal GitHub Pages publication remains
 pending; a successful local build is not deployment evidence.
 
-Bundled browser QA scripts were written for isolated macOS Chrome and a local
-Playwright runtime. They need adaptation on a Linux cloud runner: install the
-approved test dependency/browser, remove the hard-coded macOS executablePath,
-and supply `PORTFOLIO_QA_URL`. They never use personal browser profiles or send
-enquiries. Build is portable; do not report browser QA as passed until run.
+Browser QA (`scripts/qa.cjs`) runs on Linux with an isolated Playwright and
+axe-core supplied through `NODE_PATH`, `PLAYWRIGHT_EXECUTABLE` and `AXE_PATH`
+(see README). `scripts/qa-content.mjs` checks the built output. Neither adds
+project dependencies. Do not report browser QA as passed until actually run.
 
 The film editor needs FFmpeg/FFprobe and licensed originals not included here.
-Keep the supplied finished files unless an explicitly authorised change needs
-re-editing. Source/license records and output hashes are in the public manifest.
+The October 2026 grade (FFmpeg filter recorded in the manifest) was applied to
+the finished edit because originals were unreachable. Source/license records
+and output hashes are in the public manifest.
 
 ## Acceptance checks after changes
 
 Check seven routes at phone/tablet/desktop widths, both themes, accessible
 keyboard navigation, no overflow or broken assets, no-JS links, media playback
-and fallbacks, wheel interaction, and form validation/review/edit. Verify all
+and fallbacks, project index/matrix interaction, and form validation/review/edit. Verify all
 facts, credits and true delivery status. Make the user-facing result concise.

@@ -1,6 +1,6 @@
 # Third-party notices
 
-## Current editorial film and project wheel
+## Current editorial film
 
 The current hero is an edited 20-second live-action film assembled from four
 Mixkit clips individually identified as Stock Video Free License assets:
@@ -18,12 +18,21 @@ The website serves only the edited montage, not the raw source clips.
 Desktop and mobile framing, timing, grading, dissolves and compression are
 portfolio adaptations. Reproducible edit: scripts/edit-editorial-film.cjs.
 Source credits, hashes and output verification: hero-editorial-manifest.json.
+The October 2026 "Proof" redesign applies a further cool colour grade to the
+same edit and adds VP9 WebM encodes; shots, timing and credits are unchanged.
 
-The six SVG project plates are original typographic layouts. They are not
-product screenshots. Supplied company marks retain their respective owners'
-rights; their presence identifies the stated project or work history only.
+Project schematics on the site (Bitget, BP and research figures) are original
+explanatory diagrams, not results, data or product screenshots. Supplied
+company marks retain their respective owners' rights; their presence
+identifies the stated project or work history only.
 
-The Work & Questions wheel adapts the user-supplied CrafterUI Works Wheel:
+## Previously used: CrafterUI Works Wheel
+
+The redesign replaces the wheel with a server-rendered project index, so the
+wheel is no longer shipped. Its notice is retained because earlier revisions
+in this repository's history distributed the adapted code.
+
+The Work & Questions wheel adapted the user-supplied CrafterUI Works Wheel:
 https://github.com/SriSomanaath/crafterui/blob/main/apps/web/registry/crafterui/ui/works-wheel.tsx
 The original tangent-ring / bowed-drum transform geometry is retained. Scoped
 styling, SSR/reduced-motion lists, accessible navigation, intent-based touch,
@@ -106,10 +115,10 @@ SOFTWARE.
 
 ## Fonts
 
-The template declares the following Fontsource font packages. The corresponding font files are licensed under the SIL Open Font License 1.1, not the MIT license for the website code. Their original copyright notices follow. A declaration here does not mean every font is shipped in every build.
+The template declares the following Fontsource font packages. The corresponding font files are licensed under the SIL Open Font License 1.1, not the MIT license for the website code. Their original copyright notices follow. A declaration here does not mean every font is shipped in every build. The current "Proof" design ships Onest (text and display), Old Standard TT italic (accents) and JetBrains Mono (labels and data).
 
 - Onest: Copyright 2021 The Onest Project Authors (https://github.com/simpals/onest). Package `@fontsource-variable/onest` 5.2.11.
-- Inter Tight: Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter-tight). Package `@fontsource-variable/inter-tight` 5.3.0. Current portfolio typeface, verified against the installed package LICENSE on 2 October 2026.
+- Inter Tight: Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter-tight). Package `@fontsource-variable/inter-tight` 5.3.0. Typeface of the previous revision, verified against the installed package LICENSE on 2 October 2026.
 - JetBrains Mono: Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono). JetBrainsMono-Italic[wght].ttf: Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono). Package `@fontsource-variable/jetbrains-mono` 5.2.8.
 - Tektur: Copyright 2023 The Tektur Project Authors (https://www.github.com/hyvyys/Tektur). Package `@fontsource-variable/tektur` 5.2.7.
 - Faster One: Copyright 2012 The Faster Project Authors (https://github.com/etunni/faster), with Reserved Font Name 'Faster'. Package `@fontsource/faster-one` 5.2.7.
