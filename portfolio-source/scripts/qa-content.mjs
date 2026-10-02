@@ -24,7 +24,7 @@ expect(/Nothing has been sent/.test(text.tutoring) && /Nothing has been sent/.te
 
 // Attribution and status wording that must stay visible.
 const required = [
-  ['index', /not (Omar|me)\b/i, 'Film credit says the footage is not Omar'],
+  ['index', /Hi, I’m/, 'First-person greeting'],
   ['work', /programme direction/i, 'KATANA Level 4 described as programme direction'],
   ['work', /wider R&D/i, 'INOS described as part of wider R&D'],
   ['work', /no claim of trading performance|not investment advice|nothing here is investment advice/i, 'Bitget: no performance claims'],
@@ -72,10 +72,11 @@ for (const page of pages) {
   expect(css <= 30 * 1024, `${page}: CSS ${css}B gz exceeds 30KB`);
 }
 const media = await readdir(dist);
-for (const [file, limit] of [['hero-editorial.mp4', 3.5e6], ['hero-editorial-mobile.mp4', 1.6e6], ['hero-editorial-poster.webp', 220e3], ['hero-editorial-poster-mobile.webp', 220e3]]) {
+for (const [file, limit] of [['portrait-hero.webp', 60e3], ['portrait-avatar.webp', 12e3]]) {
   expect(media.includes(file), `${file} missing from dist`);
-  if (media.includes(file)) { const size = (await readFile(path.join(dist, file))).length; info.push(`${file}: ${(size / 1e6).toFixed(2)}MB`); expect(size <= limit, `${file} over budget`); }
+  if (media.includes(file)) { const size = (await readFile(path.join(dist, file))).length; info.push(`${file}: ${(size / 1e3).toFixed(0)}KB`); expect(size <= limit, `${file} over budget`); }
 }
+expect(!media.some(file => /^hero-(editorial|still)/.test(file)), 'Stock hero film files should no longer ship');
 
 info.forEach(line => console.log(line));
 if (failures.length) { failures.forEach(line => console.error('FAIL', line)); process.exitCode = 1; }

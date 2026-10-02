@@ -23,11 +23,12 @@ required. This is a static portfolio, not a hosted backend.
 - `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer.
 - `src/styles/tokens.css`, `base.css`, `layout.css`, `forms.css`; component
   styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt.
-- `src/components/PersonalHero.astro` + `src/scripts/film.ts` + `hero-motion.ts`:
-  cinematic first-person hero ("Hi, I'm Omar.", cycling line, real portrait,
-  live London time) over the full-bleed licensed film, chapter rail and one
-  "Pause motion" switch (`html[data-motion]`, `omar:motion`). `Ticker.astro`:
-  kinetic CV-word band. `[data-reveal]`/`[data-reveal-stagger]`: scroll reveals. `ProjectIndex`,
+- `src/components/SystemHero.astro` + `src/scripts/hero-graph.ts` (canvas skill
+  network: nodes, signals, evidence tooltips from `graphSkills` in data/site.ts)
+  + `hero-motion.ts` ("Pause motion" switch via `html[data-motion]`/`omar:motion`,
+  decoding role line, live MAPE-K loop, magnetic buttons). `Ticker.astro`,
+  `Stats.astro` (count-up CV numbers), `cursor.ts` (trailing ring),
+  `[data-reveal]`/`[data-reveal-stagger]` scroll reveals. `ProjectIndex`,
   `CaseStudy`, `ProjectMedia` (duotone plates), `CapabilityMatrix`, `Timeline`, `Figure` (explanatory schematics).
 - `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
   (enquiry engine), `project-index.ts`, `previews.ts`.
@@ -37,12 +38,10 @@ keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
 ## Important behaviour
 
-The hero film starts immediately with one edition per viewport: desktop 1280x800,
-phone 640x800, H.264 MP4 first with a VP9 WebM fallback (20 s, 24 fps, silent).
-If autoplay is refused (iPhone Low Power Mode), data saving is on or media fails,
-it switches to moving chapter stills (hero-still-*.webp) with a retry button.
-Keep the visible motion switch (WCAG 2.2.2), offscreen pause, reduced-motion
-start-paused behaviour and the poster for disabled JavaScript.
+The hero has no stock video (the user rejected it as generic). Keep the network
+decorative-but-truthful (every labelled skill maps to CV evidence), the visible
+"Pause motion" switch (WCAG 2.2.2), offscreen/hidden-tab pausing, reduced-motion
+start-paused behaviour, and readable content without JavaScript.
 
 The project index must keep server-rendered links that work without JS,
 keyboard focus parity with hover, and no scroll hijacking. Concept visuals stay
@@ -68,13 +67,11 @@ No phone number on pages. KATANA's Level 4 autonomy is a programme direction, no
 completed individual achievement. INOS contributions are part of wider R&D.
 Do not claim trading performance or provide investment recommendations.
 
-The hero uses individually verified Mixkit Free License camera footage. It does
-not depict Omar, his projects or workplace. Project videos are concept visuals,
-not actual product recordings. Omar's real portrait is used on About & CV and,
-while he reviews a with/without-photo comparison, in the home hero (sized crops
-portrait-hero/portrait-avatar; remove with `<PersonalHero showPortrait={false} />`).
+Project videos are concept visuals, not actual product recordings. Omar's real
+portrait is used on About & CV and as the hero avatar (sized crops
+portrait-hero/portrait-avatar).
 Never generate or alter a face/body or present stock actors as Omar. Marks retain
-their respective owners' rights. Retain LICENSE, both notices and film credits.
+their respective owners' rights. Retain LICENSE and both notices (including the previously used film credits).
 
 ## Development
 
@@ -94,11 +91,6 @@ Browser QA (`scripts/qa.cjs`) runs on Linux with an isolated Playwright and
 axe-core supplied through `NODE_PATH`, `PLAYWRIGHT_EXECUTABLE` and `AXE_PATH`
 (see README). `scripts/qa-content.mjs` checks the built output. Neither adds
 project dependencies. Do not report browser QA as passed until actually run.
-
-The film editor needs FFmpeg/FFprobe and licensed originals not included here.
-The October 2026 grade (FFmpeg filter recorded in the manifest) was applied to
-the finished edit because originals were unreachable. Source/license records
-and output hashes are in the public manifest.
 
 ## Acceptance checks after changes
 

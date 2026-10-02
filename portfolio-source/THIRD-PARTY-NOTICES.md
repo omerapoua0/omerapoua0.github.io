@@ -1,8 +1,12 @@
 # Third-party notices
 
-## Current editorial film
+## Previously used: editorial film
 
-The current hero is an edited 20-second live-action film assembled from four
+The homepage no longer uses stock footage: the hero is now an original,
+code-drawn interactive network of Omar's skills. Earlier revisions of this
+repository distributed the following, so its credits are retained.
+
+The earlier hero was an edited 20-second live-action film assembled from four
 Mixkit clips individually identified as Stock Video Free License assets:
 
 - Circuit board, Ruben Velasco: https://mixkit.co/free-stock-video/circuit-board-2381/
@@ -21,8 +25,9 @@ Source credits, hashes and output verification: hero-editorial-manifest.json.
 The October 2026 "Proof" redesign applies a further cool colour grade to the
 same edit and adds VP9 WebM encodes; shots, timing and credits are unchanged.
 
-Project schematics on the site (Bitget, BP and research figures) are original
-explanatory diagrams, not results, data or product screenshots. Supplied
+The hero's skill network, project schematics (Bitget, BP and research figures)
+and other diagrams on the site are original
+code-drawn explanatory visuals, not results, data or product screenshots. Supplied
 company marks retain their respective owners' rights; their presence
 identifies the stated project or work history only.
 

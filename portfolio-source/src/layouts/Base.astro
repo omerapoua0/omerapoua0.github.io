@@ -12,7 +12,7 @@ import onestLatin from '@fontsource-variable/onest/files/onest-latin-wght-normal
 import serifItalic from '@fontsource/old-standard-tt/files/old-standard-tt-latin-400-italic.woff2?url';
 
 interface Props { title: string; description?: string; home?: boolean; image?: string; }
-const { title, description = site.description, home = false, image = '/hero-editorial-poster.jpg' } = Astro.props;
+const { title, description = site.description, home = false, image = '/portrait-hero.jpg' } = Astro.props;
 const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 const fullTitle = home ? `${site.name} | ${title}` : `${title} | ${site.name}`;
 const person = {
@@ -48,7 +48,7 @@ const person = {
     <meta property="og:type" content="website" />
     <meta property="og:url" content={new URL(path, site.url).href} />
     <meta property="og:image" content={new URL(image, site.url).href} />
-    <meta property="og:image:alt" content={image === '/omar-aboelella.jpg' ? 'Portrait of Omar Aboelella' : 'Graded still from a licensed editorial film about computing, mathematics and London'} />
+    <meta property="og:image:alt" content="Portrait of Omar Aboelella" />
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <script is:inline>
@@ -62,5 +62,6 @@ const person = {
     <SiteFooter />
     <script>import '../scripts/site';</script>
     <script>import '../scripts/previews';</script>
+    <script>import '../scripts/cursor';</script>
   </body>
 </html>

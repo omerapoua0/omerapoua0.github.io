@@ -1,0 +1,138 @@
+---
+import { graphSkills, intro } from '../data/site';
+const lines = intro.cycle;
+const loop = [
+  { key: 'M', name: 'Monitor' },
+  { key: 'A', name: 'Analyse' },
+  { key: 'P', name: 'Plan' },
+  { key: 'E', name: 'Execute' },
+];
+---
+<section class="shero" aria-labelledby="hero-title" data-hero>
+  <canvas class="shero__graph" data-graph data-skills={JSON.stringify(graphSkills)} aria-hidden="true"></canvas>
+  <div class="shero__tip" data-graph-tip aria-hidden="true" hidden><strong data-tip-label></strong><span data-tip-note></span></div>
+  <div class="shero__shade" aria-hidden="true"></div>
+  <p class="sr-only">Behind this introduction is an interactive network of the skills I use, each linked to where I used it. The same skills and evidence are listed in the capability matrix further down the page.</p>
+
+  <div class="shero__inner">
+    <div class="shero__copy">
+      <p class="shero__status">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span>London <time class="shero__clock" data-london-time></time></span>
+        {intro.status.map(item => <span>{item}</span>)}
+      </p>
+      <div class="shero__hello">
+        <picture class="shero__avatar"><source srcset="/portrait-avatar.webp" type="image/webp" /><img src="/portrait-avatar.jpg" alt="Photo of Omar Aboelella" width="160" height="160" decoding="async" fetchpriority="high" /></picture>
+        <h1 id="hero-title"><span class="shero__hi">Hi, I’m</span> <em class="voice">{intro.greetingName}.</em></h1>
+      </div>
+      <p class="shero__cycle">
+        <span class="sr-only">{intro.cycleSummary}</span>
+        <span class="shero__cycle-text" aria-hidden="true" data-decode-cycle data-lines={JSON.stringify(lines)}>{lines[0]}</span><span class="shero__caret" aria-hidden="true"></span>
+      </p>
+      <p class="shero__lead">{intro.heroLead}</p>
+      <div class="actions shero__actions">
+        <a class="btn btn--light" data-magnetic href="#work">See what I’ve built <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+        <a class="btn btn--outline-light" data-magnetic href="/tutoring.html">Maths &amp; science lessons <span class="arrow" aria-hidden="true">↗</span></a>
+      </div>
+      <p class="shero__hint" aria-hidden="true"><span class="shero__hint-fine">Move through the network. Click to send a signal.</span><span class="shero__hint-touch">Tap the network to send a signal.</span></p>
+    </div>
+  </div>
+
+  <div class="shero__bar">
+    <button class="motion-toggle" type="button" data-motion-toggle>
+      <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
+      <span data-motion-label>Pause motion</span>
+    </button>
+    <div class="mapek" data-mapek aria-hidden="true">
+      <span class="mapek__title">Live · the MAPE-K loop I design</span>
+      <span class="mapek__ring">
+        {loop.map((stage, index) => <span class="mapek__stage" data-stage={index}><b>{stage.key}</b><i>{stage.name}</i></span>)}
+        <span class="mapek__k">K</span>
+      </span>
+    </div>
+    <a class="shero__scroll" href="#work"><span aria-hidden="true">↓</span> Scroll</a>
+  </div>
+</section>
+
+<style>
+  .shero { position: relative; isolation: isolate; min-height: max(640px, 100svh); max-height: 1150px; display: grid; grid-template-rows: 1fr auto; color: #f4f5f7; overflow: hidden;
+    background: radial-gradient(120% 90% at 85% 20%, #1a2150 0%, #0d1024 38%, #07080d 75%); }
+  .shero__graph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; touch-action: pan-y; }
+  .shero__shade { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to right, #07080dd9 0%, #07080d8c 38%, transparent 66%), linear-gradient(to top, #07080d 0%, transparent 30%); }
+  .shero__tip { position: absolute; z-index: 3; display: grid; gap: 2px; max-width: 240px; padding: 9px 12px; border: 1px solid #8e98ff66; border-radius: 6px; background: #0b0d11eb; box-shadow: 0 14px 30px -10px #000; font-size: 13px; pointer-events: none; transform: translate(-50%, calc(-100% - 16px)); }
+  .shero__tip[data-below] { transform: translate(-50%, 18px); }
+  .shero__tip strong { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #b7bdff; font-weight: 500; }
+  .shero__tip span { color: #e7eaef; }
+
+  .shero__inner { align-self: end; width: 100%; max-width: var(--max); margin-inline: auto; padding: calc(var(--header) + 32px) var(--margin) clamp(20px, 3vw, 36px); pointer-events: none; }
+  .shero__copy { display: grid; gap: clamp(14px, 1.6vw, 20px); max-width: 760px; }
+  .shero__copy a, .shero__copy button { pointer-events: auto; }
+  .shero__status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: #c9cfda; }
+  .shero__status > span:not(.live-dot) + span::before { content: '·'; margin-right: 12px; color: #6b7280; }
+  .shero__clock { display: inline-block; min-width: 5ch; color: #fff; font-variant-numeric: tabular-nums; margin-left: 4px; }
+  :global(html:not(.js)) .shero__clock { display: none; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #6fd3a3; box-shadow: 0 0 0 4px #6fd3a32e; }
+  .shero__hello { display: flex; align-items: center; gap: clamp(12px, 1.6vw, 22px); }
+  .shero__avatar { flex: none; line-height: 0; }
+  .shero__avatar img { width: clamp(62px, 5.6vw, 92px); height: clamp(62px, 5.6vw, 92px); border-radius: 50%; object-fit: cover; border: 2px solid #f4f5f7; box-shadow: 0 0 0 6px #8e98ff26, 0 12px 30px -8px #000; }
+  .shero__hello h1 { font-size: clamp(3.4rem, 1.3rem + 8.2vw, 9.6rem); letter-spacing: -.06em; line-height: .88; }
+  .shero__hello .voice { color: #b7bdff; font-weight: 400; letter-spacing: -.035em; padding-right: .04em; }
+  .shero__cycle { display: flex; align-items: baseline; min-height: 1.25em; font-family: var(--font-mono); font-size: clamp(1.05rem, .8rem + 1.2vw, 1.9rem); letter-spacing: -.02em; color: #e7eaef; }
+  .shero__cycle-text { white-space: pre; }
+  .shero__caret { display: inline-block; width: .55em; height: 1.05em; margin-left: .15em; transform: translateY(.15em); background: #8e98ff; }
+  .shero__lead { font-size: var(--step-body); color: #c9cfda; max-width: 46ch; }
+  .shero__actions { margin-top: 4px; }
+  .shero__hint { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: #8b93a3; }
+  .shero__hint-touch { display: none; }
+  @media (hover: none) { .shero__hint-fine { display: none; } .shero__hint-touch { display: inline; } }
+
+  .btn--light { background: #f4f5f7; border-color: #f4f5f7; color: #0b0d11; }
+  .btn--light:hover { background: #b7bdff; border-color: #b7bdff; color: #0b0d11; }
+  .btn--outline-light { background: #0b0d1159; border-color: #ffffff80; color: #f4f5f7; }
+  .btn--outline-light:hover { background: transparent; border-color: #b7bdff; color: #b7bdff; }
+  [data-magnetic] { transition: transform 300ms var(--ease-out), background-color var(--d-2), color var(--d-2), border-color var(--d-2); }
+  .shero :focus-visible { outline-color: #b7bdff; }
+
+  .shero__bar { width: 100%; max-width: var(--max); margin-inline: auto; padding: 0 var(--margin) calc(18px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .motion-toggle { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 0 15px; border: 1px solid #ffffff59; border-radius: 999px; background: #0b0d1180; color: #f4f5f7; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+  .motion-toggle:hover { border-color: #b7bdff; color: #b7bdff; }
+  .shero__scroll { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: #c9cfda; text-decoration: none; }
+  .shero__scroll:hover { color: #fff; }
+
+  .mapek { display: none; align-items: center; gap: 14px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #8b93a3; }
+  .mapek__ring { display: inline-flex; align-items: center; gap: 6px; }
+  .mapek__stage { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid #ffffff26; border-radius: 999px; transition: background-color 300ms, color 300ms, border-color 300ms; }
+  .mapek__stage b { font-weight: 600; color: #e7eaef; }
+  .mapek__stage i { font-style: normal; display: none; }
+  .mapek__stage[data-active] { background: #8e98ff; border-color: #8e98ff; color: #0b0d11; }
+  .mapek__stage[data-active] b { color: #0b0d11; }
+  .mapek__stage[data-active] i { display: inline; }
+  .mapek__k { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1px dashed #8e98ff99; color: #b7bdff; font-weight: 600; }
+
+  @media (max-width: 720px) {
+    .shero__shade { background: linear-gradient(to top, #07080df2 0%, #07080dcc 45%, #07080d33 75%, transparent 100%); }
+    .shero__status { font-size: 10.5px; gap: 6px 8px; letter-spacing: .02em; }
+    .shero__status > span:not(.live-dot) + span::before { margin-right: 8px; }
+  }
+  @media (min-width: 1100px) { .mapek { display: inline-flex; } }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .live-dot { animation: pulse 2.4s var(--ease-io) infinite; }
+    .shero__hi, .shero__hello .voice { display: inline-block; animation: rise var(--d-5) var(--ease-out) both; }
+    .shero__hello .voice { animation-delay: 120ms; }
+    .shero__avatar { animation: pop 900ms var(--ease-out) 80ms both; }
+    .shero__cycle, .shero__lead, .shero__actions, .shero__status, .shero__hint { animation: fade var(--d-5) var(--ease-out) 260ms both; }
+    .shero__caret { animation: caret 1s steps(1) infinite; }
+    .shero__scroll span { display: inline-block; animation: nudge 1.8s var(--ease-io) infinite; }
+    :global(html[data-motion='off']) .live-dot, :global(html[data-motion='off']) .shero__caret, :global(html[data-motion='off']) .shero__scroll span { animation-play-state: paused; }
+  }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 8px #6fd3a30d; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(.6) rotate(-8deg); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes caret { 50% { opacity: 0; } }
+  @keyframes nudge { 50% { transform: translateY(4px); } }
+</style>
+
+<script>import '../scripts/hero-graph';</script>
+<script>import '../scripts/hero-motion';</script>

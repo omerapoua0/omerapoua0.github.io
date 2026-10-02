@@ -80,6 +80,11 @@ button { cursor: pointer; }
 
 .note { padding-left: var(--s-4); border-left: 2px solid var(--accent); color: var(--muted); font-size: var(--step-small); max-width: 60ch; }
 
+/* Trailing cursor ring (src/scripts/cursor.ts). */
+.cursor-ring { position: fixed; left: 0; top: 0; z-index: 200; width: 30px; height: 30px; margin: -15px 0 0 -15px; pointer-events: none; mix-blend-mode: difference; }
+.cursor-ring::after { content: ''; position: absolute; inset: 0; border: 1.5px solid #c3c8ff; border-radius: 50%; transition: transform 250ms var(--ease-out), background-color 250ms; }
+.cursor-ring[data-hot]::after { transform: scale(1.7); background: #c3c8ff33; }
+
 /* Motion: everything below is opt-in for visitors without a reduced-motion preference. */
 @media (prefers-reduced-motion: no-preference) {
   @view-transition { navigation: auto; }

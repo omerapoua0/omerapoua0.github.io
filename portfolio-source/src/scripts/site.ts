@@ -44,11 +44,11 @@ document.addEventListener('keydown', event => {
 nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { if (!desktop.matches) setMenu(false); }));
 desktop.addEventListener('change', () => setMenu(false));
 
-/* Header over the hero film: transparent until the film scrolls away. */
-const filmHero = document.querySelector<HTMLElement>('[data-film-hero]');
-if (header?.hasAttribute('data-over') && filmHero) {
+/* Header over the hero: transparent until the hero scrolls away. */
+const heroSection = document.querySelector<HTMLElement>('[data-hero]');
+if (header?.hasAttribute('data-over') && heroSection) {
   let headerFrame = 0;
-  const update = () => { headerFrame = 0; header.toggleAttribute('data-solid', filmHero.getBoundingClientRect().bottom <= header.offsetHeight + 1); };
+  const update = () => { headerFrame = 0; header.toggleAttribute('data-solid', heroSection.getBoundingClientRect().bottom <= header.offsetHeight + 1); };
   addEventListener('scroll', () => { if (!headerFrame) headerFrame = requestAnimationFrame(update); }, { passive: true });
   addEventListener('resize', update, { passive: true });
   update();
@@ -71,6 +71,26 @@ if ('IntersectionObserver' in window) {
   }), { threshold: .12, rootMargin: '0px 0px -6% 0px' });
   revealables.forEach(element => revealer.observe(element));
 } else revealables.forEach(element => element.classList.add('is-in'));
+
+/* Count-up numbers: final values are in the HTML; animate once when seen. */
+const counters = [...document.querySelectorAll<HTMLElement>('[data-count-to]')];
+if (counters.length && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const counter = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    counter.unobserve(entry.target);
+    const element = entry.target as HTMLElement;
+    const target = Number(element.dataset.countTo) || 0;
+    const started = performance.now();
+    const tick = (time: number) => {
+      const progress = Math.min(1, (time - started) / 1400);
+      element.textContent = String(Math.round(target * (1 - (1 - progress) ** 3)));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    element.textContent = '0';
+    requestAnimationFrame(tick);
+  }), { threshold: .5 });
+  counters.forEach(element => counter.observe(element));
+}
 
 /* Live London time in the homepage status line (not shown without JavaScript). */
 const londonTime = document.querySelector<HTMLTimeElement>('[data-london-time]');

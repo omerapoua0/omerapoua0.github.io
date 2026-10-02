@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
-import PersonalHero from '../components/PersonalHero.astro';
+import SystemHero from '../components/SystemHero.astro';
+import Stats from '../components/Stats.astro';
 import Ticker from '../components/Ticker.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import CapabilityMatrix from '../components/CapabilityMatrix.astro';
@@ -28,9 +29,10 @@ const questions = [
   { q: 'Linear algebra you can run: quantum computing with Qiskit.', status: 'exploratory', statusText: 'Independent study', href: '/research.html#quantum' },
 ];
 ---
-<Base title="AI product engineer, mathematician & tutor" home image="/omar-aboelella.jpg" description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
-  <PersonalHero />
+<Base title="AI product engineer, mathematician & tutor" home description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
+  <SystemHero />
   <Ticker />
+  <Stats />
 
   <section class="now" aria-label="What I’m doing now">
     <div class="wrap">

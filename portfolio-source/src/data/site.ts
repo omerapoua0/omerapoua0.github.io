@@ -18,16 +18,30 @@ export const navigation = [
   { label: 'Tutoring', href: '/tutoring.html' },
 ] as const;
 
-export const film = {
-  credit: 'Licensed stock footage, not me or my workplace.',
-  chapters: [
-    { label: 'Physical computing', start: 0 },
-    { label: 'Mathematical study', start: 5 },
-    { label: 'Software engineering', start: 10 },
-    { label: 'London & finance', start: 15 },
-  ],
-  duration: 20,
-} as const;
+/** Labelled nodes in the hero's live skill network. Each note says where the
+    CV shows the skill in use, so the interaction is evidence, not decoration. */
+export const graphSkills = [
+  { label: 'LangGraph', note: 'Cross-team workflows · KATANA, Digis Squared' },
+  { label: 'MAPE-K', note: 'Closed-loop reasoning architecture · KATANA' },
+  { label: 'Bayesian inference', note: 'Automating network decisions · KATANA' },
+  { label: 'Agentic AI', note: 'Conversational tutoring agent · NOOKBASE' },
+  { label: 'Time series', note: 'Bitcoin price-movement models · Bitget' },
+  { label: 'Python', note: 'NumPy · Pandas · SciPy · FastAPI' },
+  { label: 'Data pipelines', note: 'Weekly competitor intelligence · BP' },
+  { label: 'Feature engineering', note: 'Market & telemetry data · Bitget' },
+  { label: 'Linear algebra', note: 'BSc Computer Science & Maths · Birkbeck' },
+  { label: 'Optimisation', note: 'Santander research placement · incoming 2027' },
+  { label: 'Qiskit', note: 'Quantum computing · independent study' },
+  { label: 'Teaching', note: 'GCSE maths & physics · Southfields Academy' },
+] as const;
+
+/** Count-up numbers. Each one is a CV fact. */
+export const stats = [
+  { value: 150, prefix: '~', label: 'beta users on NOOKBASE, pre-launch' },
+  { value: 5, prefix: '', label: 'roles across AI, data and teaching' },
+  { value: 3, prefix: '', label: 'certifications: IBM, Google, Microsoft' },
+  { value: 2, prefix: '', label: 'languages: Arabic and English' },
+] as const;
 
 /** First-person homepage introduction. Every clause is backed by the CV. */
 export const intro = {

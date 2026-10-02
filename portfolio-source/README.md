@@ -6,12 +6,12 @@ accents and JetBrains Mono metadata. Read [CLAUDE.md](CLAUDE.md) first. The
 previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for
 history only; its wheel and charcoal/ivory/oxblood styling are retired.
 
-- **Hero:** cinematic and first-person: "Hi, I'm Omar." with a cycling line,
-  the real portrait (floating, pointer tilt), a live London clock and a kinetic
-  ticker of CV words, over the full-bleed licensed film (H.264 MP4 + VP9 WebM).
-  It starts at once; when iPhones block autoplay it switches to moving chapter
-  stills. One "Pause motion" control stops the film, line and ticker; reduced
-  motion starts paused. Scroll reveals use IntersectionObserver (iOS-safe).
+- **Hero:** "Hi, I'm Omar." over an original, code-drawn **live skill network**:
+  nodes drift, signals travel between them like agents passing messages, and
+  hovering or tapping a skill shows where the CV evidences it; clicking sends
+  a burst of signals. A decoding role line, a live MAPE-K loop, magnetic
+  buttons, a cursor ring, a kinetic skills ticker and count-up numbers follow.
+  One "Pause motion" control stops everything; reduced motion starts paused.
 - **Projects:** a server-rendered project index with a sticky duotone preview
   pane and area filters, case studies with explicit stage notes, and a
   capability matrix linking each skill to where the CV shows it in use.
@@ -41,10 +41,11 @@ NODE_PATH=/path/to/node_modules/with/playwright node scripts/qa.cjs
 Playwright and axe-core are intentionally not project dependencies, so the
 lockfile stays unchanged; point `NODE_PATH`/`AXE_PATH` at an isolated install.
 `qa.cjs` covers 7 routes × 5 widths × 2 themes, axe WCAG 2.2 AA, links and legacy
-anchors, no-JS fallbacks, film playback/pause/chapters/offscreen/reduced-motion/
-save-data/failure, project index and matrix interaction, the mobile menu, both
-enquiry journeys and throttled LCP/CLS. Reports go to `.qa/` (ignored).
+anchors, no-JS fallbacks, the live network (animates, evidence tooltips,
+signals), the motion switch and reduced motion, count-ups, scroll reveals,
+project index and matrix interaction, the mobile menu, both enquiry journeys
+and throttled LCP/CLS. Reports go to `.qa/` (ignored).
 
 Build success does not mean publication. Do not deploy without explicit user
-authorisation. Preserve copyright notices, film credits and personal-data
+authorisation. Preserve copyright notices, retained credits and personal-data
 boundaries (no phone number on pages; the site links the personal GitHub).
