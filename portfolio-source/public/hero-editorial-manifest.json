@@ -71,10 +71,17 @@
     "codec": "h264",
     "pixelFormat": "yuv420p",
     "audio": false,
-    "bytes": 3330008,
-    "sha256": "f9087713735dab41768c0dc7ea087954ee6c57ce2ff2271c69e43a1965b396f2",
+    "bytes": 3270073,
+    "sha256": "21f820326b4e9acd61c3e1f4eb3ce43b6b1f9938a6e41ac6fa5e71805080a57d",
     "fastStart": true,
-    "decode": "pass"
+    "decode": "pass",
+    "posterWebp": "/hero-editorial-poster.webp",
+    "webm": {
+      "file": "/hero-editorial.webm",
+      "codec": "vp9",
+      "bytes": 2383995,
+      "sha256": "9253d2b83bf753cd4d394dae5bd2c96cb0d71ccf406c8f3886d274a38b719b3e"
+    }
   },
   "mobile": {
     "file": "/hero-editorial-mobile.mp4",
@@ -87,9 +94,21 @@
     "codec": "h264",
     "pixelFormat": "yuv420p",
     "audio": false,
-    "bytes": 1492630,
-    "sha256": "03e01ab4f08e7ef1377eac89e940aadac299a279b8067d234758fa2276d4b165",
+    "bytes": 1575269,
+    "sha256": "a9ddc1d16cbf0398afdc6a2d431a3e14fc9f23cccd6f322c45860570cd0bdc7c",
     "fastStart": true,
-    "decode": "pass"
+    "decode": "pass",
+    "posterWebp": "/hero-editorial-poster-mobile.webp",
+    "webm": {
+      "file": "/hero-editorial-mobile.webm",
+      "codec": "vp9",
+      "bytes": 1188225,
+      "sha256": "8fdc88f8682106bebdfd0d08efe2001fc021489e3deee4862b393a58e4923c10"
+    }
+  },
+  "grade": {
+    "revised": "2026-10-02",
+    "note": "Cool ink/cobalt colour grade applied with FFmpeg to the previous licensed 20-second edit for the 'Proof' redesign. Same shots, timing and credits; no new footage.",
+    "filter": "eq=saturation=0.42:contrast=1.08:brightness=-0.035:gamma=0.97,colorbalance=rs=-0.05:gs=-0.01:bs=0.09:rm=-0.03:bm=0.05:rh=-0.02:bh=0.02"
   }
 }
