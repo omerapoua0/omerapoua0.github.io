@@ -6,9 +6,11 @@ accents and JetBrains Mono metadata. Read [CLAUDE.md](CLAUDE.md) first. The
 previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for
 history only; its wheel and charcoal/ivory/oxblood styling are retired.
 
-- **Hero:** the licensed 20-second live-action film (re-graded), desktop and
-  phone editions in H.264 MP4 with VP9 WebM fallback, posters, visible
-  pause/play and a chapter rail that reflects and seeks the film.
+- **Hero:** personal and first-person ("Hi, I'm Omar.") with the real
+  portrait, a live London clock and a short CV-backed intro. The licensed
+  20-second film plays in a small framed window ("things I think about"),
+  desktop/phone editions in H.264 MP4 with VP9 WebM fallback, loaded after the
+  page, with pause/play and a chapter rail that reflects and seeks the film.
 - **Projects:** a server-rendered project index with a sticky duotone preview
   pane and area filters, case studies with explicit stage notes, and a
   capability matrix linking each skill to where the CV shows it in use.

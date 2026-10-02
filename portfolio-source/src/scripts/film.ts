@@ -124,12 +124,18 @@ if (hero && video && toggle) {
   reduce.addEventListener('change', () => { if (reduce.matches) video.pause(); else void play(); label(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) video.pause(); else void play(); });
 
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([entry]) => {
-      inView = entry.isIntersecting;
-      if (inView) void play(); else video.pause();
-    }, { threshold: .1 }).observe(hero);
-  } else void play();
+  // Start fetching the film only after the page has loaded, so it never
+  // competes with the portrait, text and fonts for first-paint bandwidth.
+  const start = () => {
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([entry]) => {
+        inView = entry.isIntersecting;
+        if (inView) void play(); else video.pause();
+      }, { threshold: .1 }).observe(hero);
+    } else void play();
+  };
+  if (document.readyState === 'complete') start();
+  else addEventListener('load', start, { once: true });
   label();
 }
 

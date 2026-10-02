@@ -19,7 +19,7 @@ export const navigation = [
 ] as const;
 
 export const film = {
-  credit: 'Licensed Mixkit stock footage. Not Omar, his work or his workplace.',
+  credit: 'Licensed stock footage, not me or my workplace.',
   chapters: [
     { label: 'Physical computing', start: 0 },
     { label: 'Mathematical study', start: 5 },
@@ -27,6 +27,17 @@ export const film = {
     { label: 'London & finance', start: 15 },
   ],
   duration: 20,
+} as const;
+
+/** First-person homepage introduction. Every clause is backed by the CV. */
+export const intro = {
+  greetingName: 'Omar',
+  lead: 'I build AI systems that reason. Right now that’s closed-loop autonomy for telecom networks at Digis Squared.',
+  more: 'I study Computer Science & Mathematics at Birkbeck, I’m building NOOKBASE, and I teach GCSE maths and physics at Southfields Academy.',
+  facts: ['Arabic & English', 'London', 'Online lessons worldwide'],
+  status: ['Studying', 'Building', 'Teaching'],
+  portraitAlt: 'Omar Aboelella smiling, wearing clear glasses and a black shirt',
+  portraitCaption: 'That’s me.',
 } as const;
 
 /** Status vocabulary used across the site so claims stay consistent. */

@@ -48,7 +48,7 @@ const person = {
     <meta property="og:type" content="website" />
     <meta property="og:url" content={new URL(path, site.url).href} />
     <meta property="og:image" content={new URL(image, site.url).href} />
-    <meta property="og:image:alt" content="Graded still from a licensed editorial film about computing, mathematics and London" />
+    <meta property="og:image:alt" content={image === '/omar-aboelella.jpg' ? 'Portrait of Omar Aboelella' : 'Graded still from a licensed editorial film about computing, mathematics and London'} />
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <script is:inline>
@@ -57,7 +57,7 @@ const person = {
   </head>
   <body class:list={[home ? 'is-home' : 'is-page']}>
     <a href="#main" class="skip-link">Skip to content</a>
-    <SiteHeader overHero={home} />
+    <SiteHeader />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter />
     <script>import '../scripts/site';</script>

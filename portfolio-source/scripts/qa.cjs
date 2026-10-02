@@ -213,10 +213,27 @@ function watch(page) {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.locator('[data-film-hero]').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => document.querySelector('[data-hero-video]').currentSrc !== '', null, { timeout: 10000 });
     assert.match(await page.evaluate(() => document.querySelector('[data-hero-video]').currentSrc), /hero-editorial-mobile\./);
     await context.close();
   });
+
+  /* 5b. Personal hero: name, portrait, voice and London time. */
+  for (const [label, viewport] of [['desktop', { width: 1440, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
+    await check(`personal hero ${label}: name, portrait and London time`, async () => {
+      const context = await isolated(browser, { viewport });
+      const page = await context.newPage();
+      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+      assert.match(await page.locator('h1').textContent(), /Hi, I’m Omar/);
+      const portrait = label === 'desktop' ? '.phero__portrait img' : '.phero__avatar';
+      assert.ok(await page.locator(portrait).isVisible(), 'portrait visible');
+      assert.ok(await page.locator(portrait).evaluate(img => img.complete && img.naturalWidth > 0), 'portrait loaded');
+      assert.match(await page.locator('[data-london-time]').textContent(), /^\d{2}:\d{2}$/);
+      assert.match(await page.locator('.filmwin__caption').textContent(), /not me/);
+      await context.close();
+    });
+  }
 
   /* 6. Project index, filters, matrix. */
   await check('project index: hover and focus drive the pane; filters announce', async () => {

@@ -23,9 +23,10 @@ required. This is a static portfolio, not a hosted backend.
 - `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer.
 - `src/styles/tokens.css`, `base.css`, `layout.css`, `forms.css`; component
   styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt.
-- `src/components/FilmHero.astro` + `src/scripts/film.ts`: the licensed film
-  with chapter rail. `ProjectIndex`, `CaseStudy`, `ProjectMedia` (duotone
-  plates), `CapabilityMatrix`, `Timeline`, `Figure` (explanatory schematics).
+- `src/components/PersonalHero.astro` + `src/scripts/film.ts`: first-person
+  home hero ("Hi, I'm Omar.", real portrait, live London time) with the
+  licensed film in a small framed window and chapter rail. `ProjectIndex`,
+  `CaseStudy`, `ProjectMedia` (duotone plates), `CapabilityMatrix`, `Timeline`, `Figure` (explanatory schematics).
 - `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
   (enquiry engine), `project-index.ts`, `previews.ts`.
 
@@ -34,8 +35,8 @@ keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
 ## Important behaviour
 
-The hero chooses one edition before loading: desktop 1280x800, phone 640x800,
-H.264 MP4 first with a VP9 WebM fallback. All are 20 seconds, 24fps, silent.
+The hero film window chooses one edition after page load: desktop 1280x800,
+phone 640x800, H.264 MP4 first with a VP9 WebM fallback. All are 20 seconds, 24fps, silent.
 Keep visible pause/play, offscreen pause, explicit-pause persistence, and static
 posters for reduced motion, save-data, disabled JavaScript or failed media.
 
@@ -65,8 +66,10 @@ Do not claim trading performance or provide investment recommendations.
 
 The hero uses individually verified Mixkit Free License camera footage. It does
 not depict Omar, his projects or workplace. Project videos are concept visuals,
-not actual product recordings. Omar's portrait belongs on About & CV; do not
-generate a different face/body or pretend stock actors are Omar. Marks retain
+not actual product recordings. Omar's real portrait is used on About & CV and,
+while he reviews a with/without-photo comparison, in the home hero (sized crops
+portrait-hero/portrait-avatar; remove with `<PersonalHero showPortrait={false} />`).
+Never generate or alter a face/body or present stock actors as Omar. Marks retain
 their respective owners' rights. Retain LICENSE, both notices and film credits.
 
 ## Development

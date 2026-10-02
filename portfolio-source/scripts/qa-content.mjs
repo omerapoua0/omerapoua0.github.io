@@ -24,7 +24,7 @@ expect(/Nothing has been sent/.test(text.tutoring) && /Nothing has been sent/.te
 
 // Attribution and status wording that must stay visible.
 const required = [
-  ['index', /not Omar/i, 'Film credit says the footage is not Omar'],
+  ['index', /not (Omar|me)\b/i, 'Film credit says the footage is not Omar'],
   ['work', /programme direction/i, 'KATANA Level 4 described as programme direction'],
   ['work', /wider R&D/i, 'INOS described as part of wider R&D'],
   ['work', /no claim of trading performance|not investment advice|nothing here is investment advice/i, 'Bitget: no performance claims'],

@@ -44,14 +44,14 @@ document.addEventListener('keydown', event => {
 nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { if (!desktop.matches) setMenu(false); }));
 desktop.addEventListener('change', () => setMenu(false));
 
-/* Header over the hero film becomes solid once the film has scrolled away. */
-const hero = document.querySelector<HTMLElement>('[data-film-hero]');
-if (header?.hasAttribute('data-over') && hero) {
-  let frame = 0;
-  const update = () => { frame = 0; header.toggleAttribute('data-solid', hero.getBoundingClientRect().bottom <= header.offsetHeight + 1); };
-  addEventListener('scroll', () => { if (!frame) frame = requestAnimationFrame(update); }, { passive: true });
-  addEventListener('resize', update, { passive: true });
-  update();
+/* Live London time in the homepage status line (not shown without JavaScript). */
+const londonTime = document.querySelector<HTMLTimeElement>('[data-london-time]');
+if (londonTime) {
+  const format = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
+  const tick = () => { londonTime.textContent = format.format(new Date()); };
+  tick();
+  londonTime.setAttribute('aria-label', 'Current time in London');
+  setInterval(tick, 30_000);
 }
 
 /* Sticky call to action: hidden while its target (or the page intro) is on screen. */

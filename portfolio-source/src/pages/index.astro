@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import FilmHero from '../components/FilmHero.astro';
+import PersonalHero from '../components/PersonalHero.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import CapabilityMatrix from '../components/CapabilityMatrix.astro';
 import SectionHead from '../components/SectionHead.astro';
@@ -27,8 +27,8 @@ const questions = [
   { q: 'Linear algebra you can run: quantum computing with Qiskit.', status: 'exploratory', statusText: 'Independent study', href: '/research.html#quantum' },
 ];
 ---
-<Base title="AI product engineer, mathematician & tutor" home description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
-  <FilmHero />
+<Base title="AI product engineer, mathematician & tutor" home image="/omar-aboelella.jpg" description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
+  <PersonalHero />
 
   <section class="now" aria-label="What I’m doing now">
     <div class="wrap">
@@ -45,8 +45,8 @@ const questions = [
   </section>
 
   <section class="section wrap" id="work" aria-labelledby="work-title">
-    <SectionHead mark="1" label="Selected work" id="work-title">Engineering, <em class="voice">in context.</em>
-      <p slot="aside">Network autonomy, an agentic learning product, market modelling and research automation. Every project says what I did, what the wider team did and what stage it is at.</p>
+    <SectionHead mark="1" label="Selected work" id="work-title">What I’ve been <em class="voice">building.</em>
+      <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. For each one I say what I did, what the wider team did and what stage it’s at.</p>
     </SectionHead>
     <ProjectIndex items={projects} morph label="Selected work" />
     <p class="more"><a class="link-arrow" href="/work.html">Full case studies <span aria-hidden="true">↗</span></a></p>
@@ -55,14 +55,14 @@ const questions = [
   <section class="section section--surface" aria-labelledby="skills-title">
     <div class="wrap">
       <SectionHead mark="2" label="Capabilities" id="skills-title">Skills, with <em class="voice">evidence.</em>
-        <p slot="aside">Each skill points to where my CV shows it in use. Hover a column to trace one project across the matrix.</p>
+        <p slot="aside">I’d rather show than list. Each skill points to where I’ve actually used it. Hover a column to trace one project across the matrix.</p>
       </SectionHead>
       <CapabilityMatrix />
     </div>
   </section>
 
   <section class="section wrap" aria-labelledby="paths-title">
-    <SectionHead mark="3" label="Work with me" id="paths-title">Three ways <em class="voice">to begin.</em></SectionHead>
+    <SectionHead mark="3" label="Work with me" id="paths-title">Three ways to <em class="voice">work with me.</em></SectionHead>
     <ol class="paths">
       {paths.map(path => (
         <li>
@@ -78,8 +78,8 @@ const questions = [
   </section>
 
   <section class="section section--rule wrap" aria-labelledby="questions-title">
-    <SectionHead mark="4" label="Open questions" id="questions-title">Mathematics is <em class="voice">the foundation.</em>
-      <p slot="aside">The research questions I am exploring alongside engineering. Labelled honestly: in progress, incoming, exploratory. Nothing here is published work.</p>
+    <SectionHead mark="4" label="Open questions" id="questions-title">Questions I’m <em class="voice">chasing.</em>
+      <p slot="aside">Maths is the thread through everything I do. These are the questions I’m exploring alongside engineering, labelled honestly. Nothing here is published work.</p>
     </SectionHead>
     <ol class="questions">
       {questions.map((item, index) => (
