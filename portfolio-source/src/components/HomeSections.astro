@@ -1,0 +1,142 @@
+---
+/* Everything below the homepage hero, shared by the hero prototypes. */
+import Stats from './Stats.astro';
+import Ticker from './Ticker.astro';
+import ProjectIndex from './ProjectIndex.astro';
+import CapabilityMatrix from './CapabilityMatrix.astro';
+import SectionHead from './SectionHead.astro';
+import { projects } from '../data/projects';
+
+const now = [
+  { label: 'Now', title: 'AI Product Engineer', meta: 'Digis Squared · since Jan 2026' },
+  { label: 'Building', title: 'NOOKBASE', meta: 'Pre-launch · around 150 beta users' },
+  { label: 'Teaching', title: 'Maths & Physics TA', meta: 'Southfields Academy · since Mar 2026' },
+  { label: 'Studying', title: 'BSc Computer Science & Maths', meta: 'Birkbeck · expected 2028 · targeting a First' },
+  { label: 'Next', title: 'Santander research placement', meta: 'Optimisation & ML · Summer 2027' },
+];
+
+const paths = [
+  { num: '01', verb: 'Build', title: 'AI & product engineering', copy: 'Agentic workflows, closed-loop reasoning and the product decisions around them, with people kept in control.', href: '/contact.html?topic=Project', cta: 'Discuss a project' },
+  { num: '02', verb: 'Automate', title: 'Research & reporting pipelines', copy: 'Turn the report you rebuild every week into a process that gathers, checks and delivers on its own.', href: '/automations.html', cta: 'See how I approach it' },
+  { num: '03', verb: 'Learn', title: 'Maths & science lessons', copy: 'Online GCSE Foundation, GCSE Higher and A-level. Free 15-minute intro call, enhanced DBS checked.', href: '/tutoring.html', cta: 'Start a lesson enquiry' },
+];
+
+const questions = [
+  { q: 'How efficiently do AI models complete university assignments, and what happens to learning?', status: 'progress', statusText: 'In progress · unpublished', href: '/research.html#ai-he' },
+  { q: 'Better decisions under real constraints: optimisation and machine learning for credit scoring.', status: 'incoming', statusText: 'Incoming · Summer 2027', href: '/research.html#optimisation' },
+  { q: 'What is a forecasting model actually learning, and how do you know?', status: 'exploratory', statusText: 'Exploratory', href: '/research.html#quant' },
+  { q: 'Linear algebra you can run: quantum computing with Qiskit.', status: 'exploratory', statusText: 'Independent study', href: '/research.html#quantum' },
+];
+---
+<Ticker />
+<Stats />
+
+<section class="now" aria-label="What I’m doing now">
+  <div class="wrap">
+    <ol class="now__list" data-reveal-stagger>
+      {now.map(item => (
+        <li>
+          <p class="label">{item.label}</p>
+          <p class="now__title">{item.title}</p>
+          <p class="now__meta">{item.meta}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<section class="section wrap" id="work" aria-labelledby="work-title">
+  <SectionHead mark="1" label="Selected work" id="work-title">What I’ve been <em class="voice">building.</em>
+    <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. For each one I say what I did, what the wider team did and what stage it’s at.</p>
+  </SectionHead>
+  <ProjectIndex items={projects} morph label="Selected work" />
+  <p class="more" data-reveal><a class="link-arrow" href="/work.html">Full case studies <span aria-hidden="true">↗</span></a></p>
+</section>
+
+<section class="section section--surface" aria-labelledby="skills-title">
+  <div class="wrap">
+    <SectionHead mark="2" label="Capabilities" id="skills-title">Skills, with <em class="voice">evidence.</em>
+      <p slot="aside">I’d rather show than list. Each skill points to where I’ve actually used it. Hover a column to trace one project across the matrix.</p>
+    </SectionHead>
+    <CapabilityMatrix />
+  </div>
+</section>
+
+<section class="section wrap" aria-labelledby="paths-title">
+  <SectionHead mark="3" label="Work with me" id="paths-title">Three ways to <em class="voice">work with me.</em></SectionHead>
+  <ol class="paths" data-reveal-stagger>
+    {paths.map(path => (
+      <li>
+        <a class="path" href={path.href}>
+          <span class="path__top"><span class="num">{path.num}</span><span class="label">{path.verb}</span></span>
+          <span class="path__title">{path.title}</span>
+          <span class="path__copy">{path.copy}</span>
+          <span class="path__cta">{path.cta} <span aria-hidden="true">↗</span></span>
+        </a>
+      </li>
+    ))}
+  </ol>
+</section>
+
+<section class="section section--rule wrap" aria-labelledby="questions-title">
+  <SectionHead mark="4" label="Open questions" id="questions-title">Questions I’m <em class="voice">chasing.</em>
+    <p slot="aside">Maths is the thread through everything I do. These are the questions I’m exploring alongside engineering, labelled honestly. Nothing here is published work.</p>
+  </SectionHead>
+  <ol class="questions" data-reveal-stagger>
+    {questions.map((item, index) => (
+      <li>
+        <a href={item.href}>
+          <span class="num">Q{index + 1}</span>
+          <span class="questions__q">{item.q}</span>
+          <span class:list={['chip', `chip--${item.status}`]}>{item.statusText}</span>
+        </a>
+      </li>
+    ))}
+  </ol>
+  <p class="more" data-reveal><a class="link-arrow" href="/research.html">Research notebook <span aria-hidden="true">↗</span></a></p>
+</section>
+
+<style>
+  .now { border-bottom: 1px solid var(--line); background: var(--bg); }
+  .now__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--gutter); }
+  .now__list li { padding: 18px 0 20px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; align-content: start; }
+  .now__list li:last-child { grid-column: 1 / -1; }
+  @media (min-width: 700px) and (max-width: 1099px) { .now__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .now__list li:last-child { grid-column: auto; } }
+  .now__title { font-weight: 560; letter-spacing: -.02em; font-size: clamp(.98rem, .9rem + .3vw, 1.06rem); line-height: 1.25; }
+  .now__meta { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+  @media (min-width: 1100px) {
+    .now__list { grid-template-columns: repeat(5, 1fr); }
+    .now__list li { border-bottom: 0; padding: 28px 24px 30px; }
+    .now__list li + li { border-left: 1px solid var(--line); }
+    .now__list li:first-child { padding-left: 0; }
+  }
+  .more { margin-top: var(--s-7); }
+
+  .paths { display: grid; border-top: 1px solid var(--line); }
+  .path { display: grid; gap: var(--s-4); padding: var(--s-6) 0 var(--s-7); border-bottom: 1px solid var(--line); text-decoration: none; height: 100%; }
+  .path__top { display: flex; justify-content: space-between; align-items: baseline; }
+  .path__top .num { font-size: 13px; color: var(--muted); }
+  .path__title { font-size: var(--step-h3); font-weight: 560; letter-spacing: -.03em; line-height: 1.15; max-width: 16ch; }
+  .path__copy { color: var(--muted); max-width: 40ch; }
+  .path__cta { margin-top: auto; font-weight: 520; display: inline-flex; gap: 8px; color: var(--accent); }
+  .path:hover .path__title { color: var(--accent); }
+  @media (min-width: 900px) {
+    .paths { grid-template-columns: repeat(3, 1fr); }
+    .path { padding: var(--s-6) var(--s-6) var(--s-7); border-bottom: 0; min-height: 360px; transition: background-color var(--d-3) var(--ease-out); }
+    .paths li + li .path { border-left: 1px solid var(--line); }
+    .paths li:first-child .path { padding-left: 0; }
+    .path:hover { background: var(--surface); }
+    .paths { border-bottom: 1px solid var(--line); }
+  }
+
+  .questions { border-top: 1px solid var(--line); }
+  .questions a { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px 16px; padding: 24px 0; border-bottom: 1px solid var(--line); text-decoration: none; align-items: baseline; }
+  .questions .num { font-size: 12px; color: var(--muted); }
+  .questions__q { font-size: clamp(1.2rem, 1rem + .9vw, 1.75rem); letter-spacing: -.03em; line-height: 1.2; font-weight: 500; max-width: 36ch; }
+  .questions .chip { grid-column: 2; justify-self: start; }
+  .questions a:hover .questions__q { color: var(--accent); }
+  @media (min-width: 900px) {
+    .questions a { grid-template-columns: 60px minmax(0, 1fr) 240px; }
+    .questions .chip { grid-column: 3; justify-self: end; }
+  }
+</style>

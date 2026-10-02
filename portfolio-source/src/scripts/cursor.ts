@@ -9,6 +9,7 @@ if (fine.matches && !reduce.matches) {
   const ring = document.createElement('div');
   ring.className = 'cursor-ring';
   ring.setAttribute('aria-hidden', 'true');
+  ring.hidden = true;
   document.body.append(ring);
   let x = -100, y = -100, rx = -100, ry = -100, frame = 0;
   const loop = () => {

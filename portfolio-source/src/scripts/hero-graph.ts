@@ -11,7 +11,7 @@ type GraphNode = { x: number; y: number; vx: number; vy: number; bx: number; by:
 type Pulse = { a: number; b: number; t: number; speed: number; hops: number; hot: boolean };
 
 const canvas = document.querySelector<HTMLCanvasElement>('[data-graph]');
-const hero = canvas?.closest<HTMLElement>('[data-hero]');
+const hero = canvas?.closest<HTMLElement>('[data-graph-host]') ?? canvas?.closest<HTMLElement>('[data-hero]');
 const tip = hero?.querySelector<HTMLElement>('[data-graph-tip]');
 const context = canvas?.getContext('2d');
 
@@ -49,9 +49,11 @@ if (canvas && hero && context) {
     });
     // Skill nodes live where they don't cover the text: the right side on
     // desktop, the top band on phones. They spring around an anchor.
-    const shown = phone ? skills.slice(0, 6) : skills;
-    const area = phone ? { x0: .04, x1: .9, y0: .1, y1: .37 } : { x0: .56, x1: .93, y0: .14, y1: .8 };
-    const cols = phone ? 2 : 3;
+    // A host can override the label layout: data-area="x0,x1,y0,y1", data-labels, data-cols.
+    const custom = canvas!.dataset.area?.split(',').map(Number);
+    const shown = skills.slice(0, Number(canvas!.dataset.labels) || (phone ? 6 : skills.length));
+    const area = custom?.length === 4 ? { x0: custom[0], x1: custom[1], y0: custom[2], y1: custom[3] } : phone ? { x0: .04, x1: .9, y0: .1, y1: .37 } : { x0: .56, x1: .93, y0: .14, y1: .8 };
+    const cols = Number(canvas!.dataset.cols) || (phone ? 2 : 3);
     shown.forEach((skill, index) => {
       const node = nodes[index];
       const col = index % cols, row = Math.floor(index / cols), rows = Math.ceil(shown.length / cols);

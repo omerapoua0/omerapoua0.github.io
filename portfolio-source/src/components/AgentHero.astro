@@ -1,0 +1,130 @@
+---
+/* Prototype B: "talk to my agent". A scripted demo, labelled as such: every
+   answer is written from the CV and site facts, nothing calls a model. */
+const script = {
+  intro: { trace: 'loading: profile/omar', text: 'Hi, I’m Omar. I build AI systems that reason at Digis Squared, I’m founding NOOKBASE, and I teach maths and physics in London. What do you want to know?' },
+  answers: [
+    { q: 'What do you build?', trace: 'retrieving: work/*', text: 'Reasoning systems. At Digis Squared I set the technical strategy for KATANA, a network-autonomy programme, and designed its closed-loop MAPE-K architecture with Bayesian inference. On the side I’m building NOOKBASE, an agentic study platform.', cards: [{ title: 'KATANA', meta: 'Network autonomy · Digis Squared', href: '/work.html#katana' }, { title: 'NOOKBASE', meta: 'Founder · pre-launch', href: '/work.html#nookbase' }] },
+    { q: 'Show me KATANA', trace: 'retrieving: work/katana', text: 'KATANA moves telecom networks from Level 1 towards Level 4 autonomy against TM Forum standards. I set its technical strategy with the product manager, designed the MAPE-K reasoning loop, built TCO models, ran security audits and planned sprints. Level 4 is the programme’s direction, not a finished deployment.', cards: [{ title: 'Read the case study', meta: 'work/katana', href: '/work.html#katana' }] },
+    { q: 'What’s NOOKBASE?', trace: 'retrieving: work/nookbase', text: 'My agentic study platform for iOS, Android and web, built around a conversational tutoring agent. The idea: understanding, not just answers. It’s pre-launch with around 150 beta users.', cards: [{ title: 'NOOKBASE case study', meta: 'Founder · ~150 beta users', href: '/work.html#nookbase' }] },
+    { q: 'Can you teach my son?', trace: 'retrieving: lessons/*', text: 'Probably. I teach maths and science online for GCSE Foundation, GCSE Higher and A-level, and I’m a Maths & Physics TA at Southfields Academy. I’m enhanced DBS checked, the first call is a free 15 minutes, and parents are welcome to sit in.', cards: [{ title: 'Start a lesson enquiry', meta: 'Reply within one working day', href: '/tutoring.html#lesson-enquiry' }] },
+    { q: 'Open to internships?', trace: 'retrieving: cv/goals', text: 'Yes. I’m looking for a Sales & Trading or quantitative internship, to apply maths and programming to markets and systematic decision-making. In summer 2027 I’m joining Santander for a research placement in optimisation and machine learning.', cards: [{ title: 'Experience & CV', meta: 'About', href: '/cv.html' }, { title: 'Get in touch', meta: 'Opportunity', href: '/contact.html?topic=Opportunity' }] },
+    { q: 'Download your CV', trace: 'fetching: Omar-Aboelella-CV.pdf', text: 'Here you go.', cards: [{ title: 'Omar Aboelella · CV (PDF)', meta: 'Opens in a new tab', href: '/Omar-Aboelella-CV.pdf', external: true }] },
+  ],
+};
+---
+<section class="agent" aria-labelledby="hero-title" data-hero data-graph-host>
+  <canvas class="agent__graph" data-graph data-skills="[]" aria-hidden="true"></canvas>
+  <div class="agent__inner">
+    <div class="agent__intro">
+      <p class="agent__status"><span class="live-dot" aria-hidden="true"></span> London <time data-london-time></time></p>
+      <h1 id="hero-title">Ask me anything. <em class="voice">Well, almost.</em></h1>
+      <div class="agent__who">
+        <picture><source srcset="/portrait-avatar.webp" type="image/webp" /><img src="/portrait-avatar.jpg" alt="Photo of Omar Aboelella" width="160" height="160" decoding="async" /></picture>
+        <p><strong>Omar Aboelella</strong><span>AI product engineer · founder · maths teacher</span></p>
+      </div>
+      <ul class="agent__proof">
+        <li><b>Digis Squared</b> AI Product Engineer</li>
+        <li><b>NOOKBASE</b> Founder · ~150 beta users</li>
+        <li><b>Santander</b> Research placement · 2027</li>
+      </ul>
+    </div>
+
+    <div class="chat" data-chat data-script={JSON.stringify(script)}>
+      <div class="chat__head">
+        <picture><source srcset="/portrait-avatar.webp" type="image/webp" /><img src="/portrait-avatar.jpg" alt="" width="160" height="160" decoding="async" /></picture>
+        <p><strong>Omar’s agent</strong><span><i class="live-dot" aria-hidden="true"></i> online · scripted demo</span></p>
+      </div>
+      <div class="chat__log" data-chat-log role="log" aria-live="polite" aria-label="Conversation">
+        <noscript><p class="chat__msg">{script.intro.text}</p></noscript>
+      </div>
+      <div class="chat__chips" data-chat-chips role="group" aria-label="Ask a question">
+        {script.answers.map((answer, index) => <button type="button" class="chat__chip" data-chat-ask={index}>{answer.q}</button>)}
+      </div>
+      <p class="chat__note">Scripted answers written from my CV. Not a live model. For the real thing, <a href="/contact.html">message me</a>.</p>
+    </div>
+  </div>
+  <button class="motion-toggle agent__toggle" type="button" data-motion-toggle>
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
+    <span data-motion-label>Pause motion</span>
+  </button>
+</section>
+
+<style>
+  .agent { position: relative; isolation: isolate; min-height: max(700px, 100svh); overflow: hidden; color: #eef0f4; background: radial-gradient(90% 70% at 80% 30%, #172042 0%, #0b0d16 55%, #07080c 100%); display: grid; align-items: center; padding: calc(var(--header) + 28px) var(--margin) 64px; }
+  .agent__graph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; opacity: .45; }
+  .agent__inner { width: 100%; max-width: var(--max); margin-inline: auto; display: grid; gap: 36px; align-items: center; }
+  .agent__intro { display: grid; gap: 22px; }
+  .agent__status { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: #aab2c0; }
+  .agent__status time { color: #fff; }
+  .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #6fd3a3; box-shadow: 0 0 0 4px #6fd3a32e; }
+  .agent h1 { font-size: clamp(3rem, 1.4rem + 5.6vw, 7rem); letter-spacing: -.055em; line-height: .92; max-width: 11ch; }
+  .agent h1 .voice { display: block; color: #b7bdff; font-weight: 400; }
+  .agent__who { display: flex; align-items: center; gap: 14px; }
+  .agent__who img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2px solid #eef0f4; }
+  .agent__who strong { display: block; font-size: 1.1rem; }
+  .agent__who span { font-size: 14px; color: #aab2c0; }
+  .agent__proof { display: grid; gap: 8px; }
+  .agent__proof li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding-top: 8px; border-top: 1px solid #ffffff1f; font-size: 14px; color: #aab2c0; }
+  .agent__proof b { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: #eef0f4; font-weight: 500; min-width: 120px; }
+
+  .chat { display: grid; grid-template-rows: auto 1fr auto auto; height: min(600px, 74svh); border: 1px solid #ffffff24; border-radius: 18px; background: #0d0f17f2; box-shadow: 0 40px 80px -30px #000, 0 0 0 1px #8e98ff14 inset; overflow: hidden; }
+  .chat__head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #ffffff17; }
+  .chat__head img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+  .chat__head strong { display: block; font-size: 15px; }
+  .chat__head span { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #8b93a3; }
+  .chat__head .live-dot { width: 6px; height: 6px; box-shadow: none; }
+  .chat__log { overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+  .chat__chips { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid #ffffff17; overflow-x: auto; scrollbar-width: none; }
+  .chat__chip { flex: none; min-height: 40px; padding: 0 14px; border: 1px solid #8e98ff66; border-radius: 999px; background: #8e98ff14; color: #dfe2ff; font-size: 14px; font-weight: 500; white-space: nowrap; transition: background-color var(--d-2), border-color var(--d-2), transform var(--d-2); }
+  .chat__chip:hover { background: #8e98ff33; border-color: #b7bdff; }
+  .chat__chip:disabled { opacity: .45; cursor: default; }
+  .chat__chip[data-asked] { border-style: dashed; }
+  .chat__note { padding: 0 18px 14px; font-size: 12px; color: #8b93a3; }
+  .chat__note a { color: #b7bdff; }
+  .agent :focus-visible { outline-color: #b7bdff; }
+  .agent__toggle { position: absolute; right: var(--margin); bottom: 18px; }
+  .motion-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid #ffffff4d; border-radius: 999px; background: #07080cb3; color: #eef0f4; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+
+  :global(.chat__msg) { max-width: 88%; padding: 11px 14px; border-radius: 14px 14px 14px 4px; background: #1a1e2b; font-size: 15px; line-height: 1.5; }
+  :global(.chat__msg--you) { align-self: flex-end; border-radius: 14px 14px 4px 14px; background: #8e98ff; color: #0b0d11; font-weight: 500; }
+  :global(.chat__trace) { font-family: var(--font-mono); font-size: 11.5px; color: #6fd3a3; letter-spacing: .02em; }
+  :global(.chat__trace::before) { content: '→ '; }
+  :global(.chat__cards) { display: flex; flex-wrap: wrap; gap: 8px; }
+  :global(.chat__card) { display: grid; gap: 2px; min-width: 180px; padding: 10px 14px; border: 1px solid #ffffff24; border-radius: 12px; background: #11141d; color: #eef0f4; text-decoration: none; }
+  :global(.chat__card:hover) { border-color: #b7bdff; }
+  :global(.chat__card strong) { font-size: 14px; }
+  :global(.chat__card span) { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: #8b93a3; }
+  :global(.chat__typing) { display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 14px; background: #1a1e2b; align-self: flex-start; }
+  :global(.chat__typing i) { width: 6px; height: 6px; border-radius: 50%; background: #8b93a3; animation: typing 1s infinite; }
+  :global(.chat__typing i:nth-child(2)) { animation-delay: .15s; }
+  :global(.chat__typing i:nth-child(3)) { animation-delay: .3s; }
+  @keyframes typing { 50% { opacity: .3; transform: translateY(-2px); } }
+
+  @media (min-width: 1000px) {
+    .agent__inner { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); }
+    .agent__intro { grid-column: 1 / span 5; }
+    .chat { grid-column: 7 / span 6; }
+    .chat__chips { flex-wrap: wrap; overflow: visible; }
+  }
+  @media (max-width: 999px) {
+    .agent { align-items: start; }
+    .agent__proof { display: none; }
+    .chat { height: min(520px, 64svh); }
+    .agent__toggle { position: static; justify-self: end; margin-top: 12px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .live-dot { animation: pulse 2.4s var(--ease-io) infinite; }
+    .agent__intro > * { animation: agent-in 900ms var(--ease-out) both; }
+    .agent__intro > *:nth-child(2) { animation-delay: 80ms; }
+    .agent__intro > *:nth-child(3) { animation-delay: 160ms; }
+    .agent__intro > *:nth-child(4) { animation-delay: 240ms; }
+    .chat { animation: agent-in 1s var(--ease-out) 200ms both; }
+  }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 8px #6fd3a30d; } }
+  @keyframes agent-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+</style>
+
+<script>import '../scripts/agent-chat';</script>
+<script>import '../scripts/hero-graph';</script>
+<script>import '../scripts/hero-motion';</script>

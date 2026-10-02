@@ -1,0 +1,189 @@
+---
+/* Prototype C: bento grid of live tiles. Every tile is a CV fact. */
+import ProjectMedia from './ProjectMedia.astro';
+import { graphSkills, intro } from '../data/site';
+import { projects } from '../data/projects';
+const katana = projects.find(project => project.id === 'katana')!;
+const loop = ['Monitor', 'Analyse', 'Plan', 'Execute'];
+---
+<section class="bento" aria-labelledby="hero-title" data-hero>
+  <div class="bento__grid" data-bento>
+    <figure class="tile tile--photo" data-tile>
+      <picture><source srcset="/portrait-hero.webp" type="image/webp" /><img src="/portrait-hero.jpg" alt={intro.portraitAlt} width="720" height="900" fetchpriority="high" decoding="async" /></picture>
+      <figcaption class="tile__sticker">That’s me 👋</figcaption>
+    </figure>
+
+    <div class="tile tile--intro" data-tile>
+      <p class="tile__label">Omar Aboelella · London</p>
+      <h1 id="hero-title">Hi, I’m <em class="voice">Omar.</em></h1>
+      <p class="tile__cycle"><span class="sr-only">{intro.cycleSummary}</span><span aria-hidden="true" data-decode-cycle data-lines={JSON.stringify(intro.cycle)}>{intro.cycle[0]}</span><span class="tile__caret" aria-hidden="true"></span></p>
+      <p class="tile__sub">AI Product Engineer at Digis Squared · Founder of NOOKBASE · Next: Santander, summer 2027</p>
+      <div class="tile__actions"><a class="btn btn--bento" data-magnetic href="#work">See my work ↓</a><a class="tile__link" href="/contact.html?topic=Hello">Say hello ↗</a></div>
+    </div>
+
+    <div class="tile tile--clock" data-tile>
+      <p class="tile__label"><span class="live-dot" aria-hidden="true"></span> London now</p>
+      <p class="tile__big"><time data-london-time>London</time></p>
+      <p class="tile__small">Online lessons worldwide · Arabic &amp; English</p>
+    </div>
+
+    <div class="tile tile--mapek" data-tile>
+      <p class="tile__label">The loop I design</p>
+      <div class="ring" data-mapek aria-hidden="true">
+        {loop.map((stage, index) => <span class:list={['ring__stage', `ring__stage--${index}`]} data-stage={index}>{stage}</span>)}
+        <span class="ring__k">K</span>
+      </div>
+      <p class="tile__small">MAPE-K · KATANA, Digis Squared</p>
+      <p class="sr-only">MAPE-K: monitor, analyse, plan and execute over shared knowledge, the reasoning loop I design for KATANA.</p>
+    </div>
+
+    <a class="tile tile--nook" data-tile href="/work.html#nookbase">
+      <p class="tile__label">Founder · NOOKBASE</p>
+      <p class="tile__big">~<span data-count-to="150">150</span></p>
+      <p class="tile__small">beta users · pre-launch agentic study platform</p>
+      <span class="tile__arrow" aria-hidden="true">↗</span>
+    </a>
+
+    <a class="tile tile--lessons" data-tile href="/tutoring.html">
+      <p class="tile__label">Maths &amp; science lessons</p>
+      <p class="tile__levels"><span>GCSE F</span><span>GCSE H</span><span>A-level</span></p>
+      <p class="tile__small">Free 15-min intro call · DBS checked</p>
+      <span class="tile__arrow" aria-hidden="true">↗</span>
+    </a>
+
+    <div class="tile tile--skills" data-tile data-graph-host>
+      <canvas data-graph data-skills={JSON.stringify(graphSkills)} data-area=".06,.82,.18,.86" data-labels="6" data-cols="3" aria-hidden="true"></canvas>
+      <div class="bento__tip" data-graph-tip aria-hidden="true" hidden><strong data-tip-label></strong><span data-tip-note></span></div>
+      <p class="tile__label tile__label--over">Skills, with evidence · tap one</p>
+    </div>
+
+    <a class="tile tile--katana" data-tile href="/work.html#katana">
+      <ProjectMedia project={katana} />
+      <p class="tile__over"><strong>KATANA</strong><span>Level 1 → 4 direction</span></p>
+    </a>
+
+    <a class="tile tile--cv" data-tile href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">
+      <p class="tile__label">Download</p>
+      <p class="tile__big">CV</p>
+      <p class="tile__small">PDF · opens in a new tab</p>
+      <span class="tile__arrow tile__arrow--down" aria-hidden="true">↓</span>
+    </a>
+  </div>
+  <button class="motion-toggle bento__toggle" type="button" data-motion-toggle>
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
+    <span data-motion-label>Pause motion</span>
+  </button>
+</section>
+
+<style>
+  .bento { position: relative; background: #08090d; color: #eef0f4; padding: calc(var(--header) + 16px) var(--margin) 22px; }
+  .bento__grid { max-width: var(--max); margin-inline: auto; display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(150px, auto); }
+  .tile { position: relative; overflow: hidden; display: grid; align-content: space-between; gap: 10px; padding: 18px; border: 1px solid #ffffff1a; border-radius: 18px; background: radial-gradient(260px circle at var(--mx, 50%) var(--my, -40%), #8e98ff26, transparent 70%), #10131b; color: inherit; text-decoration: none; transition: border-color 300ms, transform 400ms var(--ease-out); }
+  a.tile:hover, .tile:hover { border-color: #8e98ff66; }
+  .tile__label { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: #8b93a3; }
+  .tile__label--over { position: absolute; left: 18px; top: 16px; z-index: 2; }
+  .tile__big { font-size: clamp(2.6rem, 1.6rem + 3vw, 4.6rem); font-weight: 600; letter-spacing: -.06em; line-height: .9; font-variant-numeric: tabular-nums; }
+  .tile__small { font-size: 13px; color: #aab2c0; line-height: 1.4; }
+  .tile__arrow { position: absolute; right: 16px; top: 14px; font-size: 18px; color: #8b93a3; transition: transform 300ms var(--ease-out), color 300ms; }
+  a.tile:hover .tile__arrow { color: #d9ff3f; transform: translate(3px, -3px); }
+  a.tile:hover .tile__arrow--down { transform: translateY(3px); }
+  .live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #6fd3a3; box-shadow: 0 0 0 3px #6fd3a333; }
+
+  .tile--photo { grid-column: span 2; padding: 0; min-height: 360px; margin: 0; }
+  .tile--photo picture, .tile--photo img { display: block; width: 100%; height: 100%; }
+  .tile--photo img { position: absolute; inset: 0; object-fit: cover; object-position: 50% 28%; transition: transform 800ms var(--ease-out); }
+  .tile--photo:hover img { transform: scale(1.05); }
+  .tile__sticker { position: absolute; left: 14px; bottom: 14px; padding: 7px 12px; border-radius: 999px; background: #d9ff3f; color: #08090d; font-size: 14px; font-weight: 600; transform: rotate(-4deg); }
+
+  .tile--intro { grid-column: span 2; gap: 14px; }
+  .tile--intro h1 { font-size: clamp(3rem, 1.6rem + 5vw, 6.6rem); letter-spacing: -.06em; line-height: .9; }
+  .tile--intro .voice { color: #b7bdff; font-weight: 400; }
+  .tile__cycle { display: flex; align-items: baseline; min-height: 1.3em; font-family: var(--font-mono); font-size: clamp(1rem, .85rem + .7vw, 1.4rem); white-space: pre; }
+  .tile__caret { display: inline-block; width: .55em; height: 1em; margin-left: .12em; transform: translateY(.12em); background: #8e98ff; }
+  .tile__sub { font-size: 14px; color: #aab2c0; max-width: 52ch; }
+  .tile__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .btn--bento { background: #d9ff3f; border-color: #d9ff3f; color: #08090d; border-radius: 999px; }
+  .btn--bento:hover { background: #eef0f4; border-color: #eef0f4; color: #08090d; }
+  .tile__link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: #eef0f4; text-decoration-color: #d9ff3f; }
+  [data-magnetic] { transition: transform 300ms var(--ease-out), background-color var(--d-2), color var(--d-2), border-color var(--d-2); }
+
+  .tile--clock .tile__big { font-size: clamp(2.4rem, 1.4rem + 2.6vw, 4rem); }
+  .ring { position: relative; width: 132px; height: 132px; margin: 4px auto; border: 1px dashed #8e98ff59; border-radius: 50%; }
+  .ring__stage { position: absolute; padding: 3px 8px; border-radius: 999px; border: 1px solid #ffffff2e; background: #10131b; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; color: #aab2c0; transform: translate(-50%, -50%); transition: background-color 300ms, color 300ms, border-color 300ms; }
+  .ring__stage--0 { left: 50%; top: 0; } .ring__stage--1 { left: 100%; top: 50%; } .ring__stage--2 { left: 50%; top: 100%; } .ring__stage--3 { left: 0; top: 50%; }
+  .ring__stage[data-active] { background: #8e98ff; border-color: #8e98ff; color: #08090d; }
+  .ring__k { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; font-weight: 600; color: #b7bdff; }
+
+  .tile__levels { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tile__levels span { padding: 6px 10px; border-radius: 999px; background: #ffffff12; border: 1px solid #ffffff21; font-size: 13px; font-weight: 600; }
+  .tile__levels span:last-child { background: #d9ff3f; color: #08090d; border-color: #d9ff3f; }
+
+  .tile--skills { grid-column: span 2; min-height: 240px; padding: 0; }
+  .tile--skills canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: pan-y; }
+  .bento__tip { position: absolute; z-index: 3; display: grid; gap: 2px; max-width: 220px; padding: 8px 11px; border: 1px solid #8e98ff66; border-radius: 8px; background: #0b0d11f0; font-size: 12.5px; pointer-events: none; transform: translate(-50%, calc(-100% - 14px)); }
+  .bento__tip[data-below] { transform: translate(-50%, 16px); }
+  .bento__tip strong { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #b7bdff; font-weight: 500; }
+
+  .tile--katana { padding: 0; min-height: 200px; }
+  .tile--katana :global(.plate) { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; }
+  .tile--katana :global(.plate__caption) { display: none; }
+  .tile__over { position: absolute; left: 14px; bottom: 12px; z-index: 3; display: grid; gap: 2px; }
+  .tile__over strong { font-size: 1.3rem; letter-spacing: -.03em; }
+  .tile__over span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #c9cfda; }
+
+  .tile--cv .tile__big { color: #d9ff3f; }
+  .bento__toggle { display: flex; margin: 12px auto 0; max-width: var(--max); }
+  .motion-toggle { align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid #ffffff4d; border-radius: 999px; background: transparent; color: #eef0f4; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .bento :focus-visible { outline-color: #d9ff3f; }
+
+  @media (min-width: 1000px) {
+    .bento { min-height: 100svh; display: grid; align-content: center; }
+    .bento__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: minmax(250px, 1.25fr) minmax(190px, 1fr) minmax(190px, 1fr); height: min(calc(100svh - var(--header) - 84px), 900px); }
+    .tile--intro h1 { font-size: clamp(3rem, 1rem + 3.6vw, 5.4rem); }
+    .tile--intro { gap: 10px; }
+    .tile--photo { grid-column: 1; grid-row: 1 / span 2; min-height: 0; }
+    .tile--intro { grid-column: 2 / span 2; grid-row: 1; }
+    .tile--clock { grid-column: 4; grid-row: 1; }
+    .tile--mapek { grid-column: 2; grid-row: 2; }
+    .tile--nook { grid-column: 3; grid-row: 2; }
+    .tile--lessons { grid-column: 4; grid-row: 2; }
+    .tile--skills { grid-column: 1 / span 2; grid-row: 3; min-height: 0; }
+    .tile--katana { grid-column: 3; grid-row: 3; min-height: 0; }
+    .tile--cv { grid-column: 4; grid-row: 3; }
+    .bento__toggle { margin-right: 0; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tile { animation: tile-in 800ms var(--ease-out) backwards; }
+    .tile:nth-child(2) { animation-delay: 60ms; } .tile:nth-child(3) { animation-delay: 120ms; } .tile:nth-child(4) { animation-delay: 180ms; }
+    .tile:nth-child(5) { animation-delay: 240ms; } .tile:nth-child(6) { animation-delay: 300ms; } .tile:nth-child(7) { animation-delay: 360ms; }
+    .tile:nth-child(8) { animation-delay: 420ms; } .tile:nth-child(9) { animation-delay: 480ms; }
+    .tile__caret { animation: caret 1s steps(1) infinite; }
+    .live-dot { animation: pulse 2.4s var(--ease-io) infinite; }
+    :global(html[data-motion='off']) .tile__caret, :global(html[data-motion='off']) .live-dot { animation-play-state: paused; }
+  }
+  @keyframes tile-in { from { opacity: 0; transform: translateY(26px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes caret { 50% { opacity: 0; } }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 7px #6fd3a30d; } }
+</style>
+
+<script>
+  /* Spotlight that follows the pointer on each tile, with a slight tilt. */
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll<HTMLElement>('[data-tile]').forEach(tile => {
+    if (!fine) return;
+    tile.addEventListener('pointermove', event => {
+      const box = tile.getBoundingClientRect();
+      const x = event.clientX - box.left, y = event.clientY - box.top;
+      tile.style.setProperty('--mx', `${x}px`);
+      tile.style.setProperty('--my', `${y}px`);
+      if (!calm && document.documentElement.dataset.motion !== 'off' && !tile.hasAttribute('data-graph-host')) {
+        tile.style.transform = `perspective(800px) rotateX(${((y / box.height - .5) * -4).toFixed(2)}deg) rotateY(${((x / box.width - .5) * 5).toFixed(2)}deg)`;
+      }
+    });
+    tile.addEventListener('pointerleave', () => { tile.style.transform = ''; tile.style.setProperty('--my', '-40%'); });
+  });
+</script>
+<script>import '../scripts/hero-graph';</script>
+<script>import '../scripts/hero-motion';</script>

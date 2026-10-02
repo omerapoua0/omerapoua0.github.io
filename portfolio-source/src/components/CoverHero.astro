@@ -1,0 +1,154 @@
+---
+/* Prototype A: editorial cover. The photo is Omar's real portrait; CSS only
+   grades it (black and white, contrast, grain). Nothing is generated. */
+import { intro } from '../data/site';
+const coverLines = [
+  { n: '01', title: 'Founder of NOOKBASE', meta: 'Agentic study platform · ~150 beta users, pre-launch' },
+  { n: '02', title: 'Reasoning loops for network autonomy', meta: 'AI Product Engineer · Digis Squared' },
+  { n: '03', title: 'Teaching GCSE maths & physics', meta: 'Southfields Academy · online lessons' },
+  { n: '04', title: 'Next: Santander research placement', meta: 'Optimisation & ML · summer 2027' },
+];
+const strip = ['AI product engineer', 'Founder', 'Mathematician in training', 'Teacher', 'London'];
+---
+<section class="cover" aria-labelledby="hero-title" data-hero data-cover>
+  <div class="cover__grain" aria-hidden="true"></div>
+  <p class="cover__issue"><span>No. 01</span><span>London</span><span>2026</span><span class="cover__issue-right">Portfolio of Omar Aboelella</span></p>
+
+  <figure class="cover__photo" data-cover-photo>
+    <picture>
+      <source media="(min-width: 900px)" srcset="/omar-aboelella.jpg" />
+      <source srcset="/portrait-hero.webp" type="image/webp" />
+      <img src="/portrait-hero.jpg" alt={intro.portraitAlt} width="720" height="900" fetchpriority="high" decoding="async" />
+    </picture>
+    <span class="cover__vertical" aria-hidden="true">AI Product Engineer — Digis Squared</span>
+    <span class="cover__sticker" aria-hidden="true">
+      <svg viewBox="0 0 120 120"><defs><path id="cover-circle" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0" /></defs><text><textPath href="#cover-circle">AI ENGINEER · MATHS · TEACHER · LONDON ·</textPath></text></svg>
+      <b>Hi!</b>
+    </span>
+  </figure>
+
+  <h1 id="hero-title" class="cover__name" data-cover-name>
+    <span class="cover__line">{'OMAR'.split('').map((char, i) => <span class="cover__char" style={`--i:${i}`}>{char}</span>)}</span>
+    <span class="cover__line cover__line--2">{'ABOELELLA'.split('').map((char, i) => <span class="cover__char" style={`--i:${i + 4}`}>{char}</span>)}</span>
+  </h1>
+
+  <div class="cover__left">
+    <div class="cover__lines">
+    <p class="cover__kicker">In this issue</p>
+    <ol>{coverLines.map(line => <li><span class="cover__n">{line.n}</span><span><strong>{line.title}</strong><small>{line.meta}</small></span></li>)}</ol>
+    </div>
+
+    <div class="cover__cta">
+    <a class="btn btn--cover" data-magnetic href="#work">See what I’ve built <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+    <a class="cover__hello" data-magnetic href="/contact.html?topic=Hello">Say hello ↗</a>
+    </div>
+  </div>
+
+  <div class="cover__strip" aria-hidden="true">
+    <div class="cover__track">{[0, 1].map(() => <span>{strip.map(word => <em class="voice">{word}<b>✳</b></em>)}</span>)}</div>
+  </div>
+  <button class="motion-toggle cover__toggle" type="button" data-motion-toggle>
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
+    <span data-motion-label>Pause motion</span>
+  </button>
+</section>
+
+<style>
+  .cover { position: relative; isolation: isolate; min-height: max(680px, 100svh); max-height: 1150px; overflow: hidden; background: #0a0a0b; color: #f2f2ee; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto 1fr auto auto; column-gap: var(--gutter); padding: calc(var(--header) + 18px) var(--margin) 0; }
+  .cover__grain { position: absolute; inset: -50%; z-index: 3; pointer-events: none; opacity: .09; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .cover__issue { grid-column: 1 / -1; display: flex; gap: 18px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #a9a9a2; border-top: 1px solid #ffffff2e; padding-top: 10px; z-index: 4; }
+  .cover__issue-right { margin-left: auto; }
+
+  .cover__photo { position: absolute; z-index: 1; right: var(--margin); top: calc(var(--header) + 44px); bottom: 74px; aspect-ratio: 4 / 5; margin: 0; overflow: visible; }
+  .cover__photo picture, .cover__photo img { display: block; width: 100%; height: 100%; }
+  .cover__photo img { object-fit: cover; object-position: 50% 30%; filter: grayscale(1) contrast(1.3) brightness(.95); }
+  .cover__vertical { position: absolute; left: -26px; top: 0; writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #a9a9a2; }
+  .cover__sticker { position: absolute; z-index: 4; right: -22px; top: 18%; width: 118px; height: 118px; display: grid; place-items: center; border-radius: 50%; background: #d9ff3f; color: #0a0a0b; }
+  .cover__sticker svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .cover__sticker text { font-family: var(--font-mono); font-size: 10.4px; font-weight: 600; letter-spacing: .08em; fill: #0a0a0b; }
+  .cover__sticker b { font-size: 22px; letter-spacing: -.03em; }
+
+  .cover__name { position: relative; z-index: 2; grid-column: 1 / -1; grid-row: 3; align-self: end; margin: 0 0 6px; mix-blend-mode: difference; color: #f2f2ee; font-weight: 700; letter-spacing: -.07em; line-height: .8; pointer-events: none; }
+  .cover__line { display: block; overflow: clip; padding-bottom: .04em; }
+  .cover__line:first-child { font-size: clamp(5rem, .5rem + 13.6vw, 15rem); }
+  .cover__line--2 { font-size: clamp(3.2rem, .3rem + 9.2vw, 10rem); }
+  .cover__char { display: inline-block; }
+
+  .cover__left { grid-column: 1 / span 5; grid-row: 2; align-self: center; z-index: 4; display: grid; gap: 22px; max-width: 440px; }
+  .cover__lines { display: grid; gap: 14px; }
+  .cover__kicker { font-family: var(--font-serif); font-style: italic; font-size: 1.35rem; color: #d9ff3f; }
+  .cover__lines ol { display: grid; gap: 10px; }
+  .cover__lines li { display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding-top: 10px; border-top: 1px solid #ffffff24; }
+  .cover__n { font-family: var(--font-mono); font-size: 12px; color: #a9a9a2; padding-top: 3px; }
+  .cover__lines strong { display: block; font-size: 1.12rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+  .cover__lines small { display: block; margin-top: 3px; font-size: 13px; color: #a9a9a2; }
+
+  .cover__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .btn--cover { background: #d9ff3f; border-color: #d9ff3f; color: #0a0a0b; }
+  .btn--cover:hover { background: #f2f2ee; border-color: #f2f2ee; color: #0a0a0b; }
+  .cover__hello { display: inline-flex; align-items: center; min-height: 48px; padding: 0 6px; font-weight: 600; color: #f2f2ee; text-decoration-color: #d9ff3f; }
+  [data-magnetic] { transition: transform 300ms var(--ease-out), background-color var(--d-2), color var(--d-2), border-color var(--d-2); }
+
+  .cover__strip { grid-column: 1 / -1; grid-row: 4; margin: 0 calc(-1 * var(--margin)); overflow: hidden; border-top: 1px solid #ffffff24; padding: 12px 0 calc(14px + env(safe-area-inset-bottom)); z-index: 4; background: #0a0a0b; }
+  .cover__track { display: flex; width: max-content; }
+  .cover__track > span { display: flex; flex: none; }
+  .cover__track em { display: inline-flex; align-items: center; gap: 22px; padding-right: 22px; font-size: 1.6rem; color: #f2f2ee; white-space: nowrap; }
+  .cover__track b { font-style: normal; font-size: .8rem; color: #d9ff3f; }
+  .cover__toggle { position: absolute; z-index: 5; right: var(--margin); bottom: 70px; }
+  .motion-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid #ffffff59; border-radius: 999px; background: #0a0a0bb3; color: #f2f2ee; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+  .cover :focus-visible { outline-color: #d9ff3f; }
+
+  @media (max-width: 899px) {
+    .cover { grid-template-rows: auto auto auto auto auto; padding-top: calc(var(--header) + 10px); }
+    .cover__issue-right { display: none; }
+    .cover__photo { position: relative; right: auto; top: auto; bottom: auto; grid-column: 1 / -1; grid-row: 2; width: 100%; margin-top: 14px; aspect-ratio: 4 / 5; }
+    .cover__vertical { display: none; }
+    .cover__sticker { right: 10px; top: 12px; width: 92px; height: 92px; }
+    .cover__sticker text { font-size: 10.4px; }
+    .cover__name { grid-row: 2; align-self: end; margin-bottom: 8px; }
+    .cover__line:first-child { font-size: 27vw; }
+    .cover__line--2 { font-size: 15.6vw; white-space: nowrap; }
+    .cover__left { grid-row: 3; grid-column: 1 / -1; margin: 22px 0 18px; max-width: none; }
+    .cover__strip { grid-row: 5; }
+    .cover__toggle { position: static; grid-row: 4; grid-column: 1 / -1; justify-self: start; margin-bottom: 16px; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cover__char { animation: cover-rise 1s var(--ease-out) both; animation-delay: calc(var(--i) * 45ms + 150ms); }
+    .cover__photo picture { animation: cover-wipe 1.3s var(--ease-io) both; }
+    .cover__left > * { animation: cover-fade 900ms var(--ease-out) both; animation-delay: 600ms; }
+    .cover__sticker svg { animation: spin 14s linear infinite; }
+    .cover__track { animation: strip 26s linear infinite; }
+    .cover__grain { animation: grain 1s steps(4) infinite; }
+    :global(html[data-motion='off']) .cover__sticker svg, :global(html[data-motion='off']) .cover__track, :global(html[data-motion='off']) .cover__grain { animation-play-state: paused; }
+  }
+  @keyframes cover-rise { from { transform: translateY(105%); } to { transform: none; } }
+  @keyframes cover-wipe { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes cover-fade { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes strip { to { transform: translateX(-50%); } }
+  @keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -2%); } 100% { transform: translate(0, 0); } }
+</style>
+
+<script>
+  /* Pointer and scroll parallax for the cover photo and name. */
+  const root = document.documentElement;
+  const cover = document.querySelector<HTMLElement>('[data-cover]');
+  const photo = cover?.querySelector<HTMLElement>('[data-cover-photo]');
+  const name = cover?.querySelector<HTMLElement>('[data-cover-name]');
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (cover && photo && name && !calm.matches) {
+    let px = 0, py = 0, frame = 0;
+    const paint = () => {
+      frame = 0;
+      if (root.dataset.motion === 'off') return;
+      const scroll = Math.min(window.scrollY, 900);
+      photo.style.transform = `translate3d(${(px * -14).toFixed(1)}px, ${(py * -10 + scroll * .12).toFixed(1)}px, 0)`;
+      name.style.transform = `translate3d(${(px * 18 - scroll * .08).toFixed(1)}px, ${(py * 8).toFixed(1)}px, 0)`;
+    };
+    const queue = () => { if (!frame) frame = requestAnimationFrame(paint); };
+    cover.addEventListener('pointermove', event => { if (event.pointerType !== 'mouse') return; px = event.clientX / innerWidth - .5; py = event.clientY / innerHeight - .5; queue(); });
+    addEventListener('scroll', queue, { passive: true });
+  }
+</script>
+<script>import '../scripts/hero-motion';</script>
