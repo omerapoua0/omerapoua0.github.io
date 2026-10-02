@@ -1,0 +1,83 @@
+---
+/* Site-wide command menu (⌘K / Ctrl+K, or the header button): pages, case
+   studies, questions for the homepage chat and a few actions. A native
+   <dialog> with a combobox + listbox; links still work without it. */
+import { navigation, site } from '../data/site';
+import { intents } from '../data/agent';
+import { projects } from '../data/projects';
+
+type Item = { group: string; label: string; hint: string; href?: string; ask?: string; action?: string; keywords?: string; external?: boolean };
+const items: Item[] = [
+  { group: 'Pages', label: 'Home', hint: 'Ask me anything', href: '/index.html', keywords: 'start chat agent' },
+  ...navigation.map(item => ({ group: 'Pages', label: item.label, hint: item.href.replace('/', ''), href: item.href })),
+  { group: 'Pages', label: 'Contact', hint: 'contact.html', href: '/contact.html', keywords: 'email message' },
+  ...projects.map(project => ({ group: 'Work', label: project.name, hint: project.org, href: project.href, keywords: `${project.stack.join(' ')} ${project.role}` })),
+  { group: 'Work', label: 'Lesson enquiry', hint: 'Tutoring', href: '/tutoring.html#lesson-enquiry', keywords: 'gcse a-level maths physics tutor book' },
+  { group: 'Work', label: 'Skills & evidence', hint: 'Capability matrix', href: '/index.html#skills-title', keywords: 'python stack matrix' },
+  ...intents.filter(intent => !['hello'].includes(intent.id)).map(intent => ({ group: 'Ask Omar', label: intent.ask, hint: 'Answer in the chat', ask: intent.id, keywords: (intent.strong ?? []).slice(0, 6).join(' ') })),
+  { group: 'Actions', label: 'Copy email address', hint: site.email, action: 'copy-email', keywords: 'mail contact' },
+  { group: 'Actions', label: 'Download CV (PDF)', hint: 'Opens in a new tab', href: '/Omar-Aboelella-CV.pdf', external: true, keywords: 'resume' },
+  { group: 'Actions', label: 'Switch colour theme', hint: 'Light / dark', action: 'theme', keywords: 'dark light mode' },
+  { group: 'Actions', label: 'Toggle chat sounds', hint: 'Off by default', action: 'sound', keywords: 'audio mute' },
+  { group: 'Actions', label: 'GitHub', hint: 'github.com/omerapoua0', href: site.github, external: true, keywords: 'code source' },
+];
+---
+<dialog class="palette" data-palette aria-label="Command menu">
+  <div class="palette__search">
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.75" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+    <input type="text" data-palette-input role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Search pages, questions and actions" placeholder="Search, or ask a question…" autocomplete="off" spellcheck="false" />
+    <button type="button" class="palette__esc" data-palette-close aria-label="Close command menu">Esc</button>
+  </div>
+  <ul class="palette__list" id="palette-list" role="listbox" aria-label="Results" data-palette-list>
+    {items.map((item, index) => (
+      <li id={`palette-${index}`} role="option" aria-selected="false" class="palette__item" data-group={item.group} data-href={item.href} data-ask={item.ask} data-action={item.action} data-external={item.external ? '' : undefined} data-keywords={item.keywords ?? ''}>
+        <span class="palette__group" aria-hidden="true">{item.group}</span>
+        <span class="palette__label">{item.label}</span>
+        <span class="palette__hint">{item.hint}</span>
+      </li>
+    ))}
+    <li id="palette-free" role="option" aria-selected="false" class="palette__item" data-free hidden>
+      <span class="palette__group" aria-hidden="true">Ask Omar</span>
+      <span class="palette__label" data-free-label></span>
+      <span class="palette__hint">Ask in the chat</span>
+    </li>
+  </ul>
+  <p class="palette__foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></p>
+  <p class="sr-only" role="status" data-palette-status></p>
+</dialog>
+
+<style>
+  .palette { width: min(640px, calc(100vw - 24px)); max-height: min(560px, calc(100dvh - 120px)); margin: 12vh auto auto; padding: 0; border: 1px solid #ffffff24; border-radius: 18px; background: #0e0f0d; color: #f2f3ee; box-shadow: 0 40px 120px -20px #000c; overflow: hidden; }
+  .palette[open] { display: flex; flex-direction: column; }
+  .palette::backdrop { background: #05060599; backdrop-filter: blur(6px); }
+  .palette__search { display: flex; align-items: center; gap: 12px; padding: 0 12px 0 18px; border-bottom: 1px solid #ffffff1a; color: #a7aca0; }
+  .palette__search input { flex: 1; min-width: 0; min-height: 58px; border: 0; background: transparent; color: #f2f3ee; font: inherit; font-size: 17px; outline: none; }
+  .palette__search input::placeholder { color: #7d8277; }
+  .palette__esc { min-height: 30px; padding: 0 8px; border: 1px solid #ffffff2e; border-radius: 6px; background: transparent; color: #a7aca0; font-family: var(--font-mono); font-size: 11px; }
+  .palette__list { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 8px; scrollbar-width: thin; }
+  .palette__item { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 46px; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
+  .palette__item[aria-selected='true'] { background: #d9ff3f; color: #0b0d0a; }
+  .palette__group { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #7d8277; }
+  .palette__item[aria-selected='true'] .palette__group, .palette__item[aria-selected='true'] .palette__hint { color: #2d3311; }
+  .palette__label { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .palette__hint { font-size: 12.5px; color: #8b9085; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 22ch; }
+  .palette__foot { display: flex; gap: 18px; padding: 10px 18px; border-top: 1px solid #ffffff1a; font-size: 12px; color: #7d8277; }
+  .palette__foot kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; margin-right: 4px; border: 1px solid #ffffff2e; border-radius: 5px; }
+  .palette :focus-visible { outline: 2px solid #d9ff3f; outline-offset: 2px; }
+  .palette__search input:focus-visible { outline: none; }
+  @media (max-width: 560px) {
+    .palette { margin-top: 10px; max-height: calc(100dvh - 20px); }
+    .palette__item { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 8px 12px; }
+    .palette__group { display: none; }
+    .palette__hint { max-width: none; }
+    .palette__foot { display: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .palette[open] { animation: palette-in 220ms cubic-bezier(.23, 1, .32, 1); }
+    .palette[open]::backdrop { animation: fade 220ms ease-out; }
+  }
+  @keyframes palette-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
+  @keyframes fade { from { opacity: 0; } }
+</style>
+
+<script>import '../scripts/palette';</script>

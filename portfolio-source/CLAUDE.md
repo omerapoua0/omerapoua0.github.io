@@ -22,14 +22,19 @@ required. This is a static portfolio, not a hosted backend.
   capabilities, site/status vocabulary). Change facts here, not in markup.
 - `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer.
 - `src/styles/tokens.css`, `base.css`, `layout.css`, `forms.css`; component
-  styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt.
-- `src/components/SystemHero.astro` + `src/scripts/hero-graph.ts` (canvas skill
-  network: nodes, signals, evidence tooltips from `graphSkills` in data/site.ts)
-  + `hero-motion.ts` ("Pause motion" switch via `html[data-motion]`/`omar:motion`,
-  decoding role line, live MAPE-K loop, magnetic buttons). `Ticker.astro`,
-  `Stats.astro` (count-up CV numbers), `cursor.ts` (trailing ring),
-  `[data-reveal]`/`[data-reveal-stagger]` scroll reveals. `ProjectIndex`,
-  `CaseStudy`, `ProjectMedia` (duotone plates), `CapabilityMatrix`, `Timeline`, `Figure` (explanatory schematics).
+  styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt;
+  the dark homepage hero uses a single signal lime (#d9ff3f).
+- `src/components/AgentHero.astro` ("Ask Omar" chat hero) + `src/data/agent.ts`
+  (intents: answers, weighted keywords, cards, sources, follow-ups, slash
+  commands, disclosure) + `src/scripts/agent-match.ts` (local matcher) +
+  `src/scripts/agent-chat.ts` (trace, streaming, persistence, `?ask=`, sound).
+  `hero-graph.ts` draws the signal network behind it; `hero-motion.ts` is the
+  "Pause motion" switch (`html[data-motion]`/`omar:motion`). `CommandPalette.astro`
+  + `palette.ts`: site-wide ⌘K/Ctrl+K menu. `Ticker.astro`, `Stats.astro`
+  (count-up CV numbers), `cursor.ts` (trailing ring), `[data-reveal]`/
+  `[data-reveal-stagger]` scroll reveals. `ProjectIndex` (filters, list/grid
+  switch), `CaseStudy`, `ProjectMedia` (duotone plates), `CapabilityMatrix`,
+  `Timeline`, `Figure` (explanatory schematics).
 - `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
   (enquiry engine), `project-index.ts`, `previews.ts`.
 
@@ -38,10 +43,14 @@ keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
 ## Important behaviour
 
-The hero has no stock video (the user rejected it as generic). Keep the network
-decorative-but-truthful (every labelled skill maps to CV evidence), the visible
-"Pause motion" switch (WCAG 2.2.2), offscreen/hidden-tab pausing, reduced-motion
-start-paused behaviour, and readable content without JavaScript.
+The hero has no stock video (the user rejected it as generic). The chat is
+scripted and must say so: keep the disclosure under the composer, never call a
+model or send what visitors type anywhere, keep every answer within the CV and
+`src/data/*.ts` facts with a source link, and keep the honest fallback for
+anything not written. After changing intents, rerun a 50+ question routing
+check. Keep the visible "Pause motion" switch (WCAG 2.2.2), reduced-motion
+instant answers, offscreen/hidden-tab pausing, and readable content without
+JavaScript (intro answer and links).
 
 The project index must keep server-rendered links that work without JS,
 keyboard focus parity with hover, and no scroll hijacking. Concept visuals stay

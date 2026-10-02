@@ -7,6 +7,7 @@ import '../styles/base.css';
 import '../styles/layout.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import CommandPalette from '../components/CommandPalette.astro';
 import { site } from '../data/site';
 import onestLatin from '@fontsource-variable/onest/files/onest-latin-wght-normal.woff2?url';
 import serifItalic from '@fontsource/old-standard-tt/files/old-standard-tt-latin-400-italic.woff2?url';
@@ -61,6 +62,7 @@ const person = {
     <SiteHeader overHero={home} />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter />
+    <CommandPalette />
     <script>import '../scripts/site';</script>
     <script>import '../scripts/previews';</script>
     <script>import '../scripts/cursor';</script>

@@ -150,84 +150,183 @@ function watch(page) {
     assert.ok(await page.locator('noscript').count() > 0);
     assert.ok(!(await page.locator('form[data-enquiry]').isVisible()), 'guided form hidden without JS');
     await page.goto(`${base}/index.html`);
-    assert.ok(await page.locator('.shero__avatar img').isVisible(), 'hero photo visible without JS');
+    assert.ok(await page.locator('.agent__who img').isVisible(), 'hero photo visible without JS');
+    assert.match(await page.locator('[data-chat-log]').textContent(), /Hi, I’m Omar/, 'intro answer readable without JS');
+    assert.ok(!(await page.locator('[data-chat-form]').isVisible()), 'composer hidden without JS');
+    assert.ok(await page.locator('.chat__nojs a[href="/work.html"]').count() === 1, 'no-JS links into the site');
     assert.ok(await page.locator('.ticker').isVisible(), 'ticker visible without JS');
     await context.close();
   });
 
-  /* 5. Hero: live skill network, decoding line, MAPE-K loop, motion switch. */
+  /* 5. Hero: "Ask Omar" chat, network background, motion switch, command menu. */
   const canvasHash = page => page.evaluate(() => { const c = document.querySelector('[data-graph]'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0, lit = 0; for (let i = 0; i < d.length; i += 97) { h = (h * 31 + d[i]) >>> 0; if (d[i + 3] > 0) lit++; } return { h, lit }; });
+  const settled = page => page.waitForFunction(() => !document.querySelector('[data-chat]').hasAttribute('data-busy'), null, { timeout: 15000 });
+  const ask = async (page, text) => { await page.fill('[data-chat-input]', text); await page.press('[data-chat-input]', 'Enter'); await page.waitForTimeout(50); await settled(page); };
+  const lastAnswer = page => page.locator('.turn--agent').last();
   for (const [label, options] of [['desktop', { viewport: { width: 1440, height: 900 } }], ['phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) {
-    await check(`hero ${label}: network animates, skills show evidence, signals fire`, async () => {
+    await check(`agent ${label}: intro, chip answer with trace, card, sources and follow-ups`, async () => {
       const context = await isolated(browser, { reducedMotion: 'no-preference', ...options });
       const page = await context.newPage();
+      const errors = watch(page);
       await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-      const a = await canvasHash(page);
-      await page.waitForTimeout(700);
-      const b = await canvasHash(page);
-      assert.ok(a.lit > 50, 'network drawn');
-      assert.notEqual(a.h, b.h, 'network moving');
-      const labels = await page.evaluate(() => document.querySelector('[data-graph]').graphLabels());
-      assert.ok(labels.length >= 6, 'skill nodes present');
-      for (const node of labels) assert.ok(node.x > 0 && node.x < (label === 'desktop' ? 1440 : 390) && node.y > 60, `${node.label} on screen`);
-      if (label === 'desktop') await page.mouse.move(labels[0].x, labels[0].y); else await page.touchscreen.tap(labels[0].x, labels[0].y);
+      assert.match(await page.locator('h1').textContent(), /Ask me anything\.\s*Well, almost\./);
+      assert.ok(await page.locator('.agent__who img').evaluate(img => img.complete && img.naturalWidth > 0), 'photo shown');
+      assert.match(await page.locator('[data-london-time]').textContent(), /^\d{2}:\d{2}$/);
+      assert.match(await page.locator('[data-disclosure]').textContent(), /No AI model; nothing you type leaves this page/);
+      const a = await canvasHash(page); await page.waitForTimeout(600); const b = await canvasHash(page);
+      assert.ok(a.lit > 50 && a.h !== b.h, 'background network animates');
+      await page.locator('[data-chat-chips] [data-ask="katana"]').click();
       await page.waitForTimeout(250);
-      assert.ok(await page.locator('[data-graph-tip]').isVisible(), 'evidence tooltip shown');
-      assert.equal(await page.locator('[data-tip-label]').textContent(), labels[0].label);
-      assert.ok((await page.locator('[data-tip-note]').textContent()).length > 5);
-      const first = await page.locator('[data-decode-cycle]').textContent();
-      await page.waitForFunction(text => document.querySelector('[data-decode-cycle]').textContent !== text, first, { timeout: 5000 });
+      assert.ok(await page.locator('[data-chat]').evaluate(el => el.hasAttribute('data-busy')), 'streams (busy while answering)');
+      await settled(page);
+      const turn = lastAnswer(page);
+      assert.match(await turn.locator('.bubble').textContent(), /MAPE-K/);
+      assert.equal(await turn.locator('.tool[data-state="done"]').count(), 2, 'trace rows complete');
+      assert.equal(await turn.locator('a.card[href="/work.html#katana"]').count(), 1, 'case-study card');
+      assert.ok(await turn.locator('.turn__foot a[href="/work.html#katana"]').count() === 1, 'sources footer');
+      assert.equal(await page.locator('[data-chat-chips] [data-ask]').count(), 3, 'follow-up chips');
+      assert.match(await page.locator('[data-chat-status]').textContent(), /^Answer: KATANA/);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1 || [...document.querySelectorAll('.chat *')].some(el => el.getBoundingClientRect().right > document.querySelector('.chat').getBoundingClientRect().right + 1 && getComputedStyle(el).position !== 'absolute' && !el.closest('.chat__chips')));
+      assert.ok(!overflow, 'chat content stays inside the card');
+      assert.deepEqual(errors, []);
       await context.close();
     });
   }
-  await check('hero: Pause motion freezes network, line, loop and ticker; Play resumes', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+  await check('agent: free text routes, honest fallback, slash commands, Tab, history', async () => {
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    const toggle = page.locator('[data-motion-toggle]');
-    assert.match(await toggle.textContent(), /Pause motion/);
-    await toggle.click();
-    assert.equal(await page.evaluate(() => document.documentElement.dataset.motion), 'off');
-    assert.match(await toggle.textContent(), /Play motion/);
-    await page.waitForTimeout(700);
-    const a = await canvasHash(page); const line = await page.locator('[data-decode-cycle]').textContent(); const stage = await page.locator('[data-stage][data-active]').getAttribute('data-stage');
-    await page.waitForTimeout(3200);
-    assert.equal((await canvasHash(page)).h, a.h, 'network frozen');
-    assert.equal(await page.locator('[data-decode-cycle]').textContent(), line, 'line frozen');
-    assert.equal(await page.locator('[data-stage][data-active]').getAttribute('data-stage'), stage, 'MAPE-K frozen');
-    assert.equal(await page.locator('.ticker__track').first().evaluate(el => getComputedStyle(el).animationPlayState), 'paused');
-    await toggle.click();
-    await page.waitForTimeout(500);
-    assert.notEqual((await canvasHash(page)).h, a.h, 'network resumed');
+    await ask(page, 'can you teach my daughter A-level physics');
+    assert.match(await lastAnswer(page).locator('.bubble').textContent(), /enhanced DBS checked/);
+    assert.equal(await lastAnswer(page).locator('a.card[href="/tutoring.html#lesson-enquiry"]').count(), 1);
+    await ask(page, 'what is your favourite pizza?');
+    assert.match(await lastAnswer(page).locator('.bubble').textContent(), /haven’t written about that yet/);
+    assert.equal(await lastAnswer(page).locator('.tool[data-state="miss"]').count(), 1);
+    assert.equal(await page.locator('[data-chat-chips] [data-ask]').count(), 3, 'closest suggestions offered');
+    const routing = await page.evaluate(() => { const chat = document.querySelector('[data-chat]'); return ['how much do you charge', 'are you open to internships', 'is this a real AI', 'download your cv', 'whats nookbase'].map(q => chat.agentMatch(q)); });
+    assert.deepEqual(routing, ['price', 'hire', 'meta', 'cv', 'nookbase']);
+    await page.fill('[data-chat-input]', '/c');
+    assert.ok(await page.locator('[data-chat-hint] button[data-command="/cv"]').isVisible(), 'command hint');
+    await page.fill('[data-chat-input]', '/cv');
+    await page.press('[data-chat-input]', 'Enter');
+    await settled(page);
+    assert.equal(await lastAnswer(page).locator('a.card[href="/Omar-Aboelella-CV.pdf"]').count(), 1);
+    await page.fill('[data-chat-input]', '/he');
+    await page.press('[data-chat-input]', 'Tab');
+    assert.equal(await page.inputValue('[data-chat-input]'), '/help', 'Tab completes');
+    assert.ok(await page.evaluate(() => document.activeElement?.id === 'chat-input'), 'focus stays in the composer');
+    await page.press('[data-chat-input]', 'Enter');
+    await settled(page);
+    assert.ok(await lastAnswer(page).locator('[data-command="/clear"]').count() === 1, '/help lists commands');
+    await page.press('[data-chat-input]', 'ArrowUp');
+    assert.equal(await page.inputValue('[data-chat-input]'), '/help', 'history recalls last question');
     await context.close();
   });
-  await check('hero: reduced motion draws a still network and offers Play motion', async () => {
+  await check('agent: routing check over scripts/agent-questions.json (null = honest fallback)', async () => {
+    const questions = JSON.parse(await fs.readFile(path.join(__dirname, 'agent-questions.json'), 'utf8'));
+    assert.ok(questions.length >= 50, 'at least 50 questions');
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    const misses = await page.evaluate(list => { const chat = document.querySelector('[data-chat]'); return list.filter(item => chat.agentMatch(item.q) !== item.id).map(item => `${item.q} → ${chat.agentMatch(item.q)} (want ${item.id})`); }, questions);
+    results.push({ name: 'agent routing', status: 'info', message: `${questions.length - misses.length}/${questions.length} routed as expected` });
+    assert.deepEqual(misses, []);
+    await context.close();
+  });
+  await check('agent: transcript survives reload; Clear resets; ?ask= permalink answers', async () => {
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await ask(page, 'what do you study');
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.locator('.turn--you').count(), 1, 'question restored');
+    assert.match(await lastAnswer(page).textContent(), /Birkbeck/);
+    await page.click('[data-chat-clear]');
+    assert.equal(await page.locator('.turn--you').count(), 0, 'cleared');
+    assert.equal(await page.locator('[data-chat-clear]').isVisible(), false);
+    await page.goto(`${base}/index.html?ask=nookbase`, { waitUntil: 'networkidle' });
+    await settled(page);
+    assert.match(await lastAnswer(page).textContent(), /150 beta users/);
+    await page.goto(`${base}/index.html?ask=${encodeURIComponent('are you DBS checked')}`, { waitUntil: 'networkidle' });
+    await settled(page);
+    assert.match(await lastAnswer(page).textContent(), /enhanced DBS check/);
+    await context.close();
+  });
+  await check('agent: reduced motion answers instantly; Pause motion freezes network and glow', async () => {
     const context = await isolated(browser, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    const a = await canvasHash(page);
-    await page.waitForTimeout(3200);
-    const b = await canvasHash(page);
-    assert.ok(a.lit > 50, 'still network drawn');
-    assert.equal(a.h, b.h, 'no animation');
+    const a = await canvasHash(page); await page.waitForTimeout(1500); const b = await canvasHash(page);
+    assert.ok(a.lit > 50 && a.h === b.h, 'still network');
     assert.match(await page.locator('[data-motion-toggle]').textContent(), /Play motion/);
-    assert.equal(await page.locator('[data-decode-cycle]').textContent(), 'I build AI that reasons.');
-    assert.equal(await page.locator('.ticker__track').first().evaluate(el => getComputedStyle(el).animationName), 'none');
+    const started = Date.now();
+    await ask(page, 'where are you based');
+    assert.ok(Date.now() - started < 1500, 'instant answer');
+    assert.match(await lastAnswer(page).textContent(), /London, UK\. It’s \d{2}:\d{2} here/);
+    await context.close();
+    const live = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page2 = await live.newPage();
+    await page2.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page2.click('[data-motion-toggle]');
+    assert.equal(await page2.evaluate(() => document.documentElement.dataset.motion), 'off');
+    await page2.waitForTimeout(500);
+    const c = await canvasHash(page2); await page2.waitForTimeout(1500);
+    assert.equal((await canvasHash(page2)).h, c.h, 'network frozen');
+    assert.equal(await page2.locator('.chat__glow').evaluate(el => getComputedStyle(el).animationPlayState), 'paused');
+    assert.equal(await page2.locator('.ticker__track').first().evaluate(el => getComputedStyle(el).animationPlayState), 'paused');
+    await page2.click('[data-motion-toggle]');
+    await page2.waitForTimeout(500);
+    assert.notEqual((await canvasHash(page2)).h, c.h, 'network resumed');
+    await live.close();
+  });
+  await check('command menu: Ctrl+K and ⌘K open; arrows + Enter navigate; asks reach the chat', async () => {
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/work.html`, { waitUntil: 'networkidle' });
+    await page.keyboard.press('Control+k');
+    assert.ok(await page.locator('[data-palette]').evaluate(el => el.open), 'Ctrl+K opens');
+    assert.ok(await page.evaluate(() => document.activeElement?.hasAttribute('data-palette-input')));
+    await page.keyboard.press('Escape');
+    assert.ok(!(await page.locator('[data-palette]').evaluate(el => el.open)), 'Escape closes');
+    await page.keyboard.press('Meta+k');
+    assert.ok(await page.locator('[data-palette]').evaluate(el => el.open), '⌘K opens');
+    await page.keyboard.type('research');
+    const first = await page.locator('[data-palette-list] [aria-selected="true"] .palette__label').textContent();
+    assert.equal(first, 'Research');
+    await page.keyboard.press('ArrowDown');
+    assert.notEqual(await page.locator('[data-palette-list] [aria-selected="true"] .palette__label').textContent(), first, 'ArrowDown moves');
+    await page.keyboard.press('ArrowUp');
+    await Promise.all([page.waitForURL(/research\.html$/), page.keyboard.press('Enter')]);
+    await page.click('[data-palette-open]');
+    await page.keyboard.type('internships');
+    await Promise.all([page.waitForURL(/index\.html\?ask=hire$/), page.keyboard.press('Enter')]);
+    await settled(page);
+    assert.match(await lastAnswer(page).textContent(), /Sales & Trading/);
+    await page.keyboard.press('Control+k');
+    await page.keyboard.type('pizza recipes');
+    assert.ok(await page.locator('[data-free]').isVisible(), 'free-text ask offered');
+    await page.keyboard.press('End');
+    await page.locator('[data-free]').click();
+    await settled(page);
+    assert.match(await lastAnswer(page).textContent(), /haven’t written about that yet/);
+    await context.close();
+  });
+  await check('projects: list/grid switch is remembered', async () => {
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/work.html`, { waitUntil: 'networkidle' });
+    await page.click('[data-view-set="grid"]');
+    await page.waitForTimeout(400);
+    assert.equal(await page.locator('[data-project-index]').getAttribute('data-view'), 'grid');
+    assert.ok(await page.locator('[data-row="katana"] .prow__thumb').isVisible(), 'plates shown in grid');
+    assert.ok(!(await page.locator('.pindex__pane').isVisible()), 'no preview pane in grid');
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.locator('[data-view-set="grid"]').getAttribute('aria-pressed'), 'true', 'remembered');
+    await page.click('[data-view-set="list"]');
     await context.close();
   });
 
-  /* 5b. Personal hero, numbers and scroll motion. */
-  for (const [label, viewport] of [['desktop', { width: 1440, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
-    await check(`personal hero ${label}: name, photo and London time`, async () => {
-      const context = await isolated(browser, { viewport });
-      const page = await context.newPage();
-      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-      assert.match(await page.locator('h1').textContent(), /Hi, I’m Omar/);
-      assert.ok(await page.locator('.shero__avatar img').evaluate(img => img.complete && img.naturalWidth > 0 && img.getBoundingClientRect().width > 50), 'photo shown');
-      assert.match(await page.locator('[data-london-time]').textContent(), /^\d{2}:\d{2}$/);
-      await context.close();
-    });
-  }
+  /* 5b. Numbers and scroll motion. */
   await check('numbers count up to their CV values', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();

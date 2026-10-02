@@ -25,6 +25,7 @@ expect(/Nothing has been sent/.test(text.tutoring) && /Nothing has been sent/.te
 // Attribution and status wording that must stay visible.
 const required = [
   ['index', /Hi, I’m/, 'First-person greeting'],
+  ['index', /No AI model; nothing you type leaves this page/, 'Chat disclosure under the composer'],
   ['work', /programme direction/i, 'KATANA Level 4 described as programme direction'],
   ['work', /wider R&D/i, 'INOS described as part of wider R&D'],
   ['work', /no claim of trading performance|not investment advice|nothing here is investment advice/i, 'Bitget: no performance claims'],
@@ -71,6 +72,17 @@ for (const page of pages) {
   expect(js <= 20 * 1024, `${page}: JS ${js}B gz exceeds 20KB`);
   expect(css <= 30 * 1024, `${page}: CSS ${css}B gz exceeds 30KB`);
 }
+// Every link the chat can show (cards and sources) must resolve to a built page and anchor.
+const agentSource = await readFile(path.resolve('src/data/agent.ts'), 'utf8');
+for (const [, href] of agentSource.matchAll(/href: '([^']+)'/g)) {
+  if (/^https?:/.test(href)) continue;
+  const [file, anchor] = href.split('#');
+  const page = file.replace(/^\//, '').replace(/\.html(\?.*)?$/, '');
+  if (file.endsWith('.pdf')) { expect((await readdir(dist)).includes(file.slice(1)), `agent link ${href}: missing file`); continue; }
+  expect(pages.includes(page), `agent link ${href}: unknown page`);
+  if (anchor && html[page]) expect(html[page].includes(`id="${anchor}"`), `agent link ${href}: missing anchor`);
+}
+
 const media = await readdir(dist);
 for (const [file, limit] of [['portrait-hero.webp', 60e3], ['portrait-avatar.webp', 12e3]]) {
   expect(media.includes(file), `${file} missing from dist`);
@@ -80,4 +92,4 @@ expect(!media.some(file => /^hero-(editorial|still)/.test(file)), 'Stock hero fi
 
 info.forEach(line => console.log(line));
 if (failures.length) { failures.forEach(line => console.error('FAIL', line)); process.exitCode = 1; }
-else console.log(`Content checks passed (${required.length + 6} rules).`);
+else console.log(`Content checks passed (${required.length + 7} rules).`);

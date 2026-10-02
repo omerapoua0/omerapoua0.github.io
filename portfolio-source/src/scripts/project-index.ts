@@ -19,6 +19,28 @@ document.querySelectorAll<HTMLElement>('[data-project-index]').forEach(index => 
     link.addEventListener('focus', () => activate(id));
   });
 
+  /* List / grid layout switch, remembered per browser. */
+  const views = index.querySelector<HTMLElement>('[data-views]');
+  if (views) {
+    const buttons = [...views.querySelectorAll<HTMLButtonElement>('[data-view-set]')];
+    const setView = (view: string) => {
+      index.dataset.view = view;
+      buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.viewSet === view)));
+      document.dispatchEvent(new CustomEvent('previews:update'));
+    };
+    let saved = 'list';
+    try { saved = localStorage.getItem('omar-work-view') === 'grid' ? 'grid' : 'list'; } catch { /* storage unavailable */ }
+    setView(saved);
+    views.hidden = false;
+    buttons.forEach(button => button.addEventListener('click', () => {
+      const view = button.dataset.viewSet || 'list';
+      const swap = () => setView(view);
+      const doc = document as Document & { startViewTransition?: (callback: () => void) => unknown };
+      if (doc.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) doc.startViewTransition(swap); else swap();
+      try { localStorage.setItem('omar-work-view', view); } catch { /* storage unavailable */ }
+    }));
+  }
+
   if (filters) {
     filters.hidden = false;
     filters.addEventListener('change', event => {

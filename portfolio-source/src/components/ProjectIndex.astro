@@ -7,7 +7,13 @@ const { items, filters = false, morph = false, label = 'Project index' } = Astro
 const areas = Object.keys(areaLabel) as Area[];
 const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
 ---
-<div class="pindex" data-project-index>
+<div class="pindex" data-project-index data-view="list">
+  {filters && (
+    <div class="pindex__views" role="group" aria-label="Layout" data-views hidden>
+      <button type="button" data-view-set="list" aria-pressed="true"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5"/></svg>List</button>
+      <button type="button" data-view-set="grid" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Grid</button>
+    </div>
+  )}
   {filters && (
     <fieldset class="pindex__filters" data-filters hidden>
       <legend class="label">Filter by area</legend>
@@ -69,6 +75,16 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
   .fchip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
   .fchip:hover > span { border-color: var(--ink); }
 
+  .pindex { position: relative; }
+  .pindex__views { display: none; }
+  .pindex__views button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); background: transparent; font-size: 14px; font-weight: 500; }
+  .pindex__views button + button { margin-left: -1px; }
+  .pindex__views button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .pindex__views button:hover { border-color: var(--ink); }
+  @media (min-width: 640px) {
+    .pindex__views:not([hidden]) { display: flex; position: absolute; right: 0; top: 0; z-index: 1; }
+    .pindex:has(.pindex__views:not([hidden])) .pindex__filters { padding-right: 200px; }
+  }
   .pindex__layout { display: grid; gap: var(--s-7); }
   .pindex__list { border-top: 1px solid var(--line); }
   .pindex__list li { border-bottom: 1px solid var(--line); }
@@ -87,6 +103,21 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
   .pindex__pane { display: none; }
   .prow__go { display: none; }
 
+  /* Grid view: every project as a plate card, no preview pane. */
+  @media (min-width: 640px) {
+    .pindex[data-view='grid'] .pindex__layout { display: block; }
+    .pindex[data-view='grid'] .pindex__pane { display: none; }
+    .pindex[data-view='grid'] .pindex__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--s-6) var(--gutter); border-top: 0; }
+    .pindex[data-view='grid'] .pindex__list li { border: 0; }
+    .pindex[data-view='grid'] .prow { grid-template-columns: 34px minmax(0, 1fr); padding: 0 0 var(--s-4); border-bottom: 1px solid var(--line); }
+    .pindex[data-view='grid'] .prow__thumb { display: block; grid-column: 1 / -1; order: -1; margin-bottom: 12px; overflow: hidden; }
+    .pindex[data-view='grid'] .prow__thumb :global(.plate) { aspect-ratio: 4 / 3; transition: transform var(--d-4) var(--ease-out); }
+    .pindex[data-view='grid'] .prow:hover .prow__thumb :global(.plate) { transform: scale(1.03); }
+    .pindex[data-view='grid'] .prow__name { font-size: clamp(1.4rem, 1.1rem + 1vw, 1.9rem); }
+    .pindex[data-view='grid'] .prow__meta { grid-column: 2; grid-row: auto; flex-direction: row; padding-top: 0; }
+    .pindex[data-view='grid'] .prow__go { display: none; }
+    .pindex[data-view='grid'] .pindex__list:has(.prow:hover) .prow:not(:hover) { opacity: 1; }
+  }
   @media (min-width: 640px) and (max-width: 1023px) {
     .pindex__list { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--gutter); border-top: 0; }
     .pindex__list li { border-top: 1px solid var(--line); }

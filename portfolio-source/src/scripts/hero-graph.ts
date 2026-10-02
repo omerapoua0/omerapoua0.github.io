@@ -120,7 +120,7 @@ if (canvas && hero && context) {
         const mx = (a.x + b.x) / 2 - pointer.x, my = (a.y + b.y) / 2 - pointer.y;
         if (mx * mx + my * my < 160 * 160) alpha *= 2.2;
         if (i === lit || j === lit) alpha = Math.max(alpha, .75);
-        ctx.strokeStyle = `rgba(142,152,255,${Math.min(alpha, .85).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(232,236,226,${Math.min(alpha * .7, .7).toFixed(3)})`;
         ctx.lineWidth = i === lit || j === lit ? 1.4 : 1;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
@@ -129,9 +129,9 @@ if (canvas && hero && context) {
       const a = nodes[pulse.a], b = nodes[pulse.b];
       if (!a || !b) continue;
       const x = a.x + (b.x - a.x) * pulse.t, y = a.y + (b.y - a.y) * pulse.t;
-      ctx.fillStyle = pulse.hot ? 'rgba(111,211,163,.22)' : 'rgba(183,189,255,.18)';
+      ctx.fillStyle = pulse.hot ? 'rgba(217,255,63,.24)' : 'rgba(217,255,63,.12)';
       ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = pulse.hot ? '#6fd3a3' : '#dfe2ff';
+      ctx.fillStyle = pulse.hot ? '#d9ff3f' : '#eef5c8';
       ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
     }
     ctx.font = '500 11px "JetBrains Mono Variable", ui-monospace, monospace';
@@ -139,9 +139,9 @@ if (canvas && hero && context) {
     nodes.forEach((node, index) => {
       if (node.label) {
         const active = index === lit;
-        ctx.fillStyle = active ? '#6fd3a3' : '#b7bdff';
+        ctx.fillStyle = active ? '#d9ff3f' : '#e8ece2';
         ctx.beginPath(); ctx.arc(node.x, node.y, active ? 5 : node.r, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = active ? 'rgba(111,211,163,.6)' : 'rgba(142,152,255,.45)';
+        ctx.strokeStyle = active ? 'rgba(217,255,63,.6)' : 'rgba(232,236,226,.35)';
         ctx.beginPath(); ctx.arc(node.x, node.y, active ? 12 : 8, 0, Math.PI * 2); ctx.stroke();
         ctx.fillStyle = active ? '#ffffff' : 'rgba(231,234,239,.86)';
         const text = node.label.toUpperCase();
@@ -150,7 +150,7 @@ if (canvas && hero && context) {
         ctx.fillText(text, node.x + (flip ? -14 : 14), node.y);
         ctx.textAlign = 'left';
       } else {
-        ctx.fillStyle = 'rgba(231,234,239,.55)';
+        ctx.fillStyle = 'rgba(232,236,226,.5)';
         ctx.beginPath(); ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2); ctx.fill();
       }
     });

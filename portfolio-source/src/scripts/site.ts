@@ -48,7 +48,11 @@ desktop.addEventListener('change', () => setMenu(false));
 const heroSection = document.querySelector<HTMLElement>('[data-hero]');
 if (header?.hasAttribute('data-over') && heroSection) {
   let headerFrame = 0;
-  const update = () => { headerFrame = 0; header.toggleAttribute('data-solid', heroSection.getBoundingClientRect().bottom <= header.offsetHeight + 1); };
+  const update = () => {
+    headerFrame = 0;
+    header.toggleAttribute('data-solid', heroSection.getBoundingClientRect().bottom <= header.offsetHeight + 1);
+    header.toggleAttribute('data-scrolled', window.scrollY > 12);
+  };
   addEventListener('scroll', () => { if (!headerFrame) headerFrame = requestAnimationFrame(update); }, { passive: true });
   addEventListener('resize', update, { passive: true });
   update();
