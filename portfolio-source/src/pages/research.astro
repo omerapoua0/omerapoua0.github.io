@@ -1,13 +1,113 @@
 ---
-import OmarLayout from '../layouts/OmarLayout.astro';
+import Base from '../layouts/Base.astro';
+import PageIntro from '../components/PageIntro.astro';
+import Figure from '../components/Figure.astro';
+import { statusLabel, type Status } from '../data/site';
+
+const entries: { id: string; aliases?: string[]; area: string; status: Status; statusText: string; question: string; lede: string; body: string[]; tags: string; link?: { href: string; label: string }; figure?: boolean }[] = [
+  {
+    id: 'ai-he', aliases: ['education'], area: 'AI & higher education', status: 'progress', statusText: 'In progress · 2026 – present · unpublished',
+    question: 'How efficiently do AI models complete university assignments, and what does that do to learning?',
+    lede: 'Completing a task and learning from it are different outcomes.',
+    body: [
+      'Independent research investigating how efficiently AI models complete university assignments and the effect on student learning outcomes.',
+      'Teaching GCSE maths and physics, and building NOOKBASE, give me two more perspectives on the same question: how to make understanding part of the product, not an afterthought.',
+    ],
+    tags: 'Independent research · AI evaluation · Learning outcomes', link: { href: '/work.html#nookbase', label: 'The product direction: NOOKBASE' }, figure: true,
+  },
+  {
+    id: 'optimisation', area: 'Mathematical optimisation', status: 'incoming', statusText: 'Incoming · Summer 2027',
+    question: 'How do you choose a useful action when resources, information and time are limited?',
+    lede: 'Better decisions under real constraints.',
+    body: [
+      'My interests connect optimisation with machine learning and decision-making, alongside coursework in linear algebra, calculus and discrete mathematics.',
+      'I have been selected for a Santander Fintech Research Placement in summer 2027, applying mathematical optimisation and machine learning to credit-scoring models. It is upcoming, not completed research.',
+    ],
+    tags: 'Optimisation · Machine learning · Credit scoring',
+  },
+  {
+    id: 'quant', area: 'Quantitative modelling', status: 'exploratory', statusText: 'Exploratory',
+    question: 'What is a forecasting model actually learning, and how do you know?',
+    lede: 'A good prediction is only interesting if we understand how it was tested.',
+    body: [
+      'I am developing my knowledge of probability, stochastic processes and time-series methods. Building crypto prediction models at Bitget made the distinction between signal and noise a practical question.',
+      'Research and modelling interests only. Nothing here is investment advice or a claim of trading performance.',
+    ],
+    tags: 'Probability · Stochastic processes · Time series', link: { href: '/work.html#bitget', label: 'The Bitget modelling project' },
+  },
+  {
+    id: 'quantum', area: 'Quantum computing', status: 'exploratory', statusText: 'Independent study',
+    question: 'What does computation look like when linear algebra becomes the machine?',
+    lede: 'Linear algebra becomes something you can build and experiment with.',
+    body: ['I am exploring quantum computing with Qiskit, connecting mathematical foundations with small computational experiments. This is a learning direction, not original published quantum research.'],
+    tags: 'Qiskit · Linear algebra · Independent study',
+  },
+  {
+    id: 'phd', area: 'Long-term direction', status: 'aspiration', statusText: 'Aspiration',
+    question: 'Where could deeper research in optimisation and intelligent systems lead?',
+    lede: 'Research, with depth.',
+    body: ['A future PhD is an aspiration: intelligent systems, optimisation and quantitative methods. Today I am an undergraduate at Birkbeck; doctoral research is a longer-term goal, not a current programme of study.'],
+    tags: 'Intelligent systems · Optimisation · Quantitative methods',
+  },
+];
+const legend: Status[] = ['progress', 'incoming', 'exploratory', 'aspiration'];
 ---
-<OmarLayout title="Research interests" description="Omar Aboelella’s exploratory interests in AI education, mathematical optimisation, quantitative modelling and quantum computing.">
-  <section class="page-intro"><p class="eyebrow">Research notebook / 03</p><h1>Questions worth<br />staying curious about.</h1><p class="lede">The mathematical ideas behind the systems I build, and the directions I want to understand more deeply.</p><p class="notice">These are exploratory interests and independent study, not a list of published papers. Doctoral research is a longer-term ambition.</p></section>
-  <section class="section" aria-label="Research directions">
-    <article class="case-study grid-2" id="education"><div><p class="eyebrow">01 / AI & education</p><h2>Can AI help us understand,<br />not just finish?</h2><div class="tags"><span>Exploratory</span><span>Learning systems</span></div></div><div><p class="lede">Completing a task and learning from it are different outcomes.</p><p>I’m interested in explanations, knowledge checks and feedback loops that make a learner’s understanding part of the product. Teaching and building NOOKBASE give me two perspectives on the same question.</p><a href="/work.html#nookbase">Explore the product direction ↗</a></div></article>
-    <article class="case-study grid-2" id="optimisation"><div><p class="eyebrow">02 / Mathematical optimisation</p><h2>Better decisions<br />under real constraints.</h2><div class="tags"><span>Independent study</span><span>Applied mathematics</span></div></div><div><p class="lede">How do you choose a useful action when resources, information and time are limited?</p><p>My interests connect optimisation with machine learning and decision-making. They sit alongside coursework in linear algebra, calculus and discrete mathematics.</p><p>My incoming Santander research placement for summer 2027 is expected to explore mathematical optimisation and machine learning for credit scoring. It is an upcoming placement, not completed research.</p></div></article>
-    <article class="case-study grid-2" id="quant"><div><p class="eyebrow">03 / Quantitative modelling</p><h2>What is the model<br />actually learning?</h2><div class="tags"><span>Exploratory</span><span>Time series</span></div></div><div><p class="lede">A good prediction is only interesting if we understand how it was tested.</p><p>I’m developing my knowledge of probability, stochastic processes and time-series methods. My modelling experience at Bitget made the distinction between signal and noise a practical question.</p><p class="notice">Research and modelling interests only. Nothing here is investment advice or a claim of trading performance.</p><a href="/work.html#project-2">Read the project context ↗</a></div></article>
-    <article class="case-study grid-2" id="quantum"><div><p class="eyebrow">04 / Quantum computing</p><h2>A different way<br />to describe computation.</h2><div class="tags"><span>Independent study</span><span>Qiskit</span></div></div><div><p class="lede">Linear algebra becomes something you can build and experiment with.</p><p>I’m exploring quantum computing with Qiskit, connecting mathematical foundations with small computational experiments. This is a learning direction, not a claim of original published quantum research.</p></div></article>
+<Base title="Research interests" description="Omar Aboelella’s research notebook: independent research on AI in higher education, an incoming optimisation and ML placement, quantitative modelling and quantum computing. Exploratory, not published work.">
+  <PageIntro section="Research notebook" meta={['Questions, not papers']}>
+    <Fragment slot="title">Questions worth <em class="voice">staying curious about.</em></Fragment>
+    <p class="lede">The mathematical ideas behind the systems I build, and the directions I want to understand more deeply.</p>
+    <div slot="aside">
+      <p class="note">These are independent research, exploratory interests and an upcoming placement. None of it is published work. Doctoral research is a longer-term ambition.</p>
+      <ul class="legend" aria-label="Status labels">{legend.map(status => <li><span class:list={['chip', `chip--${status}`]}>{statusLabel[status]}</span></li>)}</ul>
+    </div>
+  </PageIntro>
+
+  <section class="wrap notebook" aria-label="Research questions">
+    {entries.map((entry, index) => (
+      <article class="entry" id={entry.id} aria-labelledby={`${entry.id}-q`}>
+        {entry.aliases?.map(alias => <span id={alias} class="entry__alias"></span>)}
+        <div class="entry__side">
+          <p class="label"><span class="num">Q{index + 1}</span> / {entry.area}</p>
+          <span class:list={['chip', `chip--${entry.status}`]}>{entry.statusText}</span>
+        </div>
+        <div class="entry__main">
+          <h2 id={`${entry.id}-q`}>{entry.question}</h2>
+          <p class="lede">{entry.lede}</p>
+          {entry.body.map(paragraph => <p>{paragraph}</p>)}
+          <p class="entry__tags">{entry.tags}</p>
+          {entry.link && <a class="link-arrow" href={entry.link.href}>{entry.link.label} <span aria-hidden="true">↗</span></a>}
+        </div>
+        {entry.figure && <figure class="plate plate--type entry__figure"><Figure kind="ai-he" /></figure>}
+      </article>
+    ))}
   </section>
-  <section class="section panel"><p class="eyebrow">Compare notes</p><h2>Working on a related question?</h2><p>I’d welcome a conversation about a paper, an experiment or a potential research opportunity.</p><a class="button" href="/contact.html?topic=Research">Start a research conversation ↗</a></section>
-</OmarLayout>
+
+  <section class="section wrap">
+    <div class="closing">
+      <p class="label"><span class="section-mark">§</span> Compare notes</p>
+      <h2>Working on a <em class="voice">related question?</em></h2>
+      <p class="muted">I’d welcome a conversation about a paper, an experiment or a research opportunity.</p>
+      <div class="actions"><a class="btn btn--accent" href="/contact.html?topic=Research">Start a research conversation <span class="arrow" aria-hidden="true">↗</span></a></div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--s-5); }
+  .entry { position: relative; display: grid; gap: var(--s-5); padding-block: clamp(48px, 6vw, 88px); border-bottom: 1px solid var(--line); }
+  .entry__alias { position: absolute; top: 0; }
+  .entry__side { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; align-content: start; }
+  .entry__main { display: grid; gap: var(--s-4); }
+  .entry__main h2 { font-size: clamp(1.8rem, 1.2rem + 2.2vw, 3.1rem); max-width: 22ch; }
+  .entry__main p:not(.lede):not(.entry__tags) { max-width: 62ch; }
+  .entry__tags { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+  .entry__figure { padding: var(--s-5); }
+  @media (min-width: 1024px) {
+    .entry { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); }
+    .entry__side { grid-column: 1 / span 3; flex-direction: column; align-items: start; position: sticky; top: calc(var(--header) + 32px); align-self: start; }
+    .entry__main { grid-column: 4 / span 7; }
+    .entry__figure { grid-column: 4 / span 7; }
+  }
+  .closing { display: grid; gap: var(--s-5); }
+  .closing h2 { max-width: 16ch; }
+</style>

@@ -1,0 +1,64 @@
+---
+/* Explanatory schematics for work without visual assets. They describe a
+   process; they are not results, data or product screenshots. */
+interface Props { kind: 'bitget' | 'bp' | 'ai-he' | 'pipeline'; title?: string; }
+const { kind, title } = Astro.props;
+const id = `fig-${kind}-${Math.random().toString(36).slice(2, 7)}`;
+---
+{kind === 'bitget' && (
+  <svg viewBox="0 0 480 300" role="img" aria-labelledby={id} class="figure">
+    <title id={id}>{title ?? 'Schematic: historical and live market data become features, a model and a forecast. Not results.'}</title>
+    <g fill="none" stroke="currentColor" stroke-width="1" opacity=".22">{[60, 110, 160, 210, 260].map(y => <line x1="20" x2="460" y1={y} y2={y} />)}</g>
+    <polyline class="draw" fill="none" stroke="currentColor" stroke-width="1.5" points="20,190 52,176 84,182 116,150 148,164 180,128 212,140 244,112 276,126 308,96 340,118" />
+    <polyline fill="none" stroke="#8e98ff" stroke-width="1.5" stroke-dasharray="4 5" points="340,118 372,104 404,112 436,90 460,96" />
+    <line x1="340" x2="340" y1="40" y2="270" stroke="currentColor" stroke-dasharray="2 4" opacity=".5" />
+    <g font-family="JetBrains Mono Variable, monospace" font-size="11" fill="currentColor" letter-spacing=".04em">
+      <text x="20" y="32">HISTORICAL + LIVE DATA</text>
+      <text x="346" y="32" fill="#8e98ff">FORECAST</text>
+      <text x="20" y="290" opacity=".7">FEATURES → MODEL → TEST · SCHEMATIC, NOT RESULTS</text>
+    </g>
+  </svg>
+)}
+{(kind === 'bp' || kind === 'pipeline') && (
+  <svg viewBox="0 0 480 300" role="img" aria-labelledby={id} class="figure">
+    <title id={id}>{title ?? 'Schematic of a weekly research pipeline: gather sources, analyse, deliver an Excel report.'}</title>
+    <g font-family="JetBrains Mono Variable, monospace" font-size="11" fill="currentColor" letter-spacing=".04em">
+      {[['BLOOMBERG', 70], ['OTHER SOURCES', 150], ['FILINGS & NEWS', 230]].map(([label, y]) => (
+        <g><rect x="20" y={Number(y) - 22} width="132" height="34" fill="none" stroke="currentColor" opacity=".55" /><text x="32" y={Number(y)}>{label}</text></g>
+      ))}
+      <rect x="196" y="112" width="100" height="56" fill="none" stroke="#8e98ff" stroke-width="1.5" />
+      <text x="214" y="137" fill="#8e98ff">ANALYSE</text>
+      <text x="214" y="154" opacity=".7">WEEKLY</text>
+      <rect x="340" y="112" width="120" height="56" fill="none" stroke="currentColor" />
+      <text x="356" y="137">EXCEL REPORT</text>
+      <text x="356" y="154" opacity=".7">MARKET INTEL</text>
+      <text x="20" y="290" opacity=".7">GATHER → ANALYSE → DELIVER · SCHEMATIC</text>
+    </g>
+    <g class="flow" fill="none" stroke="currentColor" stroke-width="1" opacity=".7">
+      <path d="M152 65 C 176 65, 176 130, 196 130" /><path d="M152 145 L196 140" /><path d="M152 225 C 176 225, 176 150, 196 150" /><path d="M296 140 L340 140" />
+    </g>
+  </svg>
+)}
+{kind === 'ai-he' && (
+  <svg viewBox="0 0 480 300" role="img" aria-labelledby={id} class="figure">
+    <title id={id}>{title ?? 'Research question: an AI model completes a university assignment; what happens to the student’s learning?'}</title>
+    <g font-family="JetBrains Mono Variable, monospace" font-size="11" fill="currentColor" letter-spacing=".04em">
+      <rect x="20" y="104" width="118" height="56" fill="none" stroke="currentColor" opacity=".6" /><text x="34" y="129">ASSIGNMENT</text><text x="34" y="146" opacity=".7">UNIVERSITY</text>
+      <rect x="182" y="104" width="118" height="56" fill="none" stroke="#8e98ff" stroke-width="1.5" /><text x="196" y="129" fill="#8e98ff">AI MODEL</text><text x="196" y="146" opacity=".7">EFFICIENCY?</text>
+      <rect x="342" y="56" width="118" height="44" fill="none" stroke="currentColor" opacity=".6" /><text x="356" y="83">COMPLETION</text>
+      <rect x="342" y="164" width="118" height="44" fill="none" stroke="currentColor" stroke-dasharray="4 4" /><text x="356" y="191">LEARNING ?</text>
+      <text x="20" y="290" opacity=".7">INDEPENDENT RESEARCH · IN PROGRESS · UNPUBLISHED</text>
+    </g>
+    <g fill="none" stroke="currentColor" opacity=".7"><path d="M138 132 L182 132" /><path d="M300 124 C 320 124, 320 78, 342 78" /><path d="M300 140 C 320 140, 320 186, 342 186" stroke-dasharray="3 4" /></g>
+  </svg>
+)}
+
+<style>
+  .figure { width: 100%; height: auto; color: inherit; }
+  @media (prefers-reduced-motion: no-preference) {
+    .draw { stroke-dasharray: 520; stroke-dashoffset: 520; animation: draw 2.4s var(--ease-out) .3s forwards; }
+    .flow path { stroke-dasharray: 4 6; animation: flow 1.6s linear infinite; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @keyframes flow { to { stroke-dashoffset: -20; } }
+  }
+</style>

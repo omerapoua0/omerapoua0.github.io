@@ -1,0 +1,27 @@
+---
+import Figure from './Figure.astro';
+import type { Project } from '../data/projects';
+interface Props { project: Project; video?: boolean; eager?: boolean; class?: string; }
+const { project, video = true, eager = false, class: className } = Astro.props;
+const media = project.media;
+const figureKind = project.id === 'bitget' ? 'bitget' : project.id === 'bp' ? 'bp' : 'ai-he';
+---
+{media ? (
+  <figure class:list={['plate', className]}>
+    <img src={media.image} alt={media.alt} width="1600" height="900" loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    {video && media.video && <video data-preview data-src={media.video} muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>}
+    {media.logo && <img class="plate__logo" src={media.logo} alt="" width="40" height="40" loading="lazy" />}
+    <figcaption class="plate__caption">Concept visual, not product footage</figcaption>
+  </figure>
+) : (
+  <figure class:list={['plate', 'plate--type', className]}>
+    <Figure kind={figureKind} />
+  </figure>
+)}
+
+<style>
+  .plate video { opacity: 0; transition: opacity var(--d-4) var(--ease-out); }
+  .plate video[data-playing] { opacity: 1; }
+</style>
+
+<script>import '../scripts/previews';</script>

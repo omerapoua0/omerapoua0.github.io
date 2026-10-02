@@ -1,0 +1,79 @@
+/* Shared enquiry-journey styles (tutoring and contact). */
+.form-shell { display: grid; gap: var(--s-7); }
+@media (min-width: 1024px) {
+  .form-shell { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: start; }
+  .form-shell__aside { grid-column: 1 / span 4; position: sticky; top: calc(var(--header) + 32px); }
+  .form-shell__main { grid-column: 6 / span 7; }
+}
+.form-shell__aside { display: grid; gap: var(--s-5); align-content: start; }
+.form-panel { background: var(--surface); border: 1px solid var(--line); padding: clamp(20px, 3.4vw, 48px); }
+
+.form-progress { display: grid; gap: var(--s-3); margin-bottom: var(--s-6); }
+.steps { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
+.steps li { height: 3px; background: var(--line); position: relative; overflow: hidden; }
+.steps li::after { content: ''; position: absolute; inset: 0; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform var(--d-4) var(--ease-out); }
+.steps li[data-done]::after, .steps li[aria-current='step']::after { transform: scaleX(1); }
+.steps li[aria-current='step']::after { opacity: .55; }
+.step-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+
+.form-step { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: var(--s-5); }
+.form-step legend { padding: 0; font-size: var(--step-h3); font-weight: 560; letter-spacing: -.03em; line-height: 1.15; margin-bottom: var(--s-2); outline-offset: 6px; }
+.form-step > p, .form-hint { color: var(--muted); font-size: var(--step-small); margin-top: -8px; }
+
+.choices { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
+.choice { position: relative; display: block; }
+.choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+.choice__card { display: grid; gap: 6px; min-height: 100%; padding: 18px 18px 20px; border: 1px solid var(--line-strong); background: var(--bg); border-radius: 2px; transition: border-color var(--d-2), background-color var(--d-2), box-shadow var(--d-2); }
+.choice__glyph { font-family: var(--font-serif); font-style: italic; font-size: 26px; line-height: 1; color: var(--accent); }
+.choice__title { font-weight: 580; letter-spacing: -.015em; }
+.choice__hint { font-size: 14px; color: var(--muted); line-height: 1.45; }
+.choice:hover .choice__card { border-color: var(--ink); }
+.choice input:checked + .choice__card { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.choice input:checked + .choice__card .choice__title::after { content: ' ✓'; color: var(--accent); }
+.choice input:focus-visible + .choice__card { outline: 2px solid var(--accent); outline-offset: 3px; }
+.choice input[aria-invalid] + .choice__card { border-color: var(--signal); }
+
+.field-grid { display: grid; gap: var(--s-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.field { display: grid; gap: 8px; font-size: var(--step-small); font-weight: 520; }
+.field .optional { font-weight: 400; color: var(--muted); }
+.field input, .field select, .field textarea {
+  width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 2px;
+  background: var(--bg); font-size: 16px; font-weight: 400; line-height: 1.4; transition: border-color var(--d-2), box-shadow var(--d-2);
+}
+.field textarea { min-height: 120px; resize: vertical; }
+.field select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 40px; }
+.field input:hover, .field select:hover, .field textarea:hover { border-color: var(--ink); }
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent); }
+.field [aria-invalid] { border-color: var(--signal); }
+.check { display: flex; gap: 12px; align-items: flex-start; font-size: var(--step-small); cursor: pointer; }
+.check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--accent); flex: none; }
+
+.field-error { margin: 0; font-size: 14px; font-weight: 520; color: var(--signal); }
+.field-error::before { content: '! '; font-family: var(--font-mono); }
+.error-summary { border: 2px solid var(--signal); padding: var(--s-4) var(--s-5); margin-bottom: var(--s-5); outline: none; }
+.error-summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+.error-summary h3 { font-size: 1.05rem; margin-bottom: var(--s-2); }
+.error-summary ul { display: grid; gap: 4px; }
+.error-summary a { color: var(--signal); font-weight: 520; }
+
+.form-nav { display: flex; justify-content: space-between; gap: var(--s-3); margin-top: var(--s-6); padding-top: var(--s-5); border-top: 1px solid var(--line); }
+.form-nav [data-next] { margin-left: auto; }
+@media (max-width: 767px) {
+  .form-nav { position: sticky; bottom: 0; z-index: 5; margin-inline: calc(-1 * clamp(20px, 3.4vw, 48px)); padding: 12px clamp(20px, 3.4vw, 48px) calc(12px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line-strong); }
+  .form-nav .btn { flex: 1; }
+}
+
+.review { display: grid; gap: var(--s-5); }
+.review h2, .review h3 { outline-offset: 6px; }
+.review__summary { border-top: 1px solid var(--line-strong); }
+.review__summary > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.review__summary dt { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.review__summary dd { margin: 0; grid-column: 1; white-space: pre-wrap; overflow-wrap: anywhere; }
+.review__summary .change { grid-column: 2; grid-row: 1 / span 2; align-self: center; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--accent); font-weight: 540; text-decoration: underline; text-underline-offset: .2em; }
+.review details { border: 1px solid var(--line); padding: 0 var(--s-4); }
+.review summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; font-weight: 520; }
+.review textarea { width: 100%; min-height: 220px; margin-bottom: var(--s-4); padding: 12px; border: 1px solid var(--line); background: var(--bg); font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
+.sent-note { display: flex; gap: 10px; padding: var(--s-4); background: var(--accent-soft); border-left: 2px solid var(--accent); font-size: var(--step-small); }
+.form-status:empty { display: none; }
+.form-status { margin-top: var(--s-4); font-size: var(--step-small); color: var(--muted); }
+@media (hover: none) { .gmail-link { display: none !important; } }

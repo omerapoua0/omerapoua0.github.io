@@ -1,0 +1,11 @@
+---
+interface Props { mark: string; label: string; id?: string; }
+const { mark, label, id } = Astro.props;
+---
+<div class="section-head">
+  <div class="section-head__title">
+    <p class="label"><span class="section-mark">§{mark}</span> {label}</p>
+    <h2 id={id}><slot /></h2>
+  </div>
+  {Astro.slots.has('aside') && <div><slot name="aside" /></div>}
+</div>

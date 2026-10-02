@@ -1,40 +1,37 @@
 ---
-import OmarLayout from '../layouts/OmarLayout.astro';
-const projects = [
-  { id: 'katana', number: '01', name: 'KATANA', caption: 'Network autonomy', image: 'project-katana-v14.jpg', video: 'project-katana-v14.webm', logo: 'logo-katana.png' },
-  { id: 'nookbase', number: '02', name: 'NOOKBASE', caption: 'Learning with understanding', image: 'project-nookbase.jpg', video: 'project-nookbase.webm', logo: 'logo-nookbase.png' },
-  { id: 'inos', number: '03', name: 'INOS & OctiMind', caption: 'Network testing and optimisation', image: 'project-inos.jpg', video: 'project-inos.webm', logo: 'logo-inos.png' },
-];
+import Base from '../layouts/Base.astro';
+import PageIntro from '../components/PageIntro.astro';
+import ProjectIndex from '../components/ProjectIndex.astro';
+import CaseStudy from '../components/CaseStudy.astro';
+import { caseStudies, projects } from '../data/projects';
 ---
-<OmarLayout title="Projects" description="Selected work in network autonomy, multi-agent learning, predictive modelling and research automation.">
-  <section class="page-intro">
-    <p class="eyebrow">Selected work / 01</p>
-    <h1>From a difficult question<br />to a working system.</h1>
-    <p class="lede">AI product engineering, learning tools and the quieter infrastructure that makes good decisions possible.</p>
+<Base title="Projects" description="Case studies from Omar Aboelella: KATANA network autonomy, NOOKBASE, INOS & OctiMind, Bitget prediction models and BP’s competitor intelligence pipeline.">
+  <PageIntro section="Projects" meta={[`${caseStudies.length} case studies`, '2024 – present']}>
+    <Fragment slot="title">From a hard question <em class="voice">to a working system.</em></Fragment>
+    <p class="lede">AI product engineering, a learning product, market modelling and the quieter infrastructure that makes good decisions possible.</p>
+    <p slot="aside" class="note">Every case study separates my contribution from the wider team’s work and states its current stage. Concept visuals are labelled as such; they are not product footage.</p>
+  </PageIntro>
+
+  <section class="section wrap" aria-labelledby="index-title">
+    <h2 id="index-title" class="sr-only">Project index</h2>
+    <ProjectIndex items={projects} filters label="All projects" />
   </section>
-  <nav class="grid-3 work-project-index" aria-label="Project index">
-    {projects.map(project => <a class="project-card" href={`#${project.id}`}><div class="project-media"><img src={`/${project.image}`} alt="" width="1600" height="900" loading="lazy" /><img class="project-logo" src={`/${project.logo}`} alt="" width="90" height="90" /></div><div class="project-copy"><p class="eyebrow">{project.number} / {project.caption}</p><h2>{project.name} <span aria-hidden="true">↗</span></h2></div></a>)}
-  </nav>
-  <section class="section" aria-label="Project details">
-    <article class="case-study" id="katana">
-      <span id="project-1"></span>
-      <div class="project-media"><img src="/project-katana-v14.jpg" alt="KATANA network autonomy concept artwork" width="1600" height="900" loading="lazy" /><video data-preview muted loop playsinline preload="none" poster="/project-katana-v14.jpg" data-src="/project-katana-v14.webm" aria-hidden="true" tabindex="-1"></video><img class="project-logo" src="/logo-katana.png" alt="" width="100" height="100" /><span class="visual-caption">Concept visual, not product footage</span></div>
-      <div class="case-body grid-2"><div><p class="eyebrow">Digis Squared / AI Product Engineer</p><h2>KATANA<br />Reasoning in the loop.</h2><p class="lede">When should a network observe, reason and act?</p><div class="tags"><span>MAPE-K</span><span>Bayesian inference</span><span>LangGraph</span></div><a class="button button-secondary" href="https://digis2.com/product/katana/" target="_blank" rel="noopener noreferrer">Visit KATANA ↗</a></div><div class="detail-list"><div><h3>The challenge</h3><p>Translate a route from Level 1 towards Level 4 network autonomy into an architecture and a practical development plan.</p></div><div><h3>My contribution</h3><p>Technical strategy alongside the product manager, closed-loop MAPE-K reasoning using Bayesian inference, and cross-team LangGraph workflows including data selection and access.</p></div><div><h3>The work around the model</h3><p>Total cost of ownership modelling, security auditing, and development and test sprint planning.</p></div><p class="notice">Ongoing engineering work. Level 4 is a programme direction, not a claimed achieved deployment.</p></div></div>
-    </article>
-    <article class="case-study" id="nookbase">
-      <span id="project-5"></span>
-      <div class="project-media"><img src="/project-nookbase.jpg" alt="NOOKBASE learning product concept artwork" width="1600" height="900" loading="lazy" /><video data-preview muted loop playsinline preload="none" poster="/project-nookbase.jpg" data-src="/project-nookbase.webm" aria-hidden="true" tabindex="-1"></video><img class="project-logo" src="/logo-nookbase.png" alt="" width="100" height="100" /><span class="visual-caption">Concept visual, not product footage</span></div>
-      <div class="case-body grid-2"><div><p class="eyebrow">Founder / In development</p><h2>NOOKBASE<br />Understanding is the product.</h2><p class="lede">A multi-agent learning experience connecting explanation, knowledge checks and adaptable planning.</p><div class="tags"><span>Multi-agent AI</span><span>Web + mobile</span><span>Education</span></div><a class="button" href="https://nookbase.app/" target="_blank" rel="noopener noreferrer">Explore NOOKBASE ↗</a></div><div class="detail-list"><div><h3>The question</h3><p>How can people understand and explain work they have made with AI, rather than simply complete another task?</p></div><div><h3>What I’m building</h3><p>As founder, I work across product direction and engineering. The aim is a connected experience that makes explanation, self-checks and planning part of the same learning process.</p></div><div><h3>Current stage</h3><p>In development, with a public early-access list and interactive demos. The product is not yet generally available.</p></div></div></div>
-    </article>
-    <article class="case-study" id="inos">
-      <span id="project-4"></span>
-      <div class="project-media"><img src="/project-inos.jpg" alt="INOS network testing concept artwork" width="1600" height="900" loading="lazy" /><video data-preview muted loop playsinline preload="none" poster="/project-inos.jpg" data-src="/project-inos.webm" aria-hidden="true" tabindex="-1"></video><img class="project-logo" src="/logo-inos.png" alt="" width="100" height="100" /><span class="visual-caption">Concept visual, not product footage</span></div>
-      <div class="case-body grid-2"><div><p class="eyebrow">Digis Squared / Network systems</p><h2>INOS & OctiMind<br />See the whole system.</h2><p class="lede">Network testing and optimisation, from network behaviour to the work of improving it.</p><div class="tags"><span>Network systems</span><span>Testing</span><span>Optimisation</span></div><a class="button button-secondary" href="https://digis2.com/product/inos/" target="_blank" rel="noopener noreferrer">Visit INOS ↗</a></div><div class="detail-list"><div><h3>Product context</h3><p>INOS and OctiMind are network testing and optimisation products deployed to O2.</p></div><div><h3>My experience</h3><p>My wider R&D work at Digis Squared involved researching network systems and the integration of hardware and software.</p></div><div><h3>What connects the work</h3><p>Understand the network before deciding what to automate. That systems perspective carries into my later work on autonomy.</p></div></div></div>
-    </article>
-    <div class="grid-2">
-      <article class="panel" id="project-2"><p class="eyebrow">Bitget / Feb to May 2026</p><h2>Finding signal in market data.</h2><p>As an AI Product Intern in Platform & Operations, I analysed exchange telemetry and developed predictive models using historical and live market data.</p><p>The work involved feature engineering, time-series forecasting and predictive modelling. It is a modelling project, not a claim of investment returns.</p><div class="tags"><span>Python</span><span>Time series</span><span>Feature engineering</span></div></article>
-      <article class="panel" id="project-3"><p class="eyebrow">BP / Jun to Sep 2024</p><h2>Research that keeps moving.</h2><p>A weekly competitor-intelligence pipeline gathering information from Bloomberg and other sources, analysing it and producing Excel reports for offshore-wind market intelligence.</p><p>My work localised market intelligence models and automated competitor-research reporting.</p><div class="tags"><span>Research</span><span>Data pipelines</span><span>Excel</span></div></article>
+
+  <section class="wrap" aria-label="Case studies">
+    {caseStudies.map((project, index) => <CaseStudy project={project} number={index + 1} />)}
+  </section>
+
+  <section class="section wrap">
+    <div class="closing">
+      <p class="label"><span class="section-mark">§</span> A conversation, not a pitch deck</p>
+      <h2>Interested in the decisions <em class="voice">behind the work?</em></h2>
+      <p class="muted">I’m happy to talk through the parts I can share.</p>
+      <div class="actions"><a class="btn btn--accent" href="/contact.html?topic=Project">Discuss a project <span class="arrow" aria-hidden="true">↗</span></a><a class="btn btn--ghost" href="/cv.html">Experience & CV</a></div>
     </div>
   </section>
-  <section class="section panel"><p class="eyebrow">A conversation, not a pitch deck</p><h2>Interested in the decisions behind the work?</h2><p>I’m happy to talk through the parts I can share.</p><a class="button" href="/contact.html?topic=Project">Discuss a project ↗</a></section>
-</OmarLayout>
+</Base>
+
+<style>
+  .closing { display: grid; gap: var(--s-5); padding-top: var(--section); border-top: 1px solid var(--line); }
+  .closing h2 { max-width: 18ch; }
+</style>

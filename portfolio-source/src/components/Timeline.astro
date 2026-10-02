@@ -1,0 +1,33 @@
+---
+import type { Role } from '../data/experience';
+import { statusLabel } from '../data/site';
+interface Props { roles: Role[]; }
+const { roles } = Astro.props;
+---
+<ol class="timeline">
+  {roles.map(role => (
+    <li class="timeline__row">
+      <p class="timeline__period num">{role.period}</p>
+      <div class="timeline__body">
+        <p class="label">{role.org}</p>
+        <h3>{role.title}</h3>
+        <p class="muted">{role.text}</p>
+        <div class="timeline__foot">
+          <span class:list={['chip', `chip--${role.status}`]}>{statusLabel[role.status]}</span>
+          {role.href && <a class="link-arrow" href={role.href}>Related <span aria-hidden="true">↗</span></a>}
+        </div>
+      </div>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .timeline { border-top: 1px solid var(--line-strong); }
+  .timeline__row { display: grid; gap: var(--s-2); padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
+  .timeline__period { font-size: 12.5px; color: var(--muted); letter-spacing: .02em; padding-top: .3em; }
+  .timeline__body { display: grid; gap: var(--s-2); }
+  .timeline__body p.muted { max-width: 64ch; }
+  .timeline__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 4px; }
+  .timeline__foot .link-arrow { min-height: 32px; font-size: var(--step-small); }
+  @media (min-width: 768px) { .timeline__row { grid-template-columns: 200px minmax(0, 1fr); gap: var(--gutter); } }
+</style>

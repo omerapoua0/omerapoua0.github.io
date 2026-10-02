@@ -1,10 +1,93 @@
 ---
-import OmarLayout from '../layouts/OmarLayout.astro';
+import Base from '../layouts/Base.astro';
+import PageIntro from '../components/PageIntro.astro';
+import SectionHead from '../components/SectionHead.astro';
+import Figure from '../components/Figure.astro';
+
+const offers = [
+  { num: '01', area: 'Information', title: 'Research & reporting', copy: 'Source collection, structured summaries and recurring reports that keep a route back to the evidence.', brief: 'research and reporting' },
+  { num: '02', area: 'Coordination', title: 'AI & agent workflows', copy: 'Multi-step reasoning, retrieval and tool use, with checkpoints for the decisions a person needs to own.', brief: 'an AI workflow' },
+  { num: '03', area: 'Integration', title: 'Connected data', copy: 'APIs, Python and structured pipelines that move information between systems and cut repeated handling.', brief: 'data integration' },
+];
+const principles = [
+  { title: 'Map the existing process', copy: 'What triggers it? Which tools and people are involved? Where does the time disappear?' },
+  { title: 'Keep control where it matters', copy: 'Define permissions, review points and what should stop for a human decision.' },
+  { title: 'Test the awkward cases', copy: 'Missing data, failed requests and uncertain results deserve attention before a workflow becomes routine.' },
+];
 ---
-<OmarLayout title="Automations" description="Practical automation for research, data and AI workflows, with clear checkpoints and human oversight.">
-  <section class="page-intro"><p class="eyebrow">Automation / 02</p><h1>Less repetition.<br />More room to think.</h1><p class="lede">I’m interested in the work between tools: gathering information, checking it, making a decision and getting the result somewhere useful.</p><a class="button" href="/contact.html?topic=Automation">Bring me a workflow ↗</a></section>
-  <section class="section grid-2"><div><p class="eyebrow">From my work</p><h2>A weekly report,<br />without a weekly rebuild.</h2><p>At BP, I worked on a repeatable competitor-research pipeline for offshore-wind market intelligence.</p><p>Information from Bloomberg and other sources moved through analysis into Excel reporting. The useful part was connecting these steps into a process the team could run again.</p><a href="/work.html#project-3">Read the project context ↗</a></div><div class="panel"><p class="eyebrow">Research pipeline</p><ol class="detail-list"><li><h3>Gather</h3><p>Bring relevant source information into one workflow.</p></li><li><h3>Analyse</h3><p>Organise and interpret the material for the question at hand.</p></li><li><h3>Deliver</h3><p>Produce a consistent report in the format people already use.</p></li></ol></div></section>
-  <section class="section"><div class="section-heading"><p class="eyebrow">Where I can help</p><h2>Start with the bottleneck.</h2></div><div class="grid-3"><article class="panel"><p class="eyebrow">01 / Information</p><h3>Research & reporting</h3><p>Source collection, structured summaries and recurring reports that retain a route back to the evidence.</p><a href="/contact.html?topic=Automation&amp;brief=research%20and%20reporting">Discuss reporting ↗</a></article><article class="panel"><p class="eyebrow">02 / Coordination</p><h3>AI & agent workflows</h3><p>Multi-step reasoning, retrieval and tool use, with checkpoints for the decisions a person needs to own.</p><a href="/contact.html?topic=Automation&amp;brief=an%20AI%20workflow">Discuss an AI workflow ↗</a></article><article class="panel"><p class="eyebrow">03 / Integration</p><h3>Connected data</h3><p>APIs, Python and structured data pipelines that move information between systems and reduce repeated handling.</p><a href="/contact.html?topic=Automation&amp;brief=data%20integration">Discuss integration ↗</a></article></div></section>
-  <section class="section grid-2"><div><p class="eyebrow">My approach</p><h2>Make the hand-offs explicit.</h2><p class="lede">A useful automation has a clear input, a checkable output and a plan for when something goes wrong.</p></div><div class="detail-list"><div><h3>Map the existing process</h3><p>What triggers it? Which tools and people are involved? Where does time disappear?</p></div><div><h3>Keep control where it matters</h3><p>Define permissions, review points and what should stop for a human decision.</p></div><div><h3>Test the awkward cases</h3><p>Missing data, failed requests and uncertain results deserve attention before a workflow becomes routine.</p></div></div></section>
-  <section class="section panel"><h2>What are you doing over and over?</h2><p>Tell me the current process, the tools involved and what a useful outcome would look like. Please leave out credentials or confidential records.</p><a class="button" href="/contact.html?topic=Automation">Outline your workflow ↗</a></section>
-</OmarLayout>
+<Base title="Automations" description="Practical automation for research, data and AI workflows, with clear checkpoints and human oversight. Based on Omar Aboelella’s competitor-intelligence pipeline work at BP.">
+  <PageIntro section="Automations" meta={['Research', 'Data', 'AI workflows']}>
+    <Fragment slot="title">Less repetition. <em class="voice">More room to think.</em></Fragment>
+    <p class="lede">I’m interested in the work between tools: gathering information, checking it, making a decision and getting the result somewhere useful.</p>
+    <div slot="aside" class="actions"><a class="btn btn--accent" href="/contact.html?topic=Automation">Bring me a workflow <span class="arrow" aria-hidden="true">↗</span></a></div>
+  </PageIntro>
+
+  <section class="section wrap" aria-labelledby="bp-title">
+    <div class="split">
+      <div class="split__copy">
+        <p class="label"><span class="section-mark">§1</span> From my work · BP, 2024</p>
+        <h2 id="bp-title">A weekly report, <em class="voice">without a weekly rebuild.</em></h2>
+        <p>At BP I built a competitor intelligence engine for the offshore-wind market intelligence team: an automated weekly pipeline that pulls competitor data from Bloomberg and other sources, analyses it and produces Excel reports.</p>
+        <p class="muted">The useful part was connecting the steps into a process the team could run again, in the format people already used.</p>
+        <a class="link-arrow" href="/work.html#bp">Read the case study <span aria-hidden="true">↗</span></a>
+      </div>
+      <figure class="plate plate--type split__figure"><Figure kind="pipeline" /></figure>
+    </div>
+  </section>
+
+  <section class="section section--surface" aria-labelledby="offers-title">
+    <div class="wrap">
+      <SectionHead mark="2" label="Where I can help" id="offers-title">Start with <em class="voice">the bottleneck.</em></SectionHead>
+      <ol class="offers">
+        {offers.map(offer => (
+          <li>
+            <p class="label"><span class="num">{offer.num}</span> / {offer.area}</p>
+            <h3>{offer.title}</h3>
+            <p class="muted">{offer.copy}</p>
+            <a class="link-arrow" href={`/contact.html?topic=Automation&brief=${encodeURIComponent(offer.brief)}`}>Discuss {offer.brief} <span aria-hidden="true">↗</span></a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section wrap" aria-labelledby="approach-title">
+    <SectionHead mark="3" label="Approach" id="approach-title">Make the hand-offs <em class="voice">explicit.</em>
+      <p slot="aside">A useful automation has a clear input, a checkable output and a plan for when something goes wrong.</p>
+    </SectionHead>
+    <ol class="principles">
+      {principles.map((item, index) => <li><span class="num">{String(index + 1).padStart(2, '0')}</span><h3>{item.title}</h3><p class="muted">{item.copy}</p></li>)}
+    </ol>
+  </section>
+
+  <section class="section wrap">
+    <div class="cta-band">
+      <h2>What are you doing <em class="voice">over and over?</em></h2>
+      <p class="muted">Tell me the current process, the tools involved and what a useful outcome would look like. Please leave out credentials and confidential records.</p>
+      <div class="actions"><a class="btn btn--accent" href="/contact.html?topic=Automation">Outline your workflow <span class="arrow" aria-hidden="true">↗</span></a></div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .split { display: grid; gap: var(--s-7); }
+  .split__copy { display: grid; gap: var(--s-5); align-content: start; }
+  .split__copy p { max-width: 56ch; }
+  .split__figure { aspect-ratio: 16 / 10; padding: var(--s-5); }
+  @media (min-width: 1024px) {
+    .split { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: center; }
+    .split__copy { grid-column: 1 / span 5; }
+    .split__figure { grid-column: 7 / span 6; }
+  }
+  .offers, .principles { display: grid; border-top: 1px solid var(--line-strong); }
+  .offers li, .principles li { display: grid; gap: var(--s-3); align-content: start; padding: var(--s-6) 0; border-bottom: 1px solid var(--line); }
+  .principles .num { font-size: 12px; color: var(--accent); }
+  @media (min-width: 900px) {
+    .offers, .principles { grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+    .offers li, .principles li { border-bottom: 0; padding: var(--s-6) var(--s-6) var(--s-6) 0; }
+    .offers li + li, .principles li + li { border-left: 1px solid var(--line); padding-left: var(--s-6); }
+  }
+  .cta-band { display: grid; gap: var(--s-5); padding-top: var(--section); border-top: 1px solid var(--line); }
+  .cta-band h2 { max-width: 16ch; }
+  .cta-band p { max-width: 56ch; }
+</style>

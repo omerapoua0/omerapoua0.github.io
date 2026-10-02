@@ -1,0 +1,100 @@
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--header) + 16px); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--step-body);
+  line-height: 1.6;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+img, video, svg { display: block; max-width: 100%; }
+img, video { height: auto; }
+h1, h2, h3, h4, p, ol, ul, dl, dd, figure, blockquote { margin: 0; }
+ol, ul { padding: 0; list-style: none; }
+h1, h2, h3 { font-weight: 560; letter-spacing: -.035em; line-height: 1.02; text-wrap: balance; }
+h1 { font-size: var(--step-h1); letter-spacing: -.05em; line-height: .95; }
+h2 { font-size: var(--step-h2); letter-spacing: -.04em; }
+h3 { font-size: var(--step-h3); letter-spacing: -.02em; line-height: 1.2; }
+p { text-wrap: pretty; }
+em.voice, .voice { font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -.02em; }
+strong { font-weight: 620; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+a:hover { text-decoration-color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 1px; }
+[hidden] { display: none !important; }
+
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; left: var(--s-4); top: -100px; z-index: 100; padding: var(--s-3) var(--s-4); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.skip-link:focus { top: var(--s-3); }
+
+/* Typography helpers */
+.label { font-family: var(--font-mono); font-size: var(--step-label); font-weight: 450; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lede { font-size: var(--step-lede); line-height: 1.45; letter-spacing: -.012em; color: var(--ink); max-width: 38ch; }
+.muted { color: var(--muted); }
+.measure { max-width: 64ch; }
+.section-mark { font-family: var(--font-serif); font-style: italic; color: var(--accent); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Buttons and links */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .6em;
+  min-height: 48px; padding: 12px 20px;
+  border: 1px solid var(--ink); background: var(--ink); color: var(--bg);
+  font-size: var(--step-small); font-weight: 560; letter-spacing: -.005em; text-decoration: none;
+  border-radius: 2px;
+  transition: background-color var(--d-2) var(--ease-out), color var(--d-2) var(--ease-out), border-color var(--d-2) var(--ease-out);
+}
+.btn:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn--accent { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn--accent:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.btn--ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn--ghost:hover { background: transparent; color: var(--accent); border-color: var(--accent); }
+.btn .arrow { transition: transform var(--d-2) var(--ease-out); }
+.btn:hover .arrow { transform: translate(2px, -2px); }
+.btn:hover .arrow--down { transform: translateY(3px); }
+.link-arrow { display: inline-flex; align-items: center; gap: .4em; min-height: 44px; font-weight: 520; text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.link-arrow:hover { color: var(--accent); border-color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+
+/* Status chips: one vocabulary for every claim */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px;
+  border: 1px solid var(--line-strong); border-radius: 2px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .03em; text-transform: uppercase; line-height: 1.5;
+  color: var(--muted); white-space: nowrap;
+}
+.chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip--current, .chip--progress { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+.chip--development, .chip--incoming { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.chip--exploratory, .chip--aspiration { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 45%, transparent); }
+.chip--aspiration::before { background: transparent; border: 1px solid currentColor; }
+
+.note { padding-left: var(--s-4); border-left: 2px solid var(--accent); color: var(--muted); font-size: var(--step-small); max-width: 60ch; }
+
+/* Motion: everything below is opt-in for visitors without a reduced-motion preference. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 260ms; animation-timing-function: var(--ease-out); }
+  ::view-transition-group(*) { animation-duration: 420ms; animation-timing-function: var(--ease-out); }
+
+  @supports (animation-timeline: view()) {
+    [data-reveal] {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+    @keyframes reveal { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}

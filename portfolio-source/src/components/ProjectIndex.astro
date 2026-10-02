@@ -1,0 +1,117 @@
+---
+import ProjectMedia from './ProjectMedia.astro';
+import { areaLabel, type Area, type Project } from '../data/projects';
+import { statusLabel } from '../data/site';
+interface Props { items: Project[]; filters?: boolean; morph?: boolean; label?: string; }
+const { items, filters = false, morph = false, label = 'Project index' } = Astro.props;
+const areas = Object.keys(areaLabel) as Area[];
+const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
+---
+<div class="pindex" data-project-index>
+  {filters && (
+    <fieldset class="pindex__filters" data-filters hidden>
+      <legend class="label">Filter by area</legend>
+      <div class="pindex__chips">
+        <label class="fchip"><input type="radio" name={`${uid}-area`} value="all" checked /><span>All <span class="num">{items.length}</span></span></label>
+        {areas.map(area => {
+          const count = items.filter(item => item.areas.includes(area)).length;
+          return count ? <label class="fchip"><input type="radio" name={`${uid}-area`} value={area} /><span>{areaLabel[area]} <span class="num">{count}</span></span></label> : null;
+        })}
+      </div>
+      <p class="sr-only" role="status" aria-live="polite" data-count></p>
+    </fieldset>
+  )}
+  <div class="pindex__layout">
+    <ol class="pindex__list" aria-label={label}>
+      {items.map((project, index) => (
+        <li data-areas={project.areas.join(' ')} data-row={project.id}>
+          <a class="prow" href={project.href} data-preview-id={project.id}>
+            <span class="prow__num num" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+            <span class="prow__main">
+              <span class="prow__name" style={morph ? `view-transition-name: case-${project.id}` : undefined}>{project.name}</span>
+              <span class="prow__summary">{project.summary}</span>
+            </span>
+            <span class="prow__meta"><span>{project.org}</span><span class="num">{project.period}</span></span>
+            <span class="prow__status"><span class:list={['chip', `chip--${project.status}`]}>{statusLabel[project.status]}</span></span>
+            <div class="prow__thumb" aria-hidden="true"><ProjectMedia project={project} video={false} /></div>
+            <span class="prow__go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+    <div class="pindex__pane" aria-hidden="true">
+      <div class="pindex__stage">
+        {items.map((project, index) => (
+          <div class="pindex__item" data-pane-item={project.id} data-active={index === 0 ? '' : undefined}>
+            <ProjectMedia project={project} />
+          </div>
+        ))}
+      </div>
+      <div class="pindex__notes">
+        {items.map((project, index) => (
+          <p class="pindex__note" data-pane-item={project.id} data-active={index === 0 ? '' : undefined}><span class="label">{project.name}</span>{project.statusNote}</p>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .pindex__filters { border: 0; padding: 0; margin: 0 0 var(--s-6); display: grid; gap: var(--s-3); }
+  .pindex__filters legend { padding: 0; margin-bottom: var(--s-3); }
+  .pindex__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fchip { position: relative; }
+  .fchip input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .fchip > span { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border: 1px solid var(--line-strong); border-radius: 2px; font-size: 14px; font-weight: 500; transition: background-color var(--d-2), color var(--d-2), border-color var(--d-2); }
+  .fchip .num { font-size: 11px; color: var(--muted); }
+  .fchip input:checked + span { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .fchip input:checked + span .num { color: inherit; opacity: .7; }
+  .fchip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .fchip:hover > span { border-color: var(--ink); }
+
+  .pindex__layout { display: grid; gap: var(--s-7); }
+  .pindex__list { border-top: 1px solid var(--line); }
+  .pindex__list li { border-bottom: 1px solid var(--line); }
+  .prow { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 6px 16px; padding: 22px 0; text-decoration: none; transition: opacity var(--d-3) var(--ease-out); }
+  .prow__num { font-size: 12px; color: var(--muted); padding-top: .55em; }
+  .prow__main { display: grid; gap: 6px; }
+  .prow__name { font-size: clamp(1.6rem, 1.1rem + 1.9vw, 2.6rem); font-weight: 560; letter-spacing: -.045em; line-height: 1; transition: color var(--d-2), transform var(--d-3) var(--ease-out); }
+  .prow__summary { color: var(--muted); max-width: 52ch; font-size: var(--step-small); }
+  .prow__meta { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+  .prow__status { grid-column: 2; }
+  .prow__thumb { grid-column: 1 / -1; order: -1; margin-bottom: 10px; }
+  .prow__thumb :global(.plate) { aspect-ratio: 16 / 9; }
+  .prow__go { position: absolute; right: 0; top: 24px; font-size: 20px; color: var(--muted); transition: transform var(--d-3) var(--ease-out), color var(--d-2); }
+  .prow:hover .prow__name, .prow:focus-visible .prow__name { color: var(--accent); }
+  .prow:hover .prow__go, .prow:focus-visible .prow__go { color: var(--accent); transform: translate(3px, -3px); }
+  .pindex__pane { display: none; }
+  .prow__go { display: none; }
+
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .pindex__list { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--gutter); border-top: 0; }
+    .pindex__list li { border-top: 1px solid var(--line); }
+  }
+  @media (min-width: 1024px) {
+    .pindex__layout { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: start; }
+    .pindex__list { grid-column: 1 / span 7; }
+    .prow { grid-template-columns: 44px minmax(0, 1fr) 150px; padding: 28px 40px 28px 0; align-items: start; }
+    .prow__meta { grid-column: 3; grid-row: 1; flex-direction: column; padding-top: .6em; }
+    .prow__status { grid-column: 2; }
+    .prow__thumb { display: none; }
+    .prow__go { display: block; }
+    .pindex__pane { display: block; grid-column: 8 / span 5; position: sticky; top: calc(var(--header) + 32px); }
+    .pindex__stage { position: relative; aspect-ratio: 4 / 3.4; background: var(--plate); }
+    .pindex__item { position: absolute; inset: 0; opacity: 0; transition: opacity var(--d-4) var(--ease-out); }
+    .pindex__item :global(.plate) { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; }
+    .pindex__item[data-active] { opacity: 1; }
+    .pindex__notes { position: relative; margin-top: var(--s-4); min-height: 4.5em; }
+    .pindex__note { position: absolute; inset: 0 auto auto 0; opacity: 0; display: grid; gap: 4px; font-size: var(--step-small); color: var(--muted); transition: opacity var(--d-3) var(--ease-out); }
+    .pindex__note[data-active] { opacity: 1; }
+    @media (hover: hover) {
+      .pindex__list:has(.prow:hover) .prow:not(:hover) { opacity: .42; }
+      .prow:hover .prow__name { transform: translateX(6px); }
+    }
+  }
+</style>
+
+<script>import '../scripts/project-index';</script>

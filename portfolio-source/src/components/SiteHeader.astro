@@ -1,0 +1,84 @@
+---
+import { navigation, site } from '../data/site';
+interface Props { overHero?: boolean; }
+const { overHero = false } = Astro.props;
+const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
+---
+<header class="header" data-header data-over={overHero ? 'true' : undefined}>
+  <div class="header__inner">
+    <a class="brand" href="/index.html" aria-current={path === '/index.html' ? 'page' : undefined}>
+      <span class="brand__name">Omar Aboelella</span>
+      <span class="brand__meta">AI · Mathematics · Tutoring</span>
+    </a>
+    <nav class="nav" id="site-nav" aria-label="Main" data-nav>
+      <ol class="nav__list">
+        {navigation.map((item, index) => (
+          <li><a href={item.href} aria-current={path === item.href ? 'page' : undefined}><span class="nav__num" aria-hidden="true">0{index + 1}</span>{item.label}</a></li>
+        ))}
+        <li class="nav__sheet-only"><a href="/contact.html" aria-current={path === '/contact.html' ? 'page' : undefined}><span class="nav__num" aria-hidden="true">06</span>Contact</a></li>
+      </ol>
+      <div class="nav__sheet-foot nav__sheet-only">
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+        <a href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">CV (PDF) ↗</a>
+      </div>
+    </nav>
+    <div class="header__actions">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch colour theme" title="Switch colour theme">
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5Z" fill="currentColor"/></svg>
+      </button>
+      <a class="header__cta" href="/contact.html" aria-current={path === '/contact.html' ? 'page' : undefined}>Contact</a>
+      <button class="menu-btn" type="button" data-menu aria-expanded="false" aria-controls="site-nav"><span data-menu-label>Menu</span><span class="menu-btn__bars" aria-hidden="true"></span></button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .header { position: sticky; top: 0; z-index: 50; height: var(--header); background: var(--bg); border-bottom: 1px solid var(--line); color: var(--ink); view-transition-name: site-header; transition: background-color var(--d-3) var(--ease-out), border-color var(--d-3) var(--ease-out), color var(--d-3) var(--ease-out); }
+  .header[data-over] { position: fixed; inset: 0 0 auto; background: transparent; border-color: transparent; color: #f4f5f7; }
+  .header[data-over][data-solid], .header[data-over][data-open] { background: var(--bg); border-color: var(--line); color: var(--ink); }
+  .header__inner { height: 100%; max-width: var(--max); margin-inline: auto; padding-inline: var(--margin); display: flex; align-items: center; gap: var(--s-5); }
+  .brand { display: flex; flex-direction: column; text-decoration: none; line-height: 1.1; margin-right: auto; min-height: 44px; justify-content: center; }
+  .brand__name { font-weight: 640; letter-spacing: -.03em; font-size: 17px; }
+  .brand__meta { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; opacity: .72; }
+  .nav__list { display: flex; gap: clamp(14px, 1.8vw, 28px); }
+  .nav__list a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14.5px; font-weight: 480; text-decoration: none; position: relative; }
+  .nav__list a::after { content: ''; position: absolute; left: 0; right: 0; bottom: 9px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform var(--d-3) var(--ease-out); }
+  .nav__list a:hover::after, .nav__list a[aria-current='page']::after { transform: scaleX(1); }
+  .nav__num { font-family: var(--font-mono); font-size: 10px; opacity: .6; }
+  .nav__sheet-only { display: none; }
+  .header__actions { display: flex; align-items: center; gap: var(--s-2); }
+  .icon-btn { display: grid; place-items: center; width: 44px; height: 44px; border: 0; background: transparent; border-radius: 2px; }
+  .icon-btn:hover { color: var(--accent); }
+  .header[data-over]:not([data-solid]):not([data-open]) .icon-btn:hover { color: #fff; opacity: .8; }
+  .header__cta { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 16px; border: 1px solid currentColor; border-radius: 2px; font-size: 14px; font-weight: 560; text-decoration: none; transition: background-color var(--d-2), color var(--d-2), border-color var(--d-2); }
+  .header__cta:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .menu-btn { display: none; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px 0 12px; border: 0; background: transparent; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .menu-btn__bars { position: relative; width: 18px; height: 8px; }
+  .menu-btn__bars::before, .menu-btn__bars::after { content: ''; position: absolute; left: 0; right: 0; height: 1.5px; background: currentColor; transition: transform var(--d-3) var(--ease-out); }
+  .menu-btn__bars::before { top: 0; }
+  .menu-btn__bars::after { bottom: 0; }
+  .menu-btn[aria-expanded='true'] .menu-btn__bars::before { transform: translateY(3.25px) rotate(45deg); }
+  .menu-btn[aria-expanded='true'] .menu-btn__bars::after { transform: translateY(-3.25px) rotate(-45deg); }
+
+  @media (max-width: 1099px) {
+    .header__cta { display: none; }
+    :global(html.js) .menu-btn { display: inline-flex; }
+    :global(html.js) .nav { position: fixed; inset: var(--header) 0 0; z-index: 49; display: flex; flex-direction: column; justify-content: space-between; padding: var(--s-6) var(--margin) calc(var(--s-6) + env(safe-area-inset-bottom)); background: var(--bg); color: var(--ink); overflow-y: auto; visibility: hidden; opacity: 0; transform: translateY(-8px); transition: opacity var(--d-3) var(--ease-out), transform var(--d-3) var(--ease-out), visibility 0s linear var(--d-3); }
+    :global(html.js) .nav.is-open { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+    :global(html.js) .nav__list { flex-direction: column; gap: 0; }
+    :global(html.js) .nav__list li { border-bottom: 1px solid var(--line); }
+    :global(html.js) .nav__list a { width: 100%; min-height: 64px; font-size: clamp(28px, 8vw, 44px); font-weight: 540; letter-spacing: -.04em; gap: 14px; }
+    :global(html.js) .nav__list a::after { display: none; }
+    :global(html.js) .nav__list a[aria-current='page'] { color: var(--accent); }
+    :global(html.js) .nav__num { font-size: 12px; }
+    :global(html.js) .nav__sheet-only { display: block; }
+    :global(html.js) .nav__sheet-foot { display: grid; gap: var(--s-2); margin-top: var(--s-7); font-size: var(--step-small); }
+    :global(html.js) .nav__sheet-foot a { min-height: 44px; display: inline-flex; align-items: center; }
+    /* Without JavaScript the navigation stays reachable as a scrollable row. */
+    :global(html:not(.js)) .header { height: auto; }
+    :global(html:not(.js)) .header__inner { flex-wrap: wrap; padding-block: 8px; }
+    :global(html:not(.js)) .nav { order: 3; width: 100%; overflow-x: auto; }
+    :global(html:not(.js)) .header[data-over] { position: absolute; }
+  }
+  @media (max-width: 420px) { .brand__meta { display: none; } }
+</style>

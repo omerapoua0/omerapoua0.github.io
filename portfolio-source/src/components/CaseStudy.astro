@@ -1,0 +1,48 @@
+---
+import ProjectMedia from './ProjectMedia.astro';
+import type { Project } from '../data/projects';
+import { statusLabel } from '../data/site';
+interface Props { project: Project; number: number; }
+const { project, number } = Astro.props;
+---
+<article class="case" id={project.id} aria-labelledby={`${project.id}-title`}>
+  {project.aliases.map(alias => <span id={alias} class="case__alias"></span>)}
+  <div class="case__media">
+    <ProjectMedia project={project} />
+  </div>
+  <div class="case__body">
+    <p class="label"><span class="num">{String(number).padStart(2, '0')}</span> / {project.org} · {project.period}</p>
+    <h2 id={`${project.id}-title`} style={`view-transition-name: case-${project.id}`}>{project.name}</h2>
+    <p class="case__role"><span class:list={['chip', `chip--${project.status}`]}>{statusLabel[project.status]}</span><span>{project.role}</span></p>
+    <p class="lede">{project.summary}</p>
+    <dl class="case__steps">
+      <div><dt class="label">Context</dt><dd>{project.context}</dd></div>
+      <div><dt class="label">My contribution</dt><dd><ul>{project.contribution.map(line => <li>{line}</li>)}</ul></dd></div>
+      <div><dt class="label">Stage</dt><dd>{project.stage}</dd></div>
+      <div><dt class="label">Stack</dt><dd class="case__stack">{project.stack.join(' · ')}</dd></div>
+    </dl>
+    <p class="note">{project.statusNote}</p>
+    {project.external && <p><a class="link-arrow" href={project.external.href} target="_blank" rel="noopener noreferrer">{project.external.label} <span aria-hidden="true">↗</span></a></p>}
+  </div>
+</article>
+
+<style>
+  .case { position: relative; display: grid; gap: var(--s-6); padding-block: clamp(48px, 6vw, 96px); border-top: 1px solid var(--line); }
+  .case__alias { position: absolute; top: 0; }
+  .case__body { display: grid; gap: var(--s-5); align-content: start; }
+  .case__body h2 { font-size: var(--step-h2); }
+  .case__role { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; color: var(--muted); font-size: var(--step-small); }
+  .case__steps { display: grid; border-top: 1px solid var(--line); }
+  .case__steps > div { display: grid; gap: 6px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .case__steps dd { margin: 0; max-width: 62ch; }
+  .case__steps ul { display: grid; gap: 8px; }
+  .case__steps li { position: relative; padding-left: 20px; }
+  .case__steps li::before { content: '—'; position: absolute; left: 0; color: var(--accent); }
+  .case__stack { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  @media (min-width: 1024px) {
+    .case { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: start; }
+    .case__media { grid-column: 1 / span 6; position: sticky; top: calc(var(--header) + 32px); }
+    .case__body { grid-column: 8 / span 5; }
+    .case__steps > div { grid-template-columns: 140px minmax(0, 1fr); gap: 16px; }
+  }
+</style>

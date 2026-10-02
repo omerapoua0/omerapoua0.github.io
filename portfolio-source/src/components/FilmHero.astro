@@ -1,49 +1,114 @@
 ---
+import { film } from '../data/site';
 ---
-<section class="film-hero" aria-labelledby="hero-heading" data-film-hero>
- <div class="film-art" aria-hidden="true">
-  <video class="film-video" data-hero-video data-mp4="/hero-editorial.mp4" data-mobile="/hero-editorial-mobile.mp4" muted loop playsinline preload="none" poster="/hero-editorial-poster.jpg" tabindex="-1"></video>
-  <div class="film-shade"></div>
- </div>
- <div class="film-topline"><span>LONDON, UK</span><span>PRODUCT / SYSTEMS / MATHEMATICS</span></div>
- <div class="film-copy">
-  <p class="film-eyebrow">AI product engineer & founder</p>
-  <h1 id="hero-heading"><span>AI systems.</span><span>Human intent.</span></h1>
-  <p>Agentic workflows, machine learning and product engineering. Grounded in mathematics. Built for people.</p>
-  <div class="film-actions"><a class="film-primary" href="#selected">Explore the work <span aria-hidden="true">↗</span></a><a class="film-contact" href="/contact.html">Start a conversation <span aria-hidden="true">↗</span></a></div>
- </div>
- <div class="film-bottom"><a class="film-scroll" href="#selected"><span aria-hidden="true">↓</span> Selected work</a><div class="film-caption"><span>TECHNOLOGY / THOUGHT / CONTEXT</span><span>Editorial film · Licensed footage</span></div><button class="film-pause" data-film-toggle type="button" aria-label="Play hero video" aria-pressed="false" hidden><span data-film-control>Play film</span><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5 3h2v10H5zm4 0h2v10H9z" fill="currentColor"/></svg></button></div>
- <p class="sr-only" data-film-status role="status" aria-live="polite"></p>
+<section class="hero" aria-labelledby="hero-title" data-film-hero>
+  <div class="hero__media" aria-hidden="true">
+    <picture>
+      <source media="(max-width: 720px)" srcset="/hero-editorial-poster-mobile.webp" type="image/webp" />
+      <source media="(max-width: 720px)" srcset="/hero-editorial-poster-mobile.jpg" />
+      <source srcset="/hero-editorial-poster.webp" type="image/webp" />
+      <img class="hero__poster" src="/hero-editorial-poster.jpg" alt="" width="1280" height="800" fetchpriority="high" decoding="async" />
+    </picture>
+    <video class="hero__video" data-hero-video data-mp4="/hero-editorial.mp4" data-webm="/hero-editorial.webm" data-mobile="/hero-editorial-mobile.mp4" data-mobile-webm="/hero-editorial-mobile.webm" muted loop playsinline preload="none" tabindex="-1" disablepictureinpicture></video>
+    <div class="hero__scrim"></div>
+  </div>
+
+  <div class="hero__content">
+    <p class="hero__kicker"><span>Omar Aboelella</span><span>AI product engineer · London</span></p>
+    <h1 id="hero-title" class="hero__title">
+      <span class="line"><span>Agentic systems,</span></span>
+      <span class="line"><span>built with <em class="voice">mathematical</em></span></span>
+      <span class="line"><span><em class="voice">care.</em></span></span>
+    </h1>
+    <div class="hero__foot">
+      <p class="hero__lede">I design reasoning systems for network autonomy, I’m building a learning product, and I teach maths and physics. Studying Computer Science &amp; Mathematics at Birkbeck.</p>
+      <div class="actions">
+        <a class="btn btn--light" href="#work">Selected work <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+        <a class="btn btn--outline-light" href="/tutoring.html">Maths &amp; science lessons <span class="arrow" aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero__bar">
+    <div class="chapters" role="group" aria-label="Film chapters" data-chapters hidden>
+      {film.chapters.map((chapter, index) => (
+        <button type="button" class="chapter" data-chapter={index} data-start={chapter.start} aria-label={`Chapter ${index + 1}: ${chapter.label}`}>
+          <span class="chapter__head"><span class="chapter__num">0{index + 1}</span><span class="chapter__label">{chapter.label}</span></span>
+          <span class="chapter__track"><span class="chapter__fill"></span></span>
+        </button>
+      ))}
+    </div>
+    <div class="hero__controls">
+      <button class="film-toggle" type="button" data-film-toggle aria-pressed="false" hidden>
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path data-film-icon d="M5 3l8 5-8 5z" fill="currentColor" /></svg>
+        <span data-film-control>Play film</span>
+      </button>
+      <a class="hero__credit" href="/THIRD-PARTY-NOTICES.txt">{film.credit} <span class="nowrap" aria-hidden="true">Credits ↗</span></a>
+    </div>
+  </div>
+  <p class="sr-only" data-film-status role="status" aria-live="polite"></p>
 </section>
-<script>
- const video=document.querySelector<HTMLVideoElement>('[data-hero-video]');
- const toggle=document.querySelector<HTMLButtonElement>('[data-film-toggle]');
- const status=document.querySelector<HTMLElement>('[data-film-status]');
- const hero=document.querySelector<HTMLElement>('[data-film-hero]');
- if(video && toggle && hero){
-  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
-  const connection=(navigator as Navigator & {connection?:{saveData?:boolean}}).connection;
-  const mobile=window.matchMedia('(max-width: 720px)').matches;
-  if(mobile)video.poster='/hero-editorial-poster-mobile.jpg';
-  let explicitlyPaused=false;
-  let inView=true;
-  let loaded=false;
-  let failed=false;
-  const sources:HTMLSourceElement[]=[];
-  const failedSources=new Set<HTMLSourceElement>();
-  const fallback=()=>{if(!loaded)return;failed=true;video.pause();hero.dataset.filmError='true';toggle.hidden=true;if(status)status.textContent='Showing the film still. All portfolio links are available.'};
-  const label=()=>{const playing=!video.paused;toggle.setAttribute('aria-label',playing?'Pause hero video':'Play hero video');toggle.setAttribute('aria-pressed',String(playing));toggle.querySelector('[data-film-control]')!.textContent=playing?'Pause film':'Play film';toggle.querySelector('path')?.setAttribute('d',playing?'M5 3h2v10H5zm4 0h2v10H9z':'M5 3l8 5-8 5z');hero.dataset.filmPlaying=String(playing)};
-  // An empty <source> can emit errors before IntersectionObserver runs in WebKit.
-  // Create valid sources only when playback is wanted, with MP4 as the baseline.
-  const load=()=>{if(loaded)return;loaded=true;const url=mobile?video.dataset.mobile:video.dataset.mp4;if(!url){fallback();return}const source=document.createElement('source');source.src=url;source.type='video/mp4';source.addEventListener('error',()=>{failedSources.add(source);if(failedSources.size===sources.length)fallback()});sources.push(source);video.append(source);video.load()};
-  const play=async(explicit=false)=>{if(failed)return;if(!explicit && (reduce.matches || connection?.saveData || explicitlyPaused || !inView || document.hidden))return;load();try{await video.play();if(explicit && status)status.textContent='Hero film playing.'}catch{if(status && explicit)status.textContent='Playback is unavailable. You can still explore the portfolio.'}label()};
-  toggle.hidden=false;
-  toggle.addEventListener('click',()=>{if(video.paused){explicitlyPaused=false;void play(true)}else{explicitlyPaused=true;video.pause();if(status)status.textContent='Hero film paused.'}label()});
-  video.addEventListener('play',label);video.addEventListener('pause',label);
-  video.addEventListener('error',fallback);
-  reduce.addEventListener('change',()=>{if(reduce.matches)video.pause();else void play();label()});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)video.pause();else void play()});
-  if('IntersectionObserver' in window){const observer=new IntersectionObserver(([entry])=>{inView=entry.isIntersecting;if(inView)void play();else video.pause()},{threshold:.1});observer.observe(hero)}else void play();
-  label();
- }
-</script>
+
+<style>
+  .hero { position: relative; isolation: isolate; min-height: max(640px, 100svh); max-height: 1100px; display: grid; grid-template-rows: 1fr auto; color: #f4f5f7; background: var(--plate); overflow: hidden; }
+  .hero__media, .hero__media picture, .hero__poster, .hero__video, .hero__scrim { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero__media { z-index: -1; }
+  .hero__poster, .hero__video { object-fit: cover; object-position: center; }
+  .hero__video { opacity: 0; transition: opacity var(--d-4) var(--ease-out); }
+  .hero[data-film-ready] .hero__video { opacity: 1; }
+  .hero[data-film-error] .hero__video { display: none; }
+  .hero__scrim { background:
+      linear-gradient(to top, #0b0d11f2 0%, #0b0d11b3 26%, #0b0d1140 55%, #0b0d1166 100%),
+      linear-gradient(to right, #0b0d11b8 0%, #0b0d1150 45%, transparent 75%); }
+
+  .hero__content { align-self: end; width: 100%; max-width: var(--max); margin-inline: auto; padding: calc(var(--header) + 48px) var(--margin) clamp(28px, 4vw, 48px); display: grid; gap: clamp(20px, 2.6vw, 36px); }
+  .hero__kicker { display: flex; flex-wrap: wrap; gap: 4px 20px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: #c9cfda; }
+  .hero__kicker span:first-child { color: #fff; }
+  .hero__title { font-size: clamp(3rem, 1.3rem + 6.6vw, 8rem); font-weight: 560; letter-spacing: -.055em; line-height: .93; max-width: 12ch; }
+  .hero__title .line { display: block; overflow: clip; padding-bottom: .06em; margin-bottom: -.06em; }
+  .hero__title .line > span { display: inline-block; }
+  .hero__title .voice { font-weight: 400; letter-spacing: -.035em; color: #c3c8ff; }
+  .hero__foot { display: grid; gap: var(--s-5); }
+  .hero__lede { font-size: var(--step-lede); line-height: 1.45; max-width: 44ch; color: #dde1e8; }
+  @media (min-width: 1024px) { .hero__foot { grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--s-7); } }
+
+  .btn--light { background: #f4f5f7; border-color: #f4f5f7; color: #0b0d11; }
+  .btn--light:hover { background: #c3c8ff; border-color: #c3c8ff; color: #0b0d11; }
+  .btn--outline-light { background: transparent; border-color: #ffffff80; color: #f4f5f7; }
+  .btn--outline-light:hover { background: transparent; border-color: #c3c8ff; color: #c3c8ff; }
+  .hero :focus-visible { outline-color: #c3c8ff; }
+
+  .hero__bar { width: 100%; max-width: var(--max); margin-inline: auto; padding: 0 var(--margin) calc(20px + env(safe-area-inset-bottom)); display: grid; gap: var(--s-4); }
+  .chapters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .chapter { display: grid; gap: 8px; min-height: 44px; padding: 8px 0 6px; border: 0; background: none; color: #aab2c0; text-align: left; }
+  .chapter__head { display: flex; gap: 8px; align-items: baseline; font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .chapter__num { color: #8b93a3; }
+  .chapter__track { position: relative; height: 2px; background: #ffffff33; overflow: hidden; }
+  .chapter__fill { position: absolute; inset: 0; background: #f4f5f7; transform-origin: left; transform: scaleX(var(--p, 0)); }
+  .chapter[aria-current='true'] { color: #fff; }
+  .chapter:hover { color: #fff; }
+  .chapter:hover .chapter__track { background: #ffffff66; }
+  .hero__controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; }
+  .film-toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px; border: 1px solid #ffffff59; border-radius: 2px; background: #0b0d1166; color: #f4f5f7; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; }
+  .film-toggle:hover { border-color: #c3c8ff; color: #c3c8ff; }
+  .hero__credit { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .03em; text-transform: uppercase; color: #aab2c0; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+  .hero__credit:hover { color: #fff; }
+  .nowrap { white-space: nowrap; }
+  @media (max-width: 720px) {
+    .chapter__label { display: none; }
+    .chapter[aria-current='true'] .chapter__label { display: inline; white-space: nowrap; }
+    .chapters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .hero__credit { font-size: 10px; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__title .line > span { animation: rise var(--d-5) var(--ease-out) both; }
+    .hero__title .line:nth-child(2) > span { animation-delay: 80ms; }
+    .hero__title .line:nth-child(3) > span { animation-delay: 160ms; }
+    .hero__kicker, .hero__foot { animation: fade var(--d-5) var(--ease-out) 260ms both; }
+    @keyframes rise { from { transform: translateY(105%); } to { transform: none; } }
+    @keyframes fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<script>import '../scripts/film';</script>

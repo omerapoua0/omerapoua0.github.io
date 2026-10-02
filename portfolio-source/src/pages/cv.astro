@@ -1,16 +1,97 @@
 ---
-import OmarLayout from '../layouts/OmarLayout.astro';
-const roles = [
-  { date: 'Jan 2026 to present', company: 'Digis Squared', title: 'AI Product Engineer', text: 'Technical strategy for KATANA, closed-loop MAPE-K reasoning using Bayesian inference, LangGraph workflows, TCO modelling, security auditing and sprint planning.', href: '/work.html#katana' },
-  { date: 'Mar 2026 to present', company: 'Southfields Academy', title: 'Mathematics & Physics Teaching Assistant', text: 'Teaching GCSE Higher maths and physics to international and EAL students, with clear explanations of quantitative concepts.', href: '/tutoring.html' },
-  { date: 'Feb to May 2026', company: 'Bitget', title: 'AI Product Intern', text: 'Analysed exchange telemetry and developed predictive models using historical and live market data in Platform & Operations.', href: '/work.html#project-2' },
-  { date: 'Sep 2024 to Mar 2025', company: 'Digis Squared', title: 'R&D Engineering Trainee', text: 'Researched network systems and the integration of hardware and software.' },
-  { date: 'Jun to Sep 2024', company: 'BP', title: 'Market Intelligence Research Intern', text: 'Localised offshore-wind market intelligence models and automated competitor-research reporting.', href: '/work.html#project-3' },
-];
+import Base from '../layouts/Base.astro';
+import PageIntro from '../components/PageIntro.astro';
+import SectionHead from '../components/SectionHead.astro';
+import Timeline from '../components/Timeline.astro';
+import { certifications, education, languages, researchAndTeaching, skillGroups, technicalExperience } from '../data/experience';
 ---
-<OmarLayout title="About & experience" description="AI product engineer, Computer Science and Mathematics student, and maths and science tutor based in London.">
-  <section class="page-intro"><p class="eyebrow">About / 04</p><h1>I like making<br />difficult things make sense.</h1><p class="lede">I’m Omar Aboelella. AI product engineer, Computer Science & Mathematics student, and a tutor based in London.</p><div class="form-actions"><a class="button" href="/Omar-Aboelella-CV.pdf" download>Download CV ↓</a><a class="button button-secondary" href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">Open PDF ↗</a></div></section>
-  <section class="section grid-2"><div><p class="eyebrow">The common thread</p><h2>Understand it.<br />Build it. Explain it.</h2><p class="lede">Engineering and teaching ask me to do something similar: find the structure inside a difficult problem and make the next step clearer.</p><p>My work spans network autonomy, predictive modelling, market intelligence and learning products. Mathematics is the thread running through it; building is how I test what I understand.</p><p>I speak Arabic natively and English fluently. Longer term, I want to pursue deeper research in optimisation and intelligent systems.</p></div><figure class="portrait-card"><img src="/omar-aboelella.jpg" alt="Omar Aboelella" width="900" height="1200" loading="lazy" /><figcaption>Omar Aboelella / London</figcaption></figure></section>
-  <section class="section" id="experience"><div class="section-heading"><p class="eyebrow">Experience</p><h2>The work so far.</h2></div><div class="timeline">{roles.map(role => <article class="timeline-row"><p class="eyebrow">{role.date}</p><div><p class="eyebrow">{role.company}</p><h3>{role.title}</h3><p>{role.text}</p>{role.href && <a href={role.href}>Related work ↗</a>}</div></article>)}<article class="timeline-row"><p class="eyebrow">Incoming / Summer 2027</p><div><p class="eyebrow">Santander</p><h3>Fintech Research Placement</h3><p>Selected for a placement applying mathematical optimisation and machine learning to credit-scoring models. This is upcoming, not completed experience.</p></div></article></div><p class="fine-print">My wider work experience also includes Rapport.</p></section>
-  <section class="section grid-2"><div><p class="eyebrow">Education</p><h2>Always a student.</h2><div class="detail-list"><div><p class="eyebrow">Birkbeck, University of London / Expected 2028</p><h3>BSc (Hons) Computer Science & Mathematics</h3><p>Linear algebra, calculus, discrete mathematics, data modelling and analysis, and systems analysis.</p></div><div><p class="eyebrow">Westminster Kingsway / 2025</p><h3>Access to HE Engineering</h3><p>Distinction. Additional qualifications include seven GCSEs, with an A in Mathematics.</p></div></div></div><div class="panel" id="skills"><p class="eyebrow">Toolkit</p><h2>Ideas into systems.</h2><div class="skill-groups"><div class="skill-group"><h3>AI & reasoning</h3><p>LangGraph, multi-agent orchestration, RAG, MAPE-K, Bayesian inference, predictive modelling.</p></div><div class="skill-group"><h3>Software & data</h3><p>Python, NumPy, Pandas, SciPy, FastAPI, Docker, SQL, PostgreSQL, APIs, Git and CI/CD.</p></div><div class="skill-group"><h3>Product & delivery</h3><p>Technical strategy, workflow design, TCO modelling, security auditing, test planning and Jira.</p></div><div class="skill-group"><h3>Mathematics & communication</h3><p>Linear algebra, calculus, probability, optimisation, Excel and LaTeX. Independent study in stochastic processes and Qiskit.</p></div></div></div></section>
-</OmarLayout>
+<Base title="About & CV" description="About Omar Aboelella: AI Product Engineer at Digis Squared, BSc Computer Science & Mathematics student at Birkbeck, Maths & Physics Teaching Assistant. Experience, education, certifications and CV.">
+  <PageIntro section="About & CV" meta={['London, UK', 'Arabic · English']}>
+    <Fragment slot="title">I like making difficult things <em class="voice">make sense.</em></Fragment>
+    <p class="lede">I’m Omar Aboelella: AI product engineer, Computer Science &amp; Mathematics student and tutor, based in London.</p>
+    <div class="actions cv-actions"><a class="btn btn--accent" href="/Omar-Aboelella-CV.pdf" download>Download CV <span class="arrow arrow--down" aria-hidden="true">↓</span></a><a class="btn btn--ghost" href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">Open PDF <span class="arrow" aria-hidden="true">↗</span></a></div>
+    <figure slot="aside" class="portrait">
+      <img src="/omar-aboelella.jpg" alt="Portrait of Omar Aboelella" width="900" height="1200" loading="eager" decoding="async" />
+      <figcaption class="label">Omar Aboelella · London</figcaption>
+    </figure>
+  </PageIntro>
+
+  <section class="section wrap" aria-labelledby="profile-title">
+    <div class="profile">
+      <div>
+        <p class="label"><span class="section-mark">§1</span> Profile</p>
+        <h2 id="profile-title">Understand it. Build it. <em class="voice">Explain it.</em></h2>
+      </div>
+      <div class="profile__copy">
+        <p class="lede">I build machine-learning and optimisation systems from the mathematics through to production code.</p>
+        <p>I’m strong in Python, SQL and statistical modelling, with practical experience in Bayesian inference, predictive modelling and data pipelines. My work spans network autonomy, predictive modelling, market intelligence and learning products.</p>
+        <p>Engineering and teaching ask me to do something similar: find the structure inside a difficult problem and make the next step clearer. Longer term, I want to pursue deeper research in optimisation and intelligent systems.</p>
+        <dl class="facts profile__facts">
+          <div><dt class="label">Studying</dt><dd>BSc (Hons) Computer Science &amp; Mathematics, Birkbeck · targeting First Class Honours</dd></div>
+          <div><dt class="label">Looking for</dt><dd>A Sales &amp; Trading or quantitative internship, applying mathematics and programming to markets and systematic decision-making</dd></div>
+          <div><dt class="label">Languages</dt><dd>{languages.map(item => `${item.name} (${item.level.toLowerCase()})`).join(', ')}</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--rule wrap" id="experience" aria-labelledby="experience-title">
+    <SectionHead mark="2" label="Experience" id="experience-title">The work <em class="voice">so far.</em></SectionHead>
+    <h3 class="group-title label">Technical experience</h3>
+    <Timeline roles={technicalExperience} />
+    <h3 class="group-title label">Research &amp; teaching</h3>
+    <Timeline roles={researchAndTeaching} />
+    <p class="muted fine">My wider work experience also includes Rapport.</p>
+  </section>
+
+  <section class="section section--rule wrap" id="education" aria-labelledby="education-title">
+    <SectionHead mark="3" label="Education" id="education-title">Always <em class="voice">a student.</em></SectionHead>
+    <ol class="timeline-lite">
+      {education.map(item => (
+        <li><p class="num">{item.period}</p><div><p class="label">{item.org}</p><h3>{item.title}</h3><p class="muted">{item.text}</p></div></li>
+      ))}
+      <li><p class="num">Certifications</p><div><p class="label">Professional learning</p><ul class="certs">{certifications.map(name => <li>{name}</li>)}</ul></div></li>
+    </ol>
+  </section>
+
+  <section class="section section--rule wrap" id="skills" aria-labelledby="skills-title">
+    <SectionHead mark="4" label="Skills" id="skills-title">Ideas <em class="voice">into systems.</em>
+      <p slot="aside">As listed on my CV. For where each skill was used, see the <a href="/index.html#skills-title">capability matrix</a>.</p>
+    </SectionHead>
+    <dl class="skills">
+      {skillGroups.map(group => <div><dt class="label">{group.title}</dt><dd>{group.items}</dd></div>)}
+    </dl>
+  </section>
+</Base>
+
+<style>
+  .cv-actions { margin-top: var(--s-6); }
+  .portrait { position: relative; max-width: 420px; justify-self: end; width: 100%; }
+  .portrait img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center top; background: var(--raised); }
+  .portrait figcaption { margin-top: var(--s-3); }
+  .profile { display: grid; gap: var(--s-6); }
+  .profile__copy { display: grid; gap: var(--s-5); }
+  .profile__copy > p:not(.lede) { max-width: 62ch; }
+  .profile__facts { margin-top: var(--s-4); }
+  .profile__facts dd { margin: 0; }
+  @media (min-width: 1024px) {
+    .profile { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); }
+    .profile > div:first-child { grid-column: 1 / span 5; }
+    .profile__copy { grid-column: 7 / span 6; }
+  }
+  .group-title { margin: var(--s-7) 0 var(--s-3); }
+  .group-title:first-of-type { margin-top: 0; }
+  .fine { margin-top: var(--s-5); font-size: var(--step-small); }
+  .timeline-lite { border-top: 1px solid var(--line-strong); }
+  .timeline-lite > li { display: grid; gap: var(--s-2); padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
+  .timeline-lite > li > p.num { font-size: 12.5px; color: var(--muted); padding-top: .3em; }
+  .timeline-lite > li > div { display: grid; gap: var(--s-2); }
+  .certs { display: grid; gap: 6px; }
+  .certs li { font-weight: 500; }
+  .certs li::before { content: '— '; color: var(--accent); }
+  @media (min-width: 768px) { .timeline-lite > li { grid-template-columns: 200px minmax(0, 1fr); gap: var(--gutter); } }
+  .skills { display: grid; border-top: 1px solid var(--line-strong); }
+  .skills > div { display: grid; gap: var(--s-2); padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
+  .skills dd { margin: 0; max-width: 70ch; }
+  @media (min-width: 768px) { .skills > div { grid-template-columns: 200px minmax(0, 1fr); gap: var(--gutter); } }
+</style>

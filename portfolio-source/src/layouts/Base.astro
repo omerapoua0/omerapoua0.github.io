@@ -1,0 +1,61 @@
+---
+import '@fontsource-variable/onest/wght.css';
+import '@fontsource-variable/jetbrains-mono/wght.css';
+import '@fontsource/old-standard-tt/latin-400-italic.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/layout.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { site } from '../data/site';
+
+interface Props { title: string; description?: string; home?: boolean; image?: string; }
+const { title, description = site.description, home = false, image = '/hero-editorial-poster.jpg' } = Astro.props;
+const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
+const fullTitle = home ? `${site.name} | ${title}` : `${title} | ${site.name}`;
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: 'AI Product Engineer',
+  worksFor: { '@type': 'Organization', name: 'Digis Squared' },
+  url: site.url,
+  email: `mailto:${site.email}`,
+  sameAs: [site.github],
+  knowsAbout: ['AI product engineering', 'Agentic systems', 'LangGraph', 'Bayesian inference', 'Time-series forecasting', 'Mathematics', 'Maths and science tutoring'],
+  homeLocation: { '@type': 'City', name: 'London' },
+};
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f1f2ef" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0d11" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="canonical" href={new URL(path, site.url).href} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={new URL(path, site.url).href} />
+    <meta property="og:image" content={new URL(image, site.url).href} />
+    <meta property="og:image:alt" content="Graded still from a licensed editorial film about computing, mathematics and London" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(person)} />
+    <script is:inline>
+      (function(){var d=document.documentElement;d.classList.add('js');try{var t=localStorage.getItem('omar-theme');if(t==='light'||t==='dark')d.dataset.theme=t}catch(e){}})();
+    </script>
+  </head>
+  <body class:list={[home ? 'is-home' : 'is-page']}>
+    <a href="#main" class="skip-link">Skip to content</a>
+    <SiteHeader overHero={home} />
+    <main id="main" tabindex="-1"><slot /></main>
+    <SiteFooter />
+    <script>import '../scripts/site';</script>
+  </body>
+</html>

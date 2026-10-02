@@ -1,0 +1,22 @@
+---
+interface Props { section: string; meta?: string[]; }
+const { section, meta = [] } = Astro.props;
+---
+<section class="intro wrap" aria-labelledby="page-title">
+  <p class="intro__kicker label"><span><span class="section-mark">§</span> {section}</span>{meta.map(item => <span>{item}</span>)}</p>
+  <h1 id="page-title"><slot name="title" /></h1>
+  <div class="intro__body">
+    <div><slot /></div>
+    {Astro.slots.has('aside') && <div class="intro__aside"><slot name="aside" /></div>}
+  </div>
+</section>
+
+<style>
+  .intro__aside { display: grid; gap: var(--s-4); }
+  @media (prefers-reduced-motion: no-preference) {
+    #page-title { animation: intro-rise var(--d-5) var(--ease-out) both; }
+    .intro__body { animation: intro-fade var(--d-5) var(--ease-out) 160ms both; }
+    @keyframes intro-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+    @keyframes intro-fade { from { opacity: 0; } to { opacity: 1; } }
+  }
+</style>
