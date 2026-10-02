@@ -6,11 +6,12 @@ accents and JetBrains Mono metadata. Read [CLAUDE.md](CLAUDE.md) first. The
 previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for
 history only; its wheel and charcoal/ivory/oxblood styling are retired.
 
-- **Hero:** personal and first-person ("Hi, I'm Omar.") with the real
-  portrait, a live London clock and a short CV-backed intro. The licensed
-  20-second film plays in a small framed window ("things I think about"),
-  desktop/phone editions in H.264 MP4 with VP9 WebM fallback, loaded after the
-  page, with pause/play and a chapter rail that reflects and seeks the film.
+- **Hero:** cinematic and first-person: "Hi, I'm Omar." with a cycling line,
+  the real portrait (floating, pointer tilt), a live London clock and a kinetic
+  ticker of CV words, over the full-bleed licensed film (H.264 MP4 + VP9 WebM).
+  It starts at once; when iPhones block autoplay it switches to moving chapter
+  stills. One "Pause motion" control stops the film, line and ticker; reduced
+  motion starts paused. Scroll reveals use IntersectionObserver (iOS-safe).
 - **Projects:** a server-rendered project index with a sticky duotone preview
   pane and area filters, case studies with explicit stage notes, and a
   capability matrix linking each skill to where the CV shows it in use.

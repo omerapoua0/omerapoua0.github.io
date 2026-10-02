@@ -1,8 +1,10 @@
 ---
 import { navigation, site } from '../data/site';
+interface Props { overHero?: boolean; }
+const { overHero = false } = Astro.props;
 const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 ---
-<header class="header" data-header>
+<header class="header" data-header data-over={overHero ? 'true' : undefined}>
   <div class="header__inner">
     <a class="brand" href="/index.html" aria-current={path === '/index.html' ? 'page' : undefined}>
       <span class="brand__name">Omar Aboelella</span>
@@ -31,7 +33,9 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 </header>
 
 <style>
-  .header { position: sticky; top: 0; z-index: 50; height: var(--header); background: var(--bg); border-bottom: 1px solid var(--line); color: var(--ink); view-transition-name: site-header; }
+  .header { position: sticky; top: 0; z-index: 50; height: var(--header); background: var(--bg); border-bottom: 1px solid var(--line); color: var(--ink); view-transition-name: site-header; transition: background-color var(--d-3) var(--ease-out), border-color var(--d-3) var(--ease-out), color var(--d-3) var(--ease-out); }
+  .header[data-over] { position: fixed; inset: 0 0 auto; background: transparent; border-color: transparent; color: #f4f5f7; }
+  .header[data-over][data-solid], .header[data-over][data-open] { background: var(--bg); border-color: var(--line); color: var(--ink); }
   .header__inner { height: 100%; max-width: var(--max); margin-inline: auto; padding-inline: var(--margin); display: flex; align-items: center; gap: var(--s-5); }
   .brand { display: flex; flex-direction: column; text-decoration: none; line-height: 1.1; margin-right: auto; min-height: 44px; justify-content: center; }
   .brand__name { font-weight: 640; letter-spacing: -.03em; font-size: 17px; }
@@ -73,6 +77,7 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
     :global(html:not(.js)) .header { height: auto; }
     :global(html:not(.js)) .header__inner { flex-wrap: wrap; padding-block: 8px; }
     :global(html:not(.js)) .nav { order: 3; width: 100%; overflow-x: auto; }
+    :global(html:not(.js)) .header[data-over] { position: absolute; }
   }
   @media (max-width: 420px) { .brand__meta { display: none; } }
 </style>

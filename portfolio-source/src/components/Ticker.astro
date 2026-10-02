@@ -1,0 +1,35 @@
+---
+/* Kinetic band of words from the CV. Decorative: the same skills are listed in
+   readable form on the page, so the moving copy is hidden from assistive tech. */
+const rows = [
+  ['LangGraph', 'Bayesian inference', 'MAPE-K', 'Python', 'Time-series forecasting', 'Feature engineering', 'Data pipelines'],
+  ['GCSE & A-level maths', 'Physics', 'Linear algebra', 'Birkbeck', 'NOOKBASE', 'Qiskit', 'London'],
+];
+---
+<div class="ticker" aria-hidden="true">
+  {rows.map((words, row) => (
+    <div class:list={['ticker__row', { 'ticker__row--reverse': row === 1 }]}>
+      <div class="ticker__track">
+        {[0, 1].map(() => (
+          <span class="ticker__set">{words.map((word, index) => <span class:list={['ticker__word', { 'ticker__word--outline': (index + row) % 2 === 1 }]}>{word}<span class="ticker__star">✳</span></span>)}</span>
+        ))}
+      </div>
+    </div>
+  ))}
+</div>
+
+<style>
+  .ticker { overflow: hidden; background: var(--bg); border-bottom: 1px solid var(--line); padding: clamp(14px, 2vw, 24px) 0; display: grid; gap: 4px; }
+  .ticker__row { overflow: hidden; }
+  .ticker__track { display: flex; width: max-content; }
+  .ticker__set { display: flex; flex: none; }
+  .ticker__word { display: inline-flex; align-items: center; gap: .5em; padding-right: .5em; font-size: clamp(1.8rem, 1rem + 3.4vw, 4.2rem); font-weight: 600; letter-spacing: -.045em; line-height: 1.12; white-space: nowrap; color: var(--ink); }
+  .ticker__word--outline { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
+  .ticker__star { font-size: .45em; color: var(--accent); -webkit-text-stroke: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .ticker__track { animation: ticker 38s linear infinite; }
+    .ticker__row--reverse .ticker__track { animation-direction: reverse; animation-duration: 46s; }
+    .ticker:hover .ticker__track, :global(html[data-motion='off']) .ticker__track { animation-play-state: paused; }
+  }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+</style>

@@ -23,9 +23,11 @@ required. This is a static portfolio, not a hosted backend.
 - `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer.
 - `src/styles/tokens.css`, `base.css`, `layout.css`, `forms.css`; component
   styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt.
-- `src/components/PersonalHero.astro` + `src/scripts/film.ts`: first-person
-  home hero ("Hi, I'm Omar.", real portrait, live London time) with the
-  licensed film in a small framed window and chapter rail. `ProjectIndex`,
+- `src/components/PersonalHero.astro` + `src/scripts/film.ts` + `hero-motion.ts`:
+  cinematic first-person hero ("Hi, I'm Omar.", cycling line, real portrait,
+  live London time) over the full-bleed licensed film, chapter rail and one
+  "Pause motion" switch (`html[data-motion]`, `omar:motion`). `Ticker.astro`:
+  kinetic CV-word band. `[data-reveal]`/`[data-reveal-stagger]`: scroll reveals. `ProjectIndex`,
   `CaseStudy`, `ProjectMedia` (duotone plates), `CapabilityMatrix`, `Timeline`, `Figure` (explanatory schematics).
 - `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
   (enquiry engine), `project-index.ts`, `previews.ts`.
@@ -35,10 +37,12 @@ keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
 ## Important behaviour
 
-The hero film window chooses one edition after page load: desktop 1280x800,
-phone 640x800, H.264 MP4 first with a VP9 WebM fallback. All are 20 seconds, 24fps, silent.
-Keep visible pause/play, offscreen pause, explicit-pause persistence, and static
-posters for reduced motion, save-data, disabled JavaScript or failed media.
+The hero film starts immediately with one edition per viewport: desktop 1280x800,
+phone 640x800, H.264 MP4 first with a VP9 WebM fallback (20 s, 24 fps, silent).
+If autoplay is refused (iPhone Low Power Mode), data saving is on or media fails,
+it switches to moving chapter stills (hero-still-*.webp) with a retry button.
+Keep the visible motion switch (WCAG 2.2.2), offscreen pause, reduced-motion
+start-paused behaviour and the poster for disabled JavaScript.
 
 The project index must keep server-rendered links that work without JS,
 keyboard focus parity with hover, and no scroll hijacking. Concept visuals stay

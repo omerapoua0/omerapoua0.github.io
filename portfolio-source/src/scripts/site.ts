@@ -44,6 +44,34 @@ document.addEventListener('keydown', event => {
 nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { if (!desktop.matches) setMenu(false); }));
 desktop.addEventListener('change', () => setMenu(false));
 
+/* Header over the hero film: transparent until the film scrolls away. */
+const filmHero = document.querySelector<HTMLElement>('[data-film-hero]');
+if (header?.hasAttribute('data-over') && filmHero) {
+  let headerFrame = 0;
+  const update = () => { headerFrame = 0; header.toggleAttribute('data-solid', filmHero.getBoundingClientRect().bottom <= header.offsetHeight + 1); };
+  addEventListener('scroll', () => { if (!headerFrame) headerFrame = requestAnimationFrame(update); }, { passive: true });
+  addEventListener('resize', update, { passive: true });
+  update();
+}
+
+/* Scroll reveals. Children of [data-reveal-stagger] reveal in sequence. */
+document.querySelectorAll<HTMLElement>('[data-reveal-stagger]').forEach(group => {
+  [...group.children].forEach((child, index) => {
+    if (!(child instanceof HTMLElement)) return;
+    child.setAttribute('data-reveal', '');
+    child.style.setProperty('--reveal-delay', `${Math.min(index, 8) * 80}ms`);
+  });
+});
+const revealables = [...document.querySelectorAll<HTMLElement>('[data-reveal]')];
+if ('IntersectionObserver' in window) {
+  const revealer = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    entry.target.classList.add('is-in');
+    revealer.unobserve(entry.target);
+  }), { threshold: .12, rootMargin: '0px 0px -6% 0px' });
+  revealables.forEach(element => revealer.observe(element));
+} else revealables.forEach(element => element.classList.add('is-in'));
+
 /* Live London time in the homepage status line (not shown without JavaScript). */
 const londonTime = document.querySelector<HTMLTimeElement>('[data-london-time]');
 if (londonTime) {

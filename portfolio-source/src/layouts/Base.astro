@@ -57,7 +57,7 @@ const person = {
   </head>
   <body class:list={[home ? 'is-home' : 'is-page']}>
     <a href="#main" class="skip-link">Skip to content</a>
-    <SiteHeader />
+    <SiteHeader overHero={home} />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter />
     <script>import '../scripts/site';</script>

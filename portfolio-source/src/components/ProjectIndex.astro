@@ -22,7 +22,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
     </fieldset>
   )}
   <div class="pindex__layout">
-    <ol class="pindex__list" aria-label={label}>
+    <ol class="pindex__list" aria-label={label} data-reveal-stagger>
       {items.map((project, index) => (
         <li data-areas={project.areas.join(' ')} data-row={project.id}>
           <a class="prow" href={project.href} data-preview-id={project.id}>
@@ -33,7 +33,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
             </span>
             <span class="prow__meta"><span>{project.org}</span><span class="num">{project.period}</span></span>
             <span class="prow__status"><span class:list={['chip', `chip--${project.status}`]}>{statusLabel[project.status]}</span></span>
-            <div class="prow__thumb" aria-hidden="true"><ProjectMedia project={project} video={false} /></div>
+            <div class="prow__thumb" aria-hidden="true"><ProjectMedia project={project} /></div>
             <span class="prow__go" aria-hidden="true">↗</span>
           </a>
         </li>

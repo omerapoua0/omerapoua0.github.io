@@ -86,14 +86,10 @@ button { cursor: pointer; }
   ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 260ms; animation-timing-function: var(--ease-out); }
   ::view-transition-group(*) { animation-duration: 420ms; animation-timing-function: var(--ease-out); }
 
-  @supports (animation-timeline: view()) {
-    [data-reveal] {
-      animation: reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 55%;
-    }
-    @keyframes reveal { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
-  }
+  /* Scroll reveals (IntersectionObserver in site.ts adds .is-in). The hidden
+     start state only applies with JavaScript, so content never depends on it. */
+  html.js [data-reveal] { transition: opacity 900ms var(--ease-out), transform 900ms var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
+  html.js [data-reveal]:not(.is-in) { opacity: 0; transform: translateY(36px); }
 }
 @media (prefers-reduced-motion: reduce) {
   /* Zero (not near-zero) durations: a tiny forced duration would make inherited

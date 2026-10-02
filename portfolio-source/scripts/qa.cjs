@@ -68,7 +68,7 @@ function watch(page) {
             width: innerWidth,
             scroll: document.documentElement.scrollWidth,
             h1: document.querySelectorAll('h1').length,
-            broken: [...document.images].filter(image => !image.complete || !image.naturalWidth).map(image => image.src),
+            broken: [...document.images].filter(image => image.getAttribute('src') && (!image.complete || !image.naturalWidth)).map(image => image.src),
             dupIds: (() => { const seen = new Set(); return [...document.querySelectorAll('[id]')].map(el => el.id).filter(id => seen.has(id) || !seen.add(id)); })(),
           }));
           assert.equal(state.h1, 1, 'exactly one h1');
@@ -151,44 +151,80 @@ function watch(page) {
     assert.ok(!(await page.locator('form[data-enquiry]').isVisible()), 'guided form hidden without JS');
     await page.goto(`${base}/index.html`);
     assert.ok(await page.locator('.hero__poster').isVisible(), 'hero poster visible without JS');
+    assert.ok(await page.locator('.ticker').isVisible(), 'ticker visible without JS');
     await context.close();
   });
 
-  /* 5. Hero film: playback, pause, chapter seek, offscreen pause, fallbacks. */
-  await check('film plays, pauses and seeks chapters', async () => {
+  /* 5. Hero film and motion: immediate playback, motion switch, chapters,
+        offscreen pause, reduced motion, save-data, blocked autoplay, failure. */
+  const videoState = page => page.evaluate(() => { const v = document.querySelector('[data-hero-video]'); return { paused: v.paused, time: v.currentTime, src: v.currentSrc }; });
+  await check('film plays at once; motion switch pauses film, line and ticker; chapters seek', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await page.waitForFunction(() => { const v = document.querySelector('[data-hero-video]'); return v && !v.paused && v.currentTime > 0.3; }, null, { timeout: 15000 });
+    await page.goto(`${base}/index.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => { const v = document.querySelector('[data-hero-video]'); return v && !v.paused && v.currentTime > 0.3; }, null, { timeout: 8000 });
+    const first = await page.locator('.cycle__item.is-active').textContent();
+    await page.waitForFunction(text => document.querySelector('.cycle__item.is-active')?.textContent !== text, first, { timeout: 5000 });
     const toggle = page.locator('[data-film-toggle]');
-    assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+    assert.match(await toggle.textContent(), /Pause motion/);
     await toggle.click();
-    assert.equal(await page.evaluate(() => document.querySelector('[data-hero-video]').paused), true);
-    assert.equal(await toggle.getAttribute('aria-pressed'), 'false');
+    assert.equal((await videoState(page)).paused, true);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.motion), 'off');
+    assert.match(await toggle.textContent(), /Play motion/);
+    assert.equal(await page.locator('.ticker__track').first().evaluate(el => getComputedStyle(el).animationPlayState), 'paused');
+    const frozen = await page.locator('.cycle__item.is-active').textContent();
+    await page.waitForTimeout(3000);
+    assert.equal(await page.locator('.cycle__item.is-active').textContent(), frozen, 'cycling line frozen');
     await page.locator('[data-chapter="2"]').click();
     await page.waitForFunction(() => Math.abs(document.querySelector('[data-hero-video]').currentTime - 10.05) < .5);
     assert.equal(await page.locator('[data-chapter="2"]').getAttribute('aria-current'), 'true');
-    assert.equal(await page.evaluate(() => document.querySelector('[data-hero-video]').paused), true, 'explicit pause persists after chapter seek');
+    assert.equal((await videoState(page)).paused, true, 'paused motion persists after chapter seek');
     await toggle.click();
+    await page.waitForFunction(() => !document.querySelector('[data-hero-video]').paused);
     await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
     await page.waitForFunction(() => document.querySelector('[data-hero-video]').paused);
     await page.evaluate(() => scrollTo(0, 0));
     await page.waitForFunction(() => !document.querySelector('[data-hero-video]').paused);
     await context.close();
   });
-  await check('film: reduced motion shows poster and loads no video', async () => {
+  await check('film: phone edition plays in the first viewport without scrolling', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !document.querySelector('[data-hero-video]').paused, null, { timeout: 8000 });
+    assert.match((await videoState(page)).src, /hero-editorial-mobile\./);
+    assert.equal(await page.evaluate(() => scrollY), 0);
+    await context.close();
+  });
+  await check('film: blocked autoplay (iPhone Low Power Mode) switches to moving stills', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await context.addInitScript(() => { HTMLMediaElement.prototype.play = function () { return Promise.reject(new DOMException('blocked', 'NotAllowedError')); }; });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.querySelector('[data-film-hero]').dataset.filmStills === 'blocked', null, { timeout: 8000 });
+    assert.ok(await page.locator('[data-film-retry]').isVisible(), 'retry offered');
+    const active = () => page.evaluate(() => [...document.querySelectorAll('[data-stills] img')].findIndex(img => img.hasAttribute('data-active')));
+    const start = await active();
+    assert.ok(start >= 0);
+    await page.waitForFunction(index => [...document.querySelectorAll('[data-stills] img')].findIndex(img => img.hasAttribute('data-active')) !== index, start, { timeout: 7000 });
+    assert.ok(await page.locator('[data-stills] img[data-active]').evaluate(img => img.complete && img.naturalWidth > 0 && /hero-still-\d-m\.webp/.test(img.src)));
+    await context.close();
+  });
+  await check('film: reduced motion starts still and offers play', async () => {
     const context = await isolated(browser, { reducedMotion: 'reduce' });
     const page = await context.newPage();
     const media = [];
     page.on('request', request => { if (/hero-editorial.*\.(mp4|webm)/.test(request.url())) media.push(request.url()); });
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(3000);
     assert.deepEqual(media, []);
     assert.ok(await page.locator('.hero__poster').isVisible());
-    assert.ok(await page.locator('[data-film-toggle]').isVisible(), 'play control still offered');
+    assert.match(await page.locator('[data-film-toggle]').textContent(), /Play motion/);
+    assert.equal(await page.locator('.cycle__item.is-active').textContent(), 'I build AI that reasons.');
+    assert.equal(await page.locator('.ticker__track').first().evaluate(el => getComputedStyle(el).animationName), 'none');
     await context.close();
   });
-  await check('film: save-data shows poster and loads no video', async () => {
+  await check('film: save-data uses stills and loads no video', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference' });
     await context.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
     const page = await context.newPage();
@@ -197,43 +233,46 @@ function watch(page) {
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(800);
     assert.deepEqual(media, []);
+    assert.equal(await page.evaluate(() => document.querySelector('[data-film-hero]').dataset.filmStills), 'save-data');
     await context.close();
   });
-  await check('film: failed media falls back to the poster', async () => {
+  await check('film: failed media falls back to moving stills', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference' });
     await context.route(/hero-editorial.*\.(mp4|webm)$/, route => route.abort());
     const page = await context.newPage();
     await page.goto(`${base}/index.html`);
     await page.waitForFunction(() => document.querySelector('[data-film-hero]').dataset.filmError === 'true', null, { timeout: 10000 });
-    assert.ok(await page.locator('.hero__poster').isVisible());
-    assert.ok(!(await page.locator('[data-film-toggle]').isVisible()));
-    await context.close();
-  });
-  await check('film: phone edition is chosen at 390px', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-    const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await page.locator('[data-film-hero]').scrollIntoViewIfNeeded();
-    await page.waitForFunction(() => document.querySelector('[data-hero-video]').currentSrc !== '', null, { timeout: 10000 });
-    assert.match(await page.evaluate(() => document.querySelector('[data-hero-video]').currentSrc), /hero-editorial-mobile\./);
+    assert.equal(await page.evaluate(() => document.querySelector('[data-film-hero]').dataset.filmStills), 'error');
+    assert.ok(!(await page.locator('[data-film-retry]').isVisible()), 'no retry for broken media');
     await context.close();
   });
 
-  /* 5b. Personal hero: name, portrait, voice and London time. */
+  /* 5b. Personal hero and scroll motion. */
   for (const [label, viewport] of [['desktop', { width: 1440, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
-    await check(`personal hero ${label}: name, portrait and London time`, async () => {
+    await check(`personal hero ${label}: name, portrait, London time and credit`, async () => {
       const context = await isolated(browser, { viewport });
       const page = await context.newPage();
       await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
       assert.match(await page.locator('h1').textContent(), /Hi, I’m Omar/);
-      const portrait = label === 'desktop' ? '.phero__portrait img' : '.phero__avatar';
+      const portrait = label === 'desktop' ? '.chero__portrait img' : '.chero__avatar';
       assert.ok(await page.locator(portrait).isVisible(), 'portrait visible');
       assert.ok(await page.locator(portrait).evaluate(img => img.complete && img.naturalWidth > 0), 'portrait loaded');
       assert.match(await page.locator('[data-london-time]').textContent(), /^\d{2}:\d{2}$/);
-      assert.match(await page.locator('.filmwin__caption').textContent(), /not me/);
+      assert.match(await page.locator('.chero__credit').textContent(), /not me/);
       await context.close();
     });
   }
+  await check('scroll reveals finish visible', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    const total = await page.evaluate(() => document.body.scrollHeight);
+    for (let y = 0; y < total; y += 400) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(60); }
+    await page.waitForTimeout(1200);
+    const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.classList.contains('is-in') || Number(getComputedStyle(el).opacity) < .99).length);
+    assert.equal(hidden, 0);
+    await context.close();
+  });
 
   /* 6. Project index, filters, matrix. */
   await check('project index: hover and focus drive the pane; filters announce', async () => {

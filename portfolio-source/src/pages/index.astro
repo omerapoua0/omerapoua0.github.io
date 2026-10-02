@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import PersonalHero from '../components/PersonalHero.astro';
+import Ticker from '../components/Ticker.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import CapabilityMatrix from '../components/CapabilityMatrix.astro';
 import SectionHead from '../components/SectionHead.astro';
@@ -29,10 +30,11 @@ const questions = [
 ---
 <Base title="AI product engineer, mathematician & tutor" home image="/omar-aboelella.jpg" description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
   <PersonalHero />
+  <Ticker />
 
   <section class="now" aria-label="What I’m doing now">
     <div class="wrap">
-      <ol class="now__list">
+      <ol class="now__list" data-reveal-stagger>
         {now.map(item => (
           <li>
             <p class="label">{item.label}</p>
@@ -49,7 +51,7 @@ const questions = [
       <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. For each one I say what I did, what the wider team did and what stage it’s at.</p>
     </SectionHead>
     <ProjectIndex items={projects} morph label="Selected work" />
-    <p class="more"><a class="link-arrow" href="/work.html">Full case studies <span aria-hidden="true">↗</span></a></p>
+    <p class="more" data-reveal><a class="link-arrow" href="/work.html">Full case studies <span aria-hidden="true">↗</span></a></p>
   </section>
 
   <section class="section section--surface" aria-labelledby="skills-title">
@@ -63,7 +65,7 @@ const questions = [
 
   <section class="section wrap" aria-labelledby="paths-title">
     <SectionHead mark="3" label="Work with me" id="paths-title">Three ways to <em class="voice">work with me.</em></SectionHead>
-    <ol class="paths">
+    <ol class="paths" data-reveal-stagger>
       {paths.map(path => (
         <li>
           <a class="path" href={path.href}>
@@ -81,7 +83,7 @@ const questions = [
     <SectionHead mark="4" label="Open questions" id="questions-title">Questions I’m <em class="voice">chasing.</em>
       <p slot="aside">Maths is the thread through everything I do. These are the questions I’m exploring alongside engineering, labelled honestly. Nothing here is published work.</p>
     </SectionHead>
-    <ol class="questions">
+    <ol class="questions" data-reveal-stagger>
       {questions.map((item, index) => (
         <li>
           <a href={item.href}>
@@ -92,7 +94,7 @@ const questions = [
         </li>
       ))}
     </ol>
-    <p class="more"><a class="link-arrow" href="/research.html">Research notebook <span aria-hidden="true">↗</span></a></p>
+    <p class="more" data-reveal><a class="link-arrow" href="/research.html">Research notebook <span aria-hidden="true">↗</span></a></p>
   </section>
 </Base>
 
