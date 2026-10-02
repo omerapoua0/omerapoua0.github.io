@@ -92,8 +92,6 @@ if (hero && video && toggle) {
     label();
   };
 
-  toggle.hidden = false;
-  if (rail) rail.hidden = false;
   paintChapters();
 
   toggle.addEventListener('click', () => {

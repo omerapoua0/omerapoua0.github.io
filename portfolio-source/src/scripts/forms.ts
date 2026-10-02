@@ -225,7 +225,8 @@ document.querySelectorAll<HTMLFormElement>('form[data-enquiry]').forEach(form =>
   copyButton?.addEventListener('click', async () => {
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(body);
+      // Some browsers leave the promise pending without a permission; fall back.
+      await Promise.race([navigator.clipboard.writeText(body), new Promise((_, reject) => setTimeout(() => reject(new Error('Clipboard timeout')), 1500))]);
       status.textContent = `Copied. Paste it into an email to ${recipient} and send it from your own email app. Nothing has been sent yet.`;
     } catch {
       const details = draft.closest('details');

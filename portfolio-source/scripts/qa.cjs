@@ -1,99 +1,355 @@
-/* Isolated developer QA. No personal profile or external enquiry submission.
- * Normal film playback belongs to a separate check; this suite uses reduced motion. */
-const {chromium}=require('playwright');
-const assert=require('node:assert/strict');
-const fs=require('node:fs/promises'),path=require('node:path');
-const base=process.env.PORTFOLIO_QA_URL||'http://127.0.0.1:4322';
-const origin=new URL(base).origin,output=path.resolve('.qa');
-const routes=['index','work','automations','research','cv','tutoring','contact'];
-const results=[],outbound=[];
-async function check(name,run){try{await run();results.push({name,status:'pass'})}catch(e){results.push({name,status:'fail',message:e.message});console.error(name,e.message)}}
-async function isolated(browser,options={}){
- const context=await browser.newContext({reducedMotion:'reduce',...options});
- await context.route('**/*',route=>{const r=route.request();if(new URL(r.url()).origin!==origin||!['GET','HEAD'].includes(r.method())){outbound.push({url:r.url(),method:r.method()});return route.abort()}return route.continue()});return context;
+/* Isolated browser QA for the redesigned portfolio. Linux-friendly.
+ *
+ *   PORTFOLIO_QA_URL=http://127.0.0.1:4174 \
+ *   PLAYWRIGHT_EXECUTABLE=/path/to/chromium \
+ *   AXE_PATH=/path/to/axe.min.js \
+ *   NODE_PATH=/path/to/node_modules/with/playwright node scripts/qa.cjs
+ *
+ * Playwright and axe-core are deliberately not project dependencies (the
+ * lockfile stays unchanged); point NODE_PATH/AXE_PATH at an isolated install.
+ * Every request leaving the preview origin, and every non-GET request, is
+ * blocked and reported. No personal profile is used; no enquiry is sent.
+ */
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+
+const base = process.env.PORTFOLIO_QA_URL || 'http://127.0.0.1:4174';
+const origin = new URL(base).origin;
+const executablePath = process.env.PLAYWRIGHT_EXECUTABLE || undefined;
+const axePath = process.env.AXE_PATH;
+const output = path.resolve('.qa');
+const routes = ['index', 'work', 'automations', 'research', 'cv', 'tutoring', 'contact'];
+const widths = [360, 390, 768, 1280, 1440];
+const results = [];
+const outbound = [];
+
+async function check(name, run) {
+  try { await run(); results.push({ name, status: 'pass' }); }
+  catch (error) { results.push({ name, status: 'fail', message: error.message.split('\n')[0] }); console.error('FAIL', name, '-', error.message.split('\n')[0]); }
 }
-async function setTheme(context,value){await context.addInitScript(value=>localStorage.setItem('omar-theme',value),value)}
-async function inspect(page,route,width,colour){
- const errors=[],http=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)http.push(r.status()+' '+r.url())});
- assert.equal((await page.goto(base+'/'+route+'.html',{waitUntil:'networkidle'})).status(),200);
- await page.evaluate(async()=>{await Promise.all([...document.images].map(async i=>{i.loading='eager';try{await i.decode()}catch{}}))});
- const s=await page.evaluate(()=>({width:innerWidth,doc:document.documentElement.scrollWidth,h1:document.querySelectorAll('h1').length,theme:document.documentElement.dataset.theme,broken:[...document.images].filter(i=>!i.complete||!i.naturalWidth).map(i=>i.src)}));
- assert.equal(s.h1,1,'One H1');assert.ok(s.doc<=s.width+1,'Overflow '+s.doc+' at '+width);assert.equal(s.theme,colour);
- assert.deepEqual(s.broken,[],'Broken images');assert.deepEqual(errors,[],'Page errors');assert.deepEqual(http,[],'HTTP failures');
- assert.equal(await page.locator('.studio,[data-studio],.studio-experience').count(),0,'Old studio absent');
- if(route==='index'){
-  const v=await page.locator('[data-hero-video]').evaluate(v=>({paused:v.paused,current:v.currentSrc,src:v.getAttribute('src'),sources:[...v.querySelectorAll('source')].map(s=>s.getAttribute('src')),poster:v.poster}));
-  assert.ok(v.paused,'Reduced film paused');assert.equal(v.current,'','Reduced film not fetched');assert.ok(!v.src&&v.sources.every(s=>!s),'No active video source');
-  assert.equal((await page.request.get(v.poster)).status(),200,'Poster exists');
-  if(width>720){
-   const covers=await page.locator('.works-wheel-list-card>img').evaluateAll(es=>es.map(e=>({w:e.clientWidth,h:e.clientHeight})));
-   assert.ok(covers.every(r=>Math.abs(r.w/r.h-1000/690)<.025),'Fallback covers retain 1000:690 aspect ratio');
+async function isolated(browser, options = {}) {
+  const context = await browser.newContext({ reducedMotion: 'reduce', ...options });
+  await context.route('**/*', route => {
+    const request = route.request();
+    if (new URL(request.url()).origin !== origin || !['GET', 'HEAD'].includes(request.method())) {
+      outbound.push({ url: request.url(), method: request.method() });
+      return route.abort();
+    }
+    return route.continue();
+  });
+  return context;
+}
+function watch(page) {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('response', response => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
+  return errors;
+}
+
+(async () => {
+  await fs.mkdir(path.join(output, 'screens'), { recursive: true });
+  const browser = await chromium.launch({ executablePath });
+
+  /* 1. Every route, width and theme: one H1, no overflow, no broken images, no errors. */
+  for (const theme of ['light', 'dark']) {
+    for (const width of widths) {
+      const context = await isolated(browser, { viewport: { width, height: 900 }, colorScheme: theme });
+      for (const route of routes) {
+        await check(`route ${route} ${width}px ${theme}`, async () => {
+          const page = await context.newPage();
+          const errors = watch(page);
+          const response = await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+          assert.equal(response.status(), 200);
+          await page.evaluate(async () => { await Promise.all([...document.images].map(async image => { image.loading = 'eager'; try { await image.decode(); } catch {} })); });
+          const state = await page.evaluate(() => ({
+            width: innerWidth,
+            scroll: document.documentElement.scrollWidth,
+            h1: document.querySelectorAll('h1').length,
+            broken: [...document.images].filter(image => !image.complete || !image.naturalWidth).map(image => image.src),
+            dupIds: (() => { const seen = new Set(); return [...document.querySelectorAll('[id]')].map(el => el.id).filter(id => seen.has(id) || !seen.add(id)); })(),
+          }));
+          assert.equal(state.h1, 1, 'exactly one h1');
+          assert.ok(state.scroll <= state.width + 1, `horizontal overflow ${state.scroll} > ${state.width}`);
+          assert.deepEqual(state.broken, [], 'broken images');
+          assert.deepEqual(state.dupIds, [], 'duplicate ids');
+          assert.deepEqual(errors, [], 'page/console/http errors');
+          if (width === 1440 || width === 390) await page.screenshot({ path: path.join(output, 'screens', `${route}-${width}-${theme}.png`), fullPage: true });
+          await page.close();
+        });
+      }
+      await context.close();
+    }
   }
- }
- if(width===1440&&['index','tutoring'].includes(route)){
-  await page.screenshot({path:path.join(output,route+'-desktop-'+colour+'.png'),fullPage:true});
-  await page.screenshot({path:path.join(output,route+'-viewport-'+colour+'.png')});
- }
-}
-async function menuCheck(page){
- await page.goto(base+'/index.html',{waitUntil:'networkidle'});
- const menu=page.locator('.menu-toggle'),nav=page.getByRole('navigation',{name:'Main navigation'});
- assert.equal(await menu.getAttribute('aria-expanded'),'false');assert.equal(await nav.isVisible(),false);
- await menu.click();assert.equal(await menu.getAttribute('aria-expanded'),'true');assert.ok(await nav.isVisible());
- await page.keyboard.press('Escape');assert.equal(await menu.getAttribute('aria-expanded'),'false');assert.ok(await menu.evaluate(e=>document.activeElement===e),'Escape returns focus');
- await menu.click();await nav.locator('a[href="/work.html"]').click();await page.waitForURL('**/work.html');
- assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false','Link closes menu');
-}
-async function formCheck(page,kind,colour){
- await page.goto(base+'/'+kind+'.html',{waitUntil:'networkidle'});
- const next=page.locator('[data-next]'),status=page.locator('[data-status]');
- await next.click();assert.match(await status.innerText(),/Choose an option/);
- if(kind==='tutoring'){
-  await page.locator('input[value="Maths"]').check();await next.click();await next.click();assert.match(await status.innerText(),/Choose an option/);
-  await page.locator('input[value="GCSE Higher"]').check();await next.click();await next.click();assert.match(await status.innerText(),/required field/);
-  await page.locator('[name=goal]').selectOption({label:'Prepare for exams'});await page.locator('[name=days]').selectOption({label:'Flexible'});await page.locator('[name=time]').selectOption({label:'Evening'});await next.click();
-  await page.locator('[name=relationship]').selectOption({label:'A parent or guardian'});
- }else{await page.locator('input[value="Project"]').check();await next.click();await page.locator('[name=message]').fill('Local test draft. Nothing is submitted.')}
- await page.locator('[name=name]').fill('QA Visitor');await page.locator('[name=email]').fill('bad');await next.click();assert.match(await status.innerText(),/valid email/);
- await page.locator('[name=email]').fill('qa@example.com');await next.click();
- const review=page.locator('[data-review]');assert.ok(await review.isVisible());
- const draft=await page.locator('[data-draft]').inputValue();assert.match(draft,/QA Visitor/);assert.match(draft,/qa@example.com/);assert.match(draft,kind==='tutoring'?/GCSE Higher/:/Local test draft/);
- const href=await page.locator('[data-email]').getAttribute('href');assert.ok(href.startsWith('mailto:omerapoua0@gmail.com?'));assert.match(decodeURIComponent(href),/QA Visitor/);assert.match(await review.innerText(),/Nothing has been sent/);
- const buttons=await review.locator('.form-actions').evaluate(e=>[...e.children].map(b=>({w:b.getBoundingClientRect().width,h:b.getBoundingClientRect().height})));
- assert.ok(buttons.every(b=>b.w>250&&b.h>=48),'Mobile review controls full width and 48px high');
- assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Review overflow');
- await review.screenshot({path:path.join(output,kind+'-review-mobile-'+colour+'.png')});
- await page.locator('[data-edit]').click();assert.ok(await page.locator(kind==='tutoring'?'input[value="Maths"]':'input[value="Project"]').isChecked());assert.equal(await page.locator('[name=name]').inputValue(),'QA Visitor','Edit preserves detail');
- // Never activate mailto or clipboard controls. Inspect prepared data only.
-}
-(async()=>{
- await fs.mkdir(output,{recursive:true});
- const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
- try{
-  for(const colour of ['dark','light'])for(const width of [320,390,768,1440]){
-   const context=await isolated(browser,{viewport:{width,height:900}});await setTheme(context,colour);
-   for(const route of routes){const page=await context.newPage();await check(route+' '+width+' '+colour,()=>inspect(page,route,width,colour));await page.close()}
-   if(width<1060){const page=await context.newPage();await check('menu '+width+' '+colour,()=>menuCheck(page));await page.close()}await context.close();
+
+  /* 2. Accessibility (axe-core, WCAG 2.2 A/AA) in both themes at desktop and phone widths. */
+  if (axePath) {
+    const axeSource = await fs.readFile(axePath, 'utf8');
+    for (const theme of ['light', 'dark']) for (const width of [390, 1280]) {
+      const context = await isolated(browser, { viewport: { width, height: 900 }, colorScheme: theme });
+      for (const route of routes) {
+        await check(`axe ${route} ${width}px ${theme}`, async () => {
+          const page = await context.newPage();
+          await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+          await page.addScriptTag({ content: axeSource });
+          const violations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })).violations.map(v => `${v.id}: ${v.nodes.slice(0, 3).map(n => n.target.join(' ')).join(', ')}`));
+          assert.deepEqual(violations, []);
+          await page.close();
+        });
+      }
+      await context.close();
+    }
+  } else results.push({ name: 'axe', status: 'skipped', message: 'AXE_PATH not set' });
+
+  /* 3. Every internal link and legacy anchor resolves. */
+  await check('internal links and anchors resolve', async () => {
+    const context = await isolated(browser);
+    const page = await context.newPage();
+    const ids = {};
+    const links = new Set();
+    for (const route of routes) {
+      await page.goto(`${base}/${route}.html`);
+      ids[`/${route}.html`] = await page.evaluate(() => [...document.querySelectorAll('[id]')].map(el => el.id));
+      (await page.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href')))).forEach(href => links.add(`${route}|${href}`));
+    }
+    const legacy = ['/work.html#katana', '/work.html#nookbase', '/work.html#inos', '/work.html#project-1', '/work.html#project-2', '/work.html#project-3', '/work.html#project-4', '/work.html#project-5', '/research.html#optimisation', '/research.html#quant', '/research.html#quantum', '/research.html#education', '/cv.html#experience', '/cv.html#skills', '/tutoring.html#lesson-enquiry'];
+    const problems = [];
+    const resolve = (from, href) => {
+      if (/^(mailto:|https?:)/.test(href)) return;
+      const url = new URL(href, `${base}/${from}.html`);
+      if (url.origin !== origin) return;
+      const pathname = url.pathname === '/' ? '/index.html' : url.pathname;
+      if (pathname.endsWith('.html')) {
+        if (!ids[pathname]) problems.push(`${from}: ${href} (missing page)`);
+        else if (url.hash && !ids[pathname].includes(decodeURIComponent(url.hash.slice(1)))) problems.push(`${from}: ${href} (missing anchor)`);
+      }
+    };
+    links.forEach(entry => { const [from, href] = entry.split('|'); resolve(from, href); });
+    legacy.forEach(href => resolve('index', href));
+    for (const file of ['/Omar-Aboelella-CV.pdf', '/THIRD-PARTY-NOTICES.txt', '/LICENSE.txt', '/hero-editorial.mp4', '/hero-editorial.webm', '/hero-editorial-mobile.mp4', '/hero-editorial-mobile.webm', '/hero-editorial-manifest.json']) {
+      const response = await page.request.get(base + file);
+      if (response.status() !== 200) problems.push(`${file} ${response.status()}`);
+    }
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
+  /* 4. No JavaScript: content, navigation and email fallbacks remain. */
+  await check('no-JS routes and fallbacks', async () => {
+    const context = await isolated(browser, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    for (const route of routes) {
+      await page.goto(`${base}/${route}.html`);
+      const state = await page.evaluate(() => ({ nav: [...document.querySelectorAll('#site-nav a')].filter(a => a.getBoundingClientRect().width > 0).length, overflow: document.documentElement.scrollWidth > innerWidth + 1 }));
+      assert.ok(state.nav >= 5, `${route}: visible nav links without JS`);
+      assert.ok(!state.overflow, `${route}: no overflow without JS`);
+    }
+    await page.goto(`${base}/tutoring.html`);
+    assert.ok(await page.locator('noscript').count() > 0);
+    assert.ok(!(await page.locator('form[data-enquiry]').isVisible()), 'guided form hidden without JS');
+    await page.goto(`${base}/index.html`);
+    assert.ok(await page.locator('.hero__poster').isVisible(), 'hero poster visible without JS');
+    await context.close();
+  });
+
+  /* 5. Hero film: playback, pause, chapter seek, offscreen pause, fallbacks. */
+  await check('film plays, pauses and seeks chapters', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => { const v = document.querySelector('[data-hero-video]'); return v && !v.paused && v.currentTime > 0.3; }, null, { timeout: 15000 });
+    const toggle = page.locator('[data-film-toggle]');
+    assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+    await toggle.click();
+    assert.equal(await page.evaluate(() => document.querySelector('[data-hero-video]').paused), true);
+    assert.equal(await toggle.getAttribute('aria-pressed'), 'false');
+    await page.locator('[data-chapter="2"]').click();
+    await page.waitForFunction(() => Math.abs(document.querySelector('[data-hero-video]').currentTime - 10.05) < .5);
+    assert.equal(await page.locator('[data-chapter="2"]').getAttribute('aria-current'), 'true');
+    assert.equal(await page.evaluate(() => document.querySelector('[data-hero-video]').paused), true, 'explicit pause persists after chapter seek');
+    await toggle.click();
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+    await page.waitForFunction(() => document.querySelector('[data-hero-video]').paused);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.waitForFunction(() => !document.querySelector('[data-hero-video]').paused);
+    await context.close();
+  });
+  await check('film: reduced motion shows poster and loads no video', async () => {
+    const context = await isolated(browser, { reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    const media = [];
+    page.on('request', request => { if (/hero-editorial.*\.(mp4|webm)/.test(request.url())) media.push(request.url()); });
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(800);
+    assert.deepEqual(media, []);
+    assert.ok(await page.locator('.hero__poster').isVisible());
+    assert.ok(await page.locator('[data-film-toggle]').isVisible(), 'play control still offered');
+    await context.close();
+  });
+  await check('film: save-data shows poster and loads no video', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference' });
+    await context.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
+    const page = await context.newPage();
+    const media = [];
+    page.on('request', request => { if (/hero-editorial.*\.(mp4|webm)/.test(request.url())) media.push(request.url()); });
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(800);
+    assert.deepEqual(media, []);
+    await context.close();
+  });
+  await check('film: failed media falls back to the poster', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference' });
+    await context.route(/hero-editorial.*\.(mp4|webm)$/, route => route.abort());
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`);
+    await page.waitForFunction(() => document.querySelector('[data-film-hero]').dataset.filmError === 'true', null, { timeout: 10000 });
+    assert.ok(await page.locator('.hero__poster').isVisible());
+    assert.ok(!(await page.locator('[data-film-toggle]').isVisible()));
+    await context.close();
+  });
+  await check('film: phone edition is chosen at 390px', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.querySelector('[data-hero-video]').currentSrc !== '', null, { timeout: 10000 });
+    assert.match(await page.evaluate(() => document.querySelector('[data-hero-video]').currentSrc), /hero-editorial-mobile\./);
+    await context.close();
+  });
+
+  /* 6. Project index, filters, matrix. */
+  await check('project index: hover and focus drive the pane; filters announce', async () => {
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/work.html`, { waitUntil: 'networkidle' });
+    await page.hover('[data-row="bitget"] a');
+    assert.ok(await page.locator('.pindex__item[data-pane-item="bitget"]').evaluate(el => el.hasAttribute('data-active')));
+    await page.locator('[data-row="inos"] a').focus();
+    assert.ok(await page.locator('.pindex__item[data-pane-item="inos"]').evaluate(el => el.hasAttribute('data-active')));
+    await page.locator('.fchip:has-text("Network systems")').click();
+    assert.equal(await page.locator('[data-row]:visible').count(), 2);
+    assert.match(await page.locator('[data-count]').textContent(), /2 projects shown/);
+    await page.locator('.fchip:has-text("All")').click();
+    assert.equal(await page.locator('[data-row]:visible').count(), 6);
+    await context.close();
+  });
+  await check('capability matrix: column highlight and phone list', async () => {
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.hover('thead th[data-col="bitget"]');
+    assert.ok(await page.locator('td[data-col="bitget"][data-hot]').count() > 3);
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.ok(await page.locator('.matrix__list').isVisible());
+    assert.ok(!(await page.locator('.matrix__table').isVisible()));
+    await context.close();
+  });
+
+  /* 7. Mobile navigation sheet. */
+  await check('mobile menu: inert background, focus in, Escape returns focus', async () => {
+    const context = await isolated(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    await page.goto(`${base}/work.html`);
+    await page.click('[data-menu]');
+    assert.equal(await page.locator('[data-menu]').getAttribute('aria-expanded'), 'true');
+    assert.ok(await page.evaluate(() => document.querySelector('main').inert && document.querySelector('footer').inert));
+    assert.ok(await page.evaluate(() => document.activeElement?.closest('#site-nav') !== null));
+    await page.keyboard.press('Escape');
+    assert.ok(await page.evaluate(() => document.activeElement?.hasAttribute('data-menu') && !document.querySelector('main').inert));
+    await context.close();
+  });
+
+  /* 8. Enquiry journeys: validation, conditions, review, change, drafts, nothing sent. */
+  await check('tutoring enquiry: validation, guardian condition, review, change, draft', async () => {
+    const context = await isolated(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const page = await context.newPage();
+    const posts = [];
+    page.on('request', request => { if (request.method() !== 'GET') posts.push(request.url()); });
+    await page.goto(`${base}/tutoring.html`, { waitUntil: 'networkidle' });
+    await page.click('[data-next]');
+    assert.ok(await page.locator('[data-errors]').isVisible(), 'error summary shown');
+    assert.ok(await page.evaluate(() => document.activeElement?.hasAttribute('data-errors')), 'error summary focused');
+    await page.click('label.choice:has-text("A student under 18")');
+    assert.ok(await page.locator('#guardian-email').isVisible(), 'guardian email appears for under-18s');
+    await page.click('[data-next]');
+    assert.ok(await page.locator('#guardian-email[aria-invalid="true"]').count() === 1, 'guardian email required');
+    await page.fill('#guardian-email', 'not-an-email');
+    await page.click('[data-next]');
+    assert.match(await page.locator('[data-errors]').textContent(), /correct format/);
+    await page.fill('#guardian-email', 'parent@example.com');
+    await page.click('[data-next]');
+    await page.click('label.choice:has-text("Maths & science")');
+    await page.selectOption('#science', 'Physics');
+    await page.click('[data-next]');
+    await page.click('label.choice:has-text("GCSE Higher")');
+    await page.selectOption('#board', 'AQA');
+    await page.click('[data-next]');
+    for (const [id, value] of [['#goal', 'Prepare for exams'], ['#timing', 'Exam within 3 months'], ['#days', 'Weekends'], ['#time', 'Evening']]) await page.selectOption(id, value);
+    await page.click('[data-next]');
+    await page.fill('#lesson-name', 'QA Student');
+    await page.fill('#lesson-email', 'qa@example.com');
+    await page.click('[data-next]');
+    assert.ok(await page.locator('[data-review]').isVisible(), 'review visible');
+    assert.match(await page.locator('[data-brief-line]').textContent(), /GCSE Higher/);
+    const href = await page.locator('[data-email]').getAttribute('href');
+    assert.ok(href.startsWith('mailto:omerapoua0@gmail.com?subject='));
+    assert.ok(href.length <= 1800, 'mailto within length limit');
+    const body = decodeURIComponent(href);
+    for (const line of ['Enquiring as: A student under 18', 'Parent or guardian’s email: parent@example.com', 'Science: Physics', 'Exam board: AQA', 'Free 15-minute intro call: Yes, please']) assert.ok(body.includes(line), `draft includes ${line}`);
+    assert.match(await page.locator('[data-review]').textContent(), /Nothing has been sent/);
+    await page.click('.review__summary .change >> nth=4');
+    assert.match(await page.locator('[data-step-label]').textContent(), /Step 3 of 5/);
+    assert.deepEqual(posts, []);
+    await context.close();
+  });
+  await check('contact enquiry: prefill, review and copy fallback', async () => {
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/contact.html?topic=Automation&brief=research%20and%20reporting`, { waitUntil: 'networkidle' });
+    assert.ok(await page.locator('input[name="topic"][value="Automation"]').isChecked());
+    await page.click('[data-next]');
+    assert.match(await page.inputValue('#contact-message'), /research and reporting/);
+    await page.fill('#contact-name', 'QA Person');
+    await page.fill('#contact-email', 'qa@example.com');
+    await page.click('[data-next]');
+    assert.ok(await page.locator('[data-review]').isVisible());
+    assert.match(await page.locator('[data-gmail]').getAttribute('href'), /^https:\/\/mail\.google\.com\/mail\/\?view=cm/);
+    await page.click('[data-copy]');
+    await page.waitForFunction(() => /Copied|selected/.test(document.querySelector('[data-status]').textContent || ''), null, { timeout: 5000 });
+    assert.doesNotMatch(await page.locator('main').textContent(), /\b(Message sent|Booking confirmed)\b/i);
+    await context.close();
+  });
+
+  /* 9. Performance: LCP/CLS on throttled phone and desktop loads. */
+  for (const [label, viewport, mobile] of [['phone', { width: 390, height: 844 }, true], ['desktop', { width: 1440, height: 900 }, false]]) {
+    await check(`performance ${label}: LCP <= 2.5s, CLS <= 0.05`, async () => {
+      const context = await isolated(browser, { viewport, isMobile: mobile, reducedMotion: 'no-preference' });
+      const page = await context.newPage();
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Network.enable');
+      await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 1.6 * 1024 * 1024 / 8, uploadThroughput: 750 * 1024 / 8 });
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: mobile ? 4 : 1 });
+      await page.addInitScript(() => {
+        window.__lcp = 0; window.__cls = 0;
+        new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__lcp = entry.startTime; }).observe({ type: 'largest-contentful-paint', buffered: true });
+        new PerformanceObserver(list => { for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.__cls += entry.value; }).observe({ type: 'layout-shift', buffered: true });
+      });
+      await page.goto(`${base}/index.html`, { waitUntil: 'load' });
+      await page.waitForTimeout(2500);
+      const metrics = await page.evaluate(() => ({ lcp: Math.round(window.__lcp), cls: Number(window.__cls.toFixed(3)) }));
+      results.push({ name: `performance ${label} metrics`, status: 'info', message: JSON.stringify(metrics) });
+      assert.ok(metrics.lcp <= 2500, `LCP ${metrics.lcp}ms`);
+      assert.ok(metrics.cls <= 0.05, `CLS ${metrics.cls}`);
+      await context.close();
+    });
   }
-  const nojs=await isolated(browser,{viewport:{width:390,height:844},javaScriptEnabled:false});
-  for(const route of routes){const page=await nojs.newPage();await check(route+' no-js',async()=>{
-   assert.equal((await page.goto(base+'/'+route+'.html')).status(),200);
-   const nav=page.getByRole('navigation',{name:'Main navigation'});assert.ok(await nav.isVisible());assert.ok(await nav.locator('a[href="/work.html"]').isVisible(),'No-JS projects reachable');
-   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No-JS overflow');
-   if(['contact','tutoring'].includes(route))assert.ok(await page.locator('noscript a[href="mailto:omerapoua0@gmail.com"]').isVisible(),'Email fallback');
-   if(route==='index')assert.equal(await page.locator('[data-hero-video] source[src]').count(),0);
-  });await page.close()}await nojs.close();
-  for(const colour of ['dark','light']){
-   const context=await isolated(browser,{viewport:{width:390,height:844}});await setTheme(context,colour);
-   for(const kind of ['tutoring','contact']){const page=await context.newPage();await check(kind+' review/edit '+colour,()=>formCheck(page,kind,colour));await page.close()}
-   const page=await context.newPage();await check('theme toggle '+colour,async()=>{
-    await page.goto(base+'/tutoring.html',{waitUntil:'networkidle'});await page.locator('.theme-toggle').click();
-    const expected=colour==='dark'?'light':'dark';assert.equal(await page.locator('html').getAttribute('data-theme'),expected);assert.equal(await page.evaluate(()=>localStorage.getItem('omar-theme')),expected);
-   });await context.close();
-  }
-  await check('No external requests or submissions',async()=>assert.deepEqual(outbound,[]));
- }finally{await browser.close()}
- const report={base,results,passed:results.filter(r=>r.status==='pass').length,failed:results.filter(r=>r.status==='fail').length,outbound,normalHeroPlayback:'Separate root check',noExternalSubmission:true};
- await fs.writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));
- console.log(JSON.stringify({checks:results.length,passed:report.passed,failed:report.failed,screenshots:output}));if(report.failed)process.exitCode=1;
-})().catch(e=>{console.error(e);process.exitCode=1});
+
+  await browser.close();
+  if (outbound.length) results.push({ name: 'blocked outbound requests', status: 'info', message: JSON.stringify([...new Set(outbound.map(r => `${r.method} ${r.url}`))]) });
+  const failed = results.filter(r => r.status === 'fail');
+  const report = { date: new Date().toISOString(), base, passed: results.filter(r => r.status === 'pass').length, failed: failed.length, results };
+  await fs.writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2));
+  console.log(`QA: ${report.passed} passed, ${report.failed} failed. Report: .qa/report.json`);
+  process.exitCode = failed.length ? 1 : 0;
+})();

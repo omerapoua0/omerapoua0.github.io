@@ -30,7 +30,7 @@ import { film } from '../data/site';
   </div>
 
   <div class="hero__bar">
-    <div class="chapters" role="group" aria-label="Film chapters" data-chapters hidden>
+    <div class="chapters" role="group" aria-label="Film chapters" data-chapters>
       {film.chapters.map((chapter, index) => (
         <button type="button" class="chapter" data-chapter={index} data-start={chapter.start} aria-label={`Chapter ${index + 1}: ${chapter.label}`}>
           <span class="chapter__head"><span class="chapter__num">0{index + 1}</span><span class="chapter__label">{chapter.label}</span></span>
@@ -39,7 +39,7 @@ import { film } from '../data/site';
       ))}
     </div>
     <div class="hero__controls">
-      <button class="film-toggle" type="button" data-film-toggle aria-pressed="false" hidden>
+      <button class="film-toggle" type="button" data-film-toggle aria-pressed="false">
         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path data-film-icon d="M5 3l8 5-8 5z" fill="currentColor" /></svg>
         <span data-film-control>Play film</span>
       </button>
@@ -93,6 +93,8 @@ import { film } from '../data/site';
   .film-toggle:hover { border-color: #c3c8ff; color: #c3c8ff; }
   .hero__credit { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .03em; text-transform: uppercase; color: #aab2c0; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
   .hero__credit:hover { color: #fff; }
+  /* Without JavaScript the controls keep their space but are not offered. */
+  :global(html:not(.js)) .chapters, :global(html:not(.js)) .film-toggle { visibility: hidden; }
   .nowrap { white-space: nowrap; }
   @media (max-width: 720px) {
     .chapter__label { display: none; }

@@ -8,6 +8,8 @@ import '../styles/layout.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { site } from '../data/site';
+import onestLatin from '@fontsource-variable/onest/files/onest-latin-wght-normal.woff2?url';
+import serifItalic from '@fontsource/old-standard-tt/files/old-standard-tt-latin-400-italic.woff2?url';
 
 interface Props { title: string; description?: string; home?: boolean; image?: string; }
 const { title, description = site.description, home = false, image = '/hero-editorial-poster.jpg' } = Astro.props;
@@ -35,6 +37,8 @@ const person = {
     <meta name="description" content={description} />
     <meta name="theme-color" content="#f1f2ef" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b0d11" media="(prefers-color-scheme: dark)" />
+    <link rel="preload" href={onestLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={serifItalic} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href={new URL(path, site.url).href} />
@@ -57,5 +61,6 @@ const person = {
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter />
     <script>import '../scripts/site';</script>
+    <script>import '../scripts/previews';</script>
   </body>
 </html>

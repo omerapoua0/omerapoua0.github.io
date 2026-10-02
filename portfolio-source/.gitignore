@@ -31,3 +31,6 @@ pnpm-debug.log*
 
 # Licensed source footage stays outside the published portfolio.
 .film-sources/
+
+# browser QA output
+.qa/

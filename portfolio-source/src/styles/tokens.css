@@ -1,3 +1,14 @@
+/* Metric-matched fallback: Arial (Liberation Sans on Linux) scaled to Onest's
+   width, ascent and descent, so text barely reflows when the web font swaps in. */
+@font-face {
+  font-family: 'Onest Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue'), local('Helvetica');
+  size-adjust: 106.1%;
+  ascent-override: 91.4%;
+  descent-override: 29.2%;
+  line-gap-override: 0%;
+}
+
 /* "Proof" design tokens. Light is the base; dark follows the system unless a
    visitor chooses a theme (stored as omar-theme). */
 :root {
@@ -18,7 +29,7 @@
   --plate-ink: #e7eaef;
   --plate-muted: #aab2c0;
 
-  --font-sans: 'Onest Variable', 'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Onest Variable', 'Onest', 'Onest Fallback', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-serif: 'Old Standard TT', 'Iowan Old Style', Georgia, serif;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
