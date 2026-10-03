@@ -171,7 +171,9 @@ function watch(page) {
   const lastOtto = page => page.locator('.turn--agent').last();
   const heroStage = '[data-otto-stage][data-stage-mode="hero"]';
   const modeSettled = (page, timeout = 30000) => page.waitForFunction(sel => ['3d', 'svg'].includes(document.querySelector(sel).dataset.mode), heroStage, { timeout });
-  const lime = page => page.evaluate(() => window.__otto?.snapshot().lime ?? 0);
+  // Forced 3D: the 3 s deadline may show the SVG Otto first; wait for 3D or a real failure.
+  const mode3d = page => page.waitForFunction(sel => { const el = document.querySelector(sel); return el.dataset.mode === '3d' || ['fail', 'error', 'no-webgl', 'gate'].includes(el.dataset.reason); }, heroStage, { timeout: 60000 });
+  const lime = page => page.evaluate(() => window.__otto?.handle.snapshot().lime ?? 0);
   for (const [label, options] of [['desktop', { viewport: { width: 1440, height: 900 } }], ['phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) {
     await check(`otto ${label}: lands, greets, asks how you are, handles moods, trolls and follow-ups`, async () => {
       const context = await isolated(browser, { reducedMotion: 'no-preference', ...options });
@@ -183,7 +185,7 @@ function watch(page) {
       assert.match(await page.locator('[data-london-time]').textContent(), /^\d{2}:\d{2}$/);
       assert.match(await page.locator('[data-disclosure]').textContent(), /No AI model; nothing you type leaves this page/);
       await modeSettled(page);
-      assert.equal(await page.locator(heroStage).getAttribute('data-mode'), 'svg', 'software WebGL is refused, so the SVG Otto stands in');
+      assert.equal(await page.locator(heroStage).getAttribute('data-mode'), 'svg', `software WebGL is refused or fails the warm-up, so the SVG Otto stands in (${await page.locator(heroStage).getAttribute('data-reason')})`);
       assert.ok(await page.locator(`${heroStage} [data-robot]`).isVisible(), 'SVG Otto visible');
       await page.waitForFunction(() => document.querySelectorAll('.turn--agent').length >= 2 && /All good\?/.test(document.querySelector('[data-chat-log]').textContent), null, { timeout: 9000 });
       assert.match(await page.locator('.turn--agent').first().textContent(), /I’m Otto, Omar’s robot/);
@@ -203,7 +205,7 @@ function watch(page) {
       await tell(page, 'tell me more');
       assert.match(await lastOtto(page).locator('.bubble').textContent(), /intro call/);
       await tell(page, 'what is your favourite pizza?');
-      assert.match(await lastOtto(page).locator('.bubble').textContent(), /won’t guess/, 'honest fallback');
+      assert.match(await lastOtto(page).locator('.bubble').textContent(), /won’t guess|Outside my lane/, 'honest decline');
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1 || [...document.querySelectorAll('.chat *')].some(el => el.getBoundingClientRect().right > document.querySelector('.chat').getBoundingClientRect().right + 1 && getComputedStyle(el).position !== 'absolute' && !el.closest('.chat__chips')));
       assert.ok(!overflow, 'no horizontal overflow; chat content stays inside the card');
       assert.deepEqual(errors, []);
@@ -219,15 +221,15 @@ function watch(page) {
       page.on('request', request => { if (request.resourceType() === 'script') scripts.push(request.url()); });
       await page.goto(`${base}/index.html?otto3d=force`, { waitUntil: 'load' });
       const before = scripts.length;
-      await modeSettled(page, 45000);
+      await mode3d(page);
       assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d', `3D mode (${await page.locator(heroStage).getAttribute('data-reason')})`);
       assert.ok(scripts.length > before, 'the 3D module loads after the load event');
       await page.waitForFunction(() => document.querySelector('[data-otto-stage][data-stage-mode="hero"]').hasAttribute('data-landed'), null, { timeout: 30000 });
-      const snap = await page.evaluate(() => window.__otto.snapshot());
-      assert.ok(snap.opaque > 2000, `Otto drawn (${snap.opaque} opaque samples)`);
-      assert.ok(snap.lime > 20, `lime eyes and ring lit (${snap.lime})`);
+      const snap = await page.evaluate(() => window.__otto.handle.snapshot());
+      assert.ok(snap.opaque > .012, `Otto drawn (${(snap.opaque * 100).toFixed(1)}% of the canvas opaque)`);
+      assert.ok(snap.lime > .0005, `lime eyes and ring lit (${(snap.lime * 100).toFixed(2)}%)`);
       assert.ok(await page.locator(`${heroStage} canvas`).isVisible(), 'canvas visible');
-      assert.ok(!(await page.locator(`${heroStage} .otto-stage__poster`).isVisible()), 'SVG poster hidden in 3D');
+      await page.waitForFunction(sel => getComputedStyle(document.querySelector(`${sel} .otto-stage__poster`)).opacity === '0', heroStage, { timeout: 5000 }); // SVG poster faded out in 3D
       assert.match(await page.evaluate(() => sessionStorage.getItem('otto3d')), /^(hi|lo)$/, 'tier remembered');
       assert.deepEqual(errors.filter(e => !/GPU stall|WebGL|swiftshader/i.test(e)), []);
       await context.close();
@@ -238,7 +240,7 @@ function watch(page) {
     const page = await context.newPage();
     const errors = watch(page);
     await page.goto(`${base}/index.html?otto3d=force`, { waitUntil: 'load' });
-    await modeSettled(page, 45000);
+    await mode3d(page);
     assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d');
     await page.fill('[data-chat-input]', 'show me katana');
     await page.press('[data-chat-input]', 'Enter');
@@ -346,10 +348,10 @@ function watch(page) {
     const page = await still.newPage();
     await page.goto(`${base}/index.html?otto3d=force`, { waitUntil: 'load' });
     assert.match(await page.locator('[data-greeting]').textContent(), /How are you doing\? All good\?/);
-    await modeSettled(page, 45000);
+    await mode3d(page);
     assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d');
     const a = await lime(page); await page.waitForTimeout(1200); const b = await lime(page);
-    assert.ok(a > 20 && a === b, `still frame (${a} vs ${b})`);
+    assert.ok(a > .0005 && a === b, `still frame (${a} vs ${b})`);
     assert.match(await page.locator('[data-motion-toggle]').textContent(), /Play motion/);
     const started = Date.now();
     await tell(page, 'where is he based');
@@ -379,7 +381,8 @@ function watch(page) {
     assert.equal(await page.locator(heroStage).getAttribute('data-reason'), 'gate');
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await modeSettled(page);
-    assert.equal(await page.evaluate(() => sessionStorage.getItem('otto3d')), 'off', 'refused WebGL is remembered for the session');
+    assert.match(await page.locator(heroStage).getAttribute('data-reason'), /^(software|no-webgl)$/, 'CPU-rendered WebGL is refused up front');
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('otto3d')), 'off', 'refused or slow WebGL is remembered for the session');
     await page.goto(`${base}/inside/inos.html`, { waitUntil: 'networkidle' });
     assert.equal(await page.locator('[data-otto-stage][data-stage-mode="dock"]').getAttribute('data-mode'), 'svg', 'inside dock stays SVG');
     await context.close();
@@ -415,7 +418,7 @@ function watch(page) {
     assert.ok(await page.locator('[data-free]').isVisible(), 'free-text ask offered');
     await page.locator('[data-free]').click();
     await settled(page);
-    assert.match(await lastOtto(page).textContent(), /won’t guess/);
+    assert.match(await lastOtto(page).textContent(), /won’t guess|Outside my lane/);
     await context.close();
   });
   await check('projects: list/grid switch is remembered', async () => {

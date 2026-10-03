@@ -51,15 +51,34 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
   const dock = opts.mode === 'dock';
   const camera = new PerspectiveCamera(dock ? 24 : 26, 1, .1, 60);
   const home = { pos: new Vector3(), look: new Vector3(), fov: camera.fov };
+  let shift = 0; // px: lens shift that centres Otto in the gap between the intro and the chat
+  const applyShift = (amount: number) => {
+    const width = canvas.clientWidth || 1, height = canvas.clientHeight || 1;
+    if (Math.abs(amount) > .5) camera.setViewOffset(width, height, -amount, 0, width, height);
+    else camera.clearViewOffset();
+  };
   const frame = () => {
     const width = canvas.clientWidth || 1, height = canvas.clientHeight || 1;
     const narrow = width < 720;
+    shift = 0;
     if (dock) { home.pos.set(0, 1.55, 4.2); home.look.set(0, 1.45, 0); }
-    else { home.pos.set(0, 1.42, narrow ? 6.8 : 8.9); home.look.set(0, 1.28, 0); }
+    else {
+      let z = narrow ? 6.8 : 8.9;
+      const style = getComputedStyle(canvas.parentElement ?? canvas);
+      const gx = parseFloat(style.getPropertyValue('--gx')), gw = parseFloat(style.getPropertyValue('--gw'));
+      if (gx > 0 && gw > 0) {
+        shift = gx - width / 2;
+        // Open-armed Otto is ~2.3 units wide: back the camera off just enough
+        // that he fits the gap (10% grace), so he never sits behind the text.
+        z = Math.min(14, Math.max(z, 2.3 * height / (2 * Math.tan(home.fov * Math.PI / 360) * gw * 1.1)));
+      }
+      home.pos.set(0, 1.42, z); home.look.set(0, 1.28, 0);
+    }
     camera.aspect = width / height;
     camera.position.copy(home.pos);
     camera.fov = home.fov;
     camera.lookAt(home.look);
+    applyShift(shift);
     camera.updateProjectionMatrix();
   };
 
@@ -117,6 +136,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
       camera.position.lerpVectors(take.from, take.to, e);
       camera.fov = home.fov + (20 - home.fov) * e;
       camera.lookAt(world(rig.chest));
+      applyShift(shift * (1 - e)); // ease the lens shift out so the chest ends dead centre
       camera.updateProjectionMatrix();
       (rig.chest.material as MeshBasicMaterial).color.setScalar(1 + .8 * e);
     }
@@ -187,7 +207,8 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     } else if (phase === 'take') {
       director.handoff('take');
       const chestWorld = world(rig.chest);
-      take = { start: performance.now(), from: camera.position.clone(), to: chestWorld.clone().add(new Vector3(0, 0, .3)) };
+      // The camera dive is motion: skipped when motion is reduced or paused.
+      if (!still) take = { start: performance.now(), from: camera.position.clone(), to: chestWorld.clone().add(new Vector3(0, 0, .3)) };
       // Report the chest-screen rectangle so the portal can grow out of it.
       window.setTimeout(() => {
         const c = world(rig.chest);
@@ -212,6 +233,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
   window.addEventListener('otto:state', onState);
   window.addEventListener('otto:handoff', onHandoff);
   window.addEventListener('omar:motion', onMotion);
+  window.addEventListener('otto:layout', resize);
   document.addEventListener('visibilitychange', onVisibility);
   canvas.addEventListener('webglcontextlost', onContextLost);
   const io = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) { delta(); schedule(); } }, { rootMargin: '80px' });
@@ -234,6 +256,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     window.removeEventListener('otto:state', onState);
     window.removeEventListener('otto:handoff', onHandoff);
     window.removeEventListener('omar:motion', onMotion);
+    window.removeEventListener('otto:layout', resize);
     document.removeEventListener('visibilitychange', onVisibility);
     canvas.removeEventListener('webglcontextlost', onContextLost);
     rig.dispose(); face.dispose(); chest.dispose(); envTarget.dispose(); pmrem.dispose();
@@ -241,14 +264,41 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     renderer.forceContextLoss();
   }
 
-  // First frame: compile shaders off the main path where supported, then go.
+  /* Warm-up, while the canvas is still invisible: draw Otto at his home pose
+   * for up to ~0.9 s and only reveal him if frames come at >= ~22 fps (median
+   * interval <= 45 ms). A slow GPU never sees the 3D Otto start and then
+   * swap to the SVG one. A frame gap over 1 s (hidden tab) restarts it. */
+  const probe = () => new Promise<boolean>(resolve => {
+    const gaps: number[] = [];
+    let last = 0, began = 0;
+    const median = () => [...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)] ?? Infinity;
+    const step = (now: number) => {
+      if (failed) return resolve(true);
+      if (last && now - last > 1000) { gaps.length = 0; began = 0; }
+      draw();
+      if (last && began) gaps.push(now - last);
+      if (!began) began = now;
+      last = now;
+      if (gaps.length >= 8) return resolve(median() <= 45);
+      if (now - began > 900) return resolve(gaps.length >= 5 && median() <= 45);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+
+  // Compile shaders off the main path where supported, prove the frame rate, then go.
   frame(); fitDpr();
   director.setStill(still);
+  director.settle();
+  try { await renderer.compileAsync(scene, camera); } catch { /* older three/WebGL: compile on first draw */ }
+  if (!still && !opts.force && !(await probe())) { fail('slow'); throw new Error('Otto 3D: frame rate too low'); }
+  if (failed) throw new Error('Otto 3D: failed during warm-up');
   if (opts.entrance === 'fly' && !still) director.entrance('fly');
   else if (opts.entrance === 'rise' && !still) director.entrance('rise');
-  else { director.settle(); emit('otto:landed'); }
-  try { await renderer.compileAsync(scene, camera); } catch { /* older three/WebGL: compile on first draw */ }
+  else emit('otto:landed');
+  director.update(0);
   draw();
+  delta(); // fresh timer baseline, so warm-up time doesn't count as one long frame
   emit('otto:ready', { tier });
   if (running()) schedule();
   else requestRender();

@@ -49,7 +49,19 @@ function initStage(stage: HTMLElement) {
   // Remembered so the chat can greet at once if Otto landed before it listened.
   if (!dock) window.addEventListener('otto:landed', () => stage.setAttribute('data-landed', ''));
 
-  // Speech bubble: the latest thing Otto says, kept short, near his head.
+  // Speech bubble: the latest thing Otto says, kept short, near his head, and
+  // nudged sideways so it stays in the free space (never under the chat card).
+  const place = () => {
+    if (!bubble) return;
+    const width = stage.clientWidth;
+    const gx = parseFloat(stage.style.getPropertyValue('--gx')), gw = parseFloat(stage.style.getPropertyValue('--gw'));
+    const lo = gw > 0 ? gx - gw / 2 + 8 : 8, hi = gw > 0 ? gx + gw / 2 - 8 : width - 8;
+    bubble.style.maxWidth = `${Math.round(Math.max(150, hi - lo))}px`;
+    const anchor = stage.dataset.mode === '3d' ? parseFloat(stage.style.getPropertyValue('--bx')) : gx > 0 ? gx : width / 2;
+    if (!Number.isFinite(anchor)) return;
+    const size = bubble.offsetWidth, left = anchor - size * .12;
+    bubble.style.setProperty('--nudge', `${Math.round(Math.min(Math.max(left, lo), Math.max(lo, hi - size)) - left)}px`);
+  };
   let hideTimer = 0;
   window.addEventListener('otto:say', event => {
     if (!bubble) return;
@@ -63,6 +75,7 @@ function initStage(stage: HTMLElement) {
       line = next;
     }
     bubble.textContent = line.length > 110 ? `${line.slice(0, 107).trimEnd()}…` : line;
+    place();
     bubble.setAttribute('data-show', '');
     window.clearTimeout(hideTimer);
     hideTimer = window.setTimeout(() => bubble.removeAttribute('data-show'), dock ? 3200 : 7000);
@@ -73,11 +86,47 @@ function initStage(stage: HTMLElement) {
     const box = stage.getBoundingClientRect();
     stage.style.setProperty('--bx', `${Math.round(x - box.left)}px`);
     stage.style.setProperty('--by', `${Math.round(y - box.top)}px`);
+    if (bubble.hasAttribute('data-show')) place();
   });
+  window.addEventListener('otto:mode', place);
+  window.addEventListener('otto:layout', place);
+
+  // Desktop hero: Otto stands in the gap between the intro and the chat, not
+  // at the page centre. --gx/--gw (px, relative to the stage) drive the SVG
+  // Otto's CSS and the 3D camera (otto:layout).
+  if (!dock) {
+    const hero = stage.closest('[data-hero]');
+    const layout = () => {
+      const intro = hero?.querySelector('.agent__intro')?.getBoundingClientRect();
+      const chat = hero?.querySelector('[data-chat]')?.getBoundingClientRect();
+      const box = stage.getBoundingClientRect();
+      const gap = intro && chat ? chat.left - intro.right : 0;
+      if (intro && chat && gap > 160 && Math.abs(chat.top - intro.top) < box.height) {
+        stage.style.setProperty('--gx', `${Math.round((intro.right + chat.left) / 2 - box.left)}px`);
+        stage.style.setProperty('--gw', `${Math.round(gap)}px`);
+      } else { stage.style.removeProperty('--gx'); stage.style.removeProperty('--gw'); }
+      window.dispatchEvent(new CustomEvent('otto:layout'));
+    };
+    layout();
+    if ('ResizeObserver' in window) new ResizeObserver(layout).observe(stage);
+    else addEventListener('resize', layout);
+  }
 
   if (!canvas || !capable(dock)) { toSvg(canvas ? 'gate' : 'no-canvas'); return; }
   const gl = canvas.getContext('webgl2', { antialias: (window.devicePixelRatio || 1) < 2, alpha: true, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: flag !== 'force' }) as WebGL2RenderingContext | null;
   if (!gl) { toSvg('no-webgl'); session.set('otto3d', 'off'); return; }
+  // CPU-rendered WebGL (SwiftShader, llvmpipe…) can't carry Otto smoothly.
+  // Firefox reports it in RENDERER; Chromium/WebKit only through the debug extension.
+  let renderer = String(gl.getParameter(gl.RENDERER) ?? '');
+  if (/^webkit webgl$/i.test(renderer)) {
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    if (info) renderer = String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) ?? '');
+  }
+  if (flag !== 'force' && /swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) {
+    toSvg('software'); session.set('otto3d', 'off');
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return;
+  }
 
   const deadline = window.setTimeout(() => { if (!settled) toSvg('deadline'); }, DEADLINE);
   window.addEventListener('otto:fail', () => { session.set('otto3d', 'off'); handle = null; toSvg('fail'); });
