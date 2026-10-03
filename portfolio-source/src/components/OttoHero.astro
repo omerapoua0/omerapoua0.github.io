@@ -2,13 +2,11 @@
 /* Homepage hero with Otto, Omar's robot host. Otto greets visitors, chats
    about Omar from answers Omar wrote (src/data/otto.ts, matched in the
    browser by scripts/otto-brain.ts) and teleports to /inside/<project>.html.
-   variant="3d" swaps the SVG Otto for the 21st.dev Spline robot. */
+   */
 import Robot from './Robot.astro';
-import SplineRobot from './SplineRobot.astro';
 import { otto } from '../data/otto';
 import { site } from '../data/site';
-interface Props { variant?: 'otto' | '3d' }
-const { variant = 'otto' } = Astro.props;
+const variant = 'otto';
 const headline = ['Ask', 'Otto', 'anything.'];
 const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS & OctiMind'], ['bitget', 'Bitget models'], ['bp', 'BP pipeline']];
 ---
@@ -26,7 +24,6 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
         <picture><source srcset="/portrait-bust.webp 1x, /portrait-bust-2x.webp 2x" type="image/webp" /><img src="/portrait-bust.jpg" alt="Photo of Omar Aboelella" width="160" height="160" decoding="async" fetchpriority="high" /></picture>
         <p><strong>Omar Aboelella</strong><span>AI product engineer · founder · maths tutor</span></p>
       </div>
-      {variant === '3d' && <SplineRobot />}
       <ul class="agent__proof">
         <li><b>Now</b><span>AI Product Engineer, Digis Squared</span></li>
         <li><b>Building</b><span>NOOKBASE · ~150 beta users</span></li>
@@ -37,9 +34,8 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
 
     <div class="chat" data-chat data-otto>
       <span class="chat__glow" aria-hidden="true"></span>
-      {variant === 'otto' && <div class="chat__robot"><Robot /></div>}
+      <div class="chat__robot"><Robot /></div>
       <div class="chat__head">
-        {variant === '3d' && <i class="chat__dot-bot" aria-hidden="true">O</i>}
         <p><strong>Otto</strong><span><i class="live-dot" aria-hidden="true"></i> <span class="chat__sub-long">Omar’s robot ·&nbsp;</span>no AI model</span></p>
         <div class="chat__tools">
           <button type="button" class="chat__tool" data-chat-sound aria-pressed="false" hidden><span data-chat-sound-label>Sound off</span></button>

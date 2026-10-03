@@ -11,7 +11,7 @@ export default defineConfig({
   integrations: [
     react(),
     sitemap({
-      filter: (page) => !page.endsWith('/viewports/') && !page.includes('/preview-') && !page.includes('/inside/'),
+      filter: (page) => !page.endsWith('/viewports/'),
     }),
   ],
 });

@@ -1,7 +1,8 @@
 /*
- * Otto, Omar's robot host: what he knows and how he talks. Factual answers are
- * the same CV facts as src/data/agent.ts, retold in Otto's third-person voice;
- * social replies (greetings, moods, trolls, jokes) contain no facts at all.
+ * Otto, Omar's robot host: how he talks. Factual answers live in
+ * src/data/agent.ts (already in Otto's third-person voice); this file adds
+ * follow-up details, teleport targets and social replies (greetings, moods,
+ * trolls, jokes), which contain no facts at all.
  * Matching runs in the browser (src/scripts/otto-brain.ts). No model, no API.
  */
 import { intents as base, type AgentCard, type Intent } from './agent';
@@ -23,33 +24,6 @@ export const otto = {
   topics: ['work', 'katana', 'nookbase', 'lessons', 'hire', 'cv'],
   noscript: 'Hi, I’m Otto, Omar’s robot. Omar builds AI systems that reason at Digis Squared, is building NOOKBASE, and teaches maths and physics in London.',
   disclosure: 'Answers written by Omar, matched in your browser. No AI model; nothing you type leaves this page.',
-};
-
-/** Otto's voice for every factual intent (same facts, third person). */
-const voice: Record<string, { ask?: string; answer: string }> = {
-  about: { ask: 'Who is Omar?', answer: 'Omar Aboelella is an AI product engineer in London. At Digis Squared he works on KATANA, reasoning systems for telecom network autonomy. He studies Computer Science & Mathematics at Birkbeck, he’s building NOOKBASE, and he teaches GCSE maths and physics at Southfields Academy.' },
-  work: { ask: 'What does Omar build?', answer: 'Reasoning systems, mostly. At Digis Squared Omar set the technical strategy for KATANA and designed its closed-loop MAPE-K architecture. He’s founding NOOKBASE, an agentic study platform. Before that: Bitcoin forecasting models at Bitget and an automated competitor-intelligence pipeline at BP.' },
-  katana: { answer: 'KATANA is Digis Squared’s autonomy programme for telecom networks, working from Level 1 towards Level 4 against TM Forum standards. Omar set its technical strategy with the product manager, designed the closed-loop MAPE-K reasoning architecture using Bayesian inference, built TCO models, ran security audits and planned sprints. Level 4 is the programme’s direction, not a finished deployment.' },
-  nookbase: { answer: 'NOOKBASE is Omar’s agentic study platform for iOS, Android and web, built around a conversational tutoring agent. The idea is understanding, not just answers: can a learner explain the work, not only finish it? It’s pre-launch, with around 150 beta users.' },
-  inos: { ask: 'What did Omar do on INOS?', answer: 'INOS and OctiMind are Digis Squared’s network testing and optimisation products, deployed to O2. As an R&D Engineering Trainee (Sep 2024 – Mar 2025) Omar researched network systems, focusing on how hardware and software integrate. His work was one part of a wider R&D effort, not ownership of the products.' },
-  bitget: { ask: 'What did Omar do at Bitget?', answer: 'From February to May 2026 Omar was an AI Product Intern in Platform & Operations at Bitget. He analysed exchange telemetry and built machine-learning models forecasting Bitcoin price movement from historical and live market data. Modelling work only: no claim of trading returns, and nothing here is investment advice.' },
-  bp: { ask: 'What did Omar build at BP?', answer: 'At BP in summer 2024 Omar was a Market Intelligence Research Intern. He built a competitor-intelligence engine for the offshore-wind team: a weekly pipeline that pulls competitor data from Bloomberg and other sources, analyses it and produces Excel reports.' },
-  automate: { ask: 'Can Omar automate my workflow?', answer: 'Maybe. Omar’s interested in the work between tools: gathering information, checking it, deciding and getting the result somewhere useful. Think research and reporting, AI and agent workflows with human checkpoints, or connected data. Tell him what the process is and where the time disappears.' },
-  agents: { ask: 'What AI does Omar work with?', answer: 'Mostly reasoning and agent systems. At Digis Squared: closed-loop MAPE-K reasoning with Bayesian inference for KATANA, and cross-team LangGraph workflows. At NOOKBASE: a conversational tutoring agent. Around that sits the classical side: predictive modelling, time-series forecasting, feature engineering and RAG.' },
-  research: { ask: 'What is Omar researching?', answer: 'Independent research on AI in higher education (2026 to now, unpublished): how efficiently AI models complete university assignments, and what that does to learning. Alongside it he’s exploring optimisation, quantitative modelling and quantum computing with Qiskit. A PhD is a long-term aspiration, not a current programme.' },
-  santander: { answer: 'In summer 2027 Omar joins Santander for a Fintech Research Placement, applying mathematical optimisation and machine learning to credit-scoring models. It’s upcoming, not completed.' },
-  study: { ask: 'What does Omar study?', answer: 'BSc (Hons) Computer Science & Mathematics at Birkbeck, University of London, expected 2028. Modules include Linear Algebra, Calculus, Discrete Mathematics, and Data Modelling and Analysis, and he’s aiming for a First. Before that: Access to HE Engineering with Distinction, and seven GCSEs including Maths (A).' },
-  skills: { ask: 'What’s Omar’s stack?', answer: 'Python (NumPy, Pandas, SciPy, FastAPI), SQL and PostgreSQL, plus JavaScript, HTML and CSS. On the ML side: predictive modelling, Bayesian inference, time series, feature engineering, RAG and MAPE-K loops. Engineering: Git, Docker, CI/CD and data pipelines. And the maths underneath: linear algebra, calculus, optimisation, probability.' },
-  certs: { ask: 'Any certifications?', answer: 'Three: IBM Data Science, Google Mathematics for Machine Learning and Microsoft Fabric.' },
-  price: { answer: 'Lesson length, pricing and times are agreed directly with Omar once you’ve talked about what you need, usually after the free 15-minute intro call. No payment is taken on this website.' },
-  safe: { ask: 'Is Omar DBS checked?', answer: 'Yes. Omar holds an enhanced DBS check. Lessons for under-18s are arranged with a parent or guardian, who is welcome to sit in on any lesson.' },
-  lessons: { ask: 'Can Omar teach my son?', answer: 'Very likely. Omar teaches maths and science online at GCSE Foundation, GCSE Higher and A-level, and he’s a Maths & Physics Teaching Assistant at Southfields Academy. He’s enhanced DBS checked, the first call is a free 15 minutes, he replies to every enquiry within one working day, and parents are welcome to sit in.' },
-  hire: { ask: 'Is Omar open to internships?', answer: 'Yes. Omar’s looking for a Sales & Trading or quantitative internship, to apply maths and programming to markets and systematic decision-making. In summer 2027 he joins Santander for a research placement in optimisation and machine learning.' },
-  contact: { ask: 'How do I reach Omar?', answer: 'Email is best: omerapoua0@gmail.com. The contact page helps you write it and prepares an email you send yourself; nothing is sent or stored by this site. His code lives on github.com/omerapoua0.' },
-  cv: { ask: 'Download Omar’s CV', answer: 'Here’s Omar’s CV. One page, PDF.' },
-  where: { ask: 'Where is Omar based?', answer: 'London, UK. It’s {time} there right now. Lessons are online, so students can be anywhere.' },
-  languages: { ask: 'What languages does Omar speak?', answer: 'Arabic (native) and English (fluent). If you meant programming languages: mostly Python, then SQL and JavaScript.' },
-  meta: { ask: 'Are you a real AI?', answer: 'No model, honestly. Omar wrote every answer; I match your question to them with keywords, right here in your browser. Nothing you type leaves this page. If he hasn’t written about something, I’ll say so.' },
 };
 
 const insideIds = new Set(['katana', 'nookbase', 'inos', 'bitget', 'bp']);
@@ -88,14 +62,10 @@ const extraStrong: Record<string, string[]> = {
 export const prefer: Record<string, string[]> = { lessons: ['price', 'safe'], work: ['katana', 'nookbase', 'inos', 'bitget', 'bp'] };
 
 export const ottoIntents: OttoIntent[] = base
-  .filter(intent => intent.id !== 'hello')
   .map(intent => {
-    const v = voice[intent.id];
     return {
       ...intent,
       strong: [...(intent.strong ?? []), ...(extraStrong[intent.id] ?? [])],
-      ask: v?.ask ?? intent.ask,
-      answer: v?.answer ?? intent.answer,
       inside: insideIds.has(intent.id),
       detail: details[intent.id],
     };

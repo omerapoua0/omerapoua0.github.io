@@ -14,7 +14,8 @@ const items: Item[] = [
   ...projects.map(project => ({ group: 'Work', label: project.name, hint: project.org, href: project.href, keywords: `${project.stack.join(' ')} ${project.role}` })),
   { group: 'Work', label: 'Lesson enquiry', hint: 'Tutoring', href: '/tutoring.html#lesson-enquiry', keywords: 'gcse a-level maths physics tutor book' },
   { group: 'Work', label: 'Skills & evidence', hint: 'Capability matrix', href: '/index.html#skills-title', keywords: 'python stack matrix' },
-  ...intents.filter(intent => !['hello'].includes(intent.id)).map(intent => ({ group: 'Ask Omar', label: intent.ask, hint: 'Answer in the chat', ask: intent.id, keywords: (intent.strong ?? []).slice(0, 6).join(' ') })),
+  ...['katana', 'nookbase', 'inos', 'bitget', 'bp'].map(id => projects.find(project => project.id === id)!).filter(Boolean).map(project => ({ group: 'Inside', label: `Inside ${project.name}`, hint: 'Otto’s tour', href: `/inside/${project.id}.html`, keywords: `tour otto ${project.org}` })),
+  ...intents.map(intent => ({ group: 'Ask Otto', label: intent.ask, hint: 'Answer in the chat', ask: intent.id, keywords: (intent.strong ?? []).slice(0, 6).join(' ') })),
   { group: 'Actions', label: 'Copy email address', hint: site.email, action: 'copy-email', keywords: 'mail contact' },
   { group: 'Actions', label: 'Download CV (PDF)', hint: 'Opens in a new tab', href: '/Omar-Aboelella-CV.pdf', external: true, keywords: 'resume' },
   { group: 'Actions', label: 'Switch colour theme', hint: 'Light / dark', action: 'theme', keywords: 'dark light mode' },
@@ -37,9 +38,9 @@ const items: Item[] = [
       </li>
     ))}
     <li id="palette-free" role="option" aria-selected="false" class="palette__item" data-free hidden>
-      <span class="palette__group" aria-hidden="true">Ask Omar</span>
+      <span class="palette__group" aria-hidden="true">Ask Otto</span>
       <span class="palette__label" data-free-label></span>
-      <span class="palette__hint">Ask in the chat</span>
+      <span class="palette__hint">Ask Otto in the chat</span>
     </li>
   </ul>
   <p class="palette__foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></p>
