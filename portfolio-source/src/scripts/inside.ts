@@ -6,15 +6,20 @@
  *   as kickers, so nothing here is needed to read the page.
  * - Arrival: after a hand-off (sessionStorage `otto-handoff`, < 10s old) the
  *   h1 takes focus without scrolling and Otto says "We're in". Focus is never
- *   moved otherwise.
- * - "Back to Otto" (and Esc) returns to Otto: history when we came from a
- *   same-origin page that isn't another tour, otherwise the homepage.
+ *   moved otherwise. The entrance plays once (html[data-tour-entered]), and
+ *   leaving clears the portal arrival so the monitor isn't captured again.
+ * - "Back to Otto" (and Esc) returns to Otto: history when we came straight
+ *   from the homepage, otherwise a fresh visit to the homepage.
  * - Pause: html[data-motion] + `omar:motion`, remembered for the session.
  *   The concept video only plays with motion on (previews.ts does the rest).
+ *   With reduced motion nothing on the page moves, so there's no toggle.
+ * - The dock (data-bubble-owner="page") gets its bubble text from here; a
+ *   3D Otto, if otto-stage.ts mounts one, only hears `otto:say`/`otto:state`.
  */
 type Pose = 'idle' | 'wave' | 'talk' | 'think' | 'confused' | 'cheeky' | 'point' | 'pew';
 
 const ARRIVE_SAY = 700;
+const ENTRANCE = 1500;
 const NARRATE = 900;
 const POSE_HOLD = 1600;
 const BUBBLE_HIDE = 3200;
@@ -40,6 +45,7 @@ const toggle = document.querySelector<HTMLButtonElement>('[data-inside-motion]')
 const media = document.querySelector<HTMLElement>('[data-tour-media]');
 function syncMotion() {
   const paused = root.dataset.motion === 'off';
+  if (toggle) toggle.hidden = reduce.matches;
   const label = toggle?.querySelector('[data-inside-motion-label]');
   if (label) label.textContent = paused ? 'Play motion' : 'Pause motion';
   toggle?.querySelector('[data-inside-motion-icon]')?.setAttribute('d', paused ? 'M5 3l8 5-8 5z' : 'M4 3h3v10H4zm5 0h3v10H9z');
@@ -47,9 +53,13 @@ function syncMotion() {
   media?.toggleAttribute('data-active', motionOn());
   document.dispatchEvent(new Event('previews:update'));
 }
+/* Once the entrance is over (or the visitor has touched the switch) it never replays. */
+const entered = () => { root.dataset.tourEntered = ''; };
+window.setTimeout(entered, ENTRANCE);
 if (toggle) {
-  toggle.hidden = false;
+  toggle.hidden = reduce.matches;
   toggle.addEventListener('click', () => {
+    entered();
     const next = root.dataset.motion === 'off' ? 'on' : 'off';
     root.dataset.motion = next;
     session.set('omar-motion', next);
@@ -76,10 +86,20 @@ const handoff = (() => {
 })();
 if (handoff) document.querySelector<HTMLElement>('#tour-title')?.focus({ preventScroll: true });
 const arrived = () => handoff || root.dataset.arrive === 'portal' || root.classList.contains('arrive-css');
+/* The portal name is for arriving only: leaving (next tour, case study, Back)
+   must not capture the monitor as "portal" with no partner on the next page. */
+window.addEventListener('pageswap', () => {
+  entered();
+  delete root.dataset.arrive;
+  root.classList.remove('arrive-css');
+});
 
 /* ---- Back to Otto ----------------------------------------------------- */
+/* History only when the previous page is Otto's (the homepage); from anywhere
+   else (another tour, /work.html via the command menu) start a fresh visit. */
 const referrer = (() => { try { return document.referrer ? new URL(document.referrer) : null; } catch { return null; } })();
-const canGoBack = !!referrer && referrer.origin === location.origin && !referrer.pathname.startsWith('/inside/') && history.length > 1;
+const fromOtto = !!referrer && referrer.origin === location.origin && (referrer.pathname === '/' || referrer.pathname === '/index.html');
+const canGoBack = fromOtto && history.length > 1;
 const goBack = () => { if (canGoBack) history.back(); else location.href = '/index.html'; };
 document.querySelectorAll<HTMLAnchorElement>('[data-inside-back]').forEach(link => link.addEventListener('click', event => {
   if (!canGoBack || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -109,6 +129,7 @@ let hideTimer = 0;
 const state = (pose: Pose, ms: number) => window.dispatchEvent(new CustomEvent('otto:state', { detail: { state: pose, ms } }));
 function say(text: string) {
   window.dispatchEvent(new CustomEvent('otto:say', { detail: { text } }));
+  /* Written after the event, so the full line wins over any other listener. */
   if (!bubble) return;
   bubble.textContent = text;
   bubble.removeAttribute('data-show');
