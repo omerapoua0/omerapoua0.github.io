@@ -1,0 +1,1 @@
+var e;function t(t){e=t}function n(t){if(e!==void 0)return`${e}/${t}`;let n=typeof import.meta.url==`string`?import.meta.url:``,r=n.lastIndexOf(`/`);return r>0?n.slice(0,r+1)+t:t}export{t as n,n as t};

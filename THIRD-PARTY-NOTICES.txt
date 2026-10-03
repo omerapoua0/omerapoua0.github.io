@@ -237,6 +237,14 @@ Organisation and project marks retain their respective owners' rights. They are 
 
 Project concept images and videos must not be described as screenshots of a live product unless independently established. The original portrait is used without generating a replacement face or body.
 
+## 3D robot preview (21st.dev / Spline)
+
+- Used only on the noindex comparison page `/preview-3d.html` while the user chooses between robots.
+- Component idea: "Spline Scene" by serafimcloud on 21st.dev (https://21st.dev/community/components/serafimcloud/splite), listed there under MIT. Re-implemented here without React as `src/components/SplineRobot.astro` + `src/scripts/spline-robot.ts`.
+- 3D scene: `https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode`, created and hosted by its Spline author and loaded from Spline's servers at runtime; it is not copied into this repository. Rights remain with its author under Spline's terms.
+- Runtime: `@splinetool/runtime` 2.0.66 from npm (Spline). The npm package declares no licence field; its terms are Spline's. Remove the dependency if the 3D robot is not chosen.
+- Otto, the robot on `/preview-otto.html` and the inside pages, is an original SVG drawing made for this portfolio.
+
 ## Other dependencies
 
 Runtime and build dependencies keep their own licenses, available in their installed packages and upstream repositories. This notice does not replace those terms. Retain applicable dependency notices when redistributing bundled code.
