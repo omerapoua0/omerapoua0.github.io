@@ -37,9 +37,9 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
       <p class="otto-stage__pad" aria-hidden="true"><span></span>Otto is on his way…</p>
       <p class="otto-bubble" data-otto-bubble aria-hidden="true"></p>
       <div class="otto-offer" data-otto-offer hidden>
-        <button type="button" class="otto-offer__take" data-offer-take><span class="otto-offer__ring" data-offer-ring aria-hidden="true"></span><span class="otto-offer__hand" aria-hidden="true">✋</span><span data-offer-label>Take Otto’s hand</span></button>
+        <button type="button" class="otto-offer__take" data-offer-take aria-describedby="otto-offer-desc"><span class="otto-offer__ring" data-offer-ring aria-hidden="true"></span><span class="otto-offer__hand" aria-hidden="true">✋</span><span data-offer-label>Take Otto’s hand</span></button>
         <button type="button" class="otto-offer__stay" data-offer-stay>Stay here</button>
-        <p class="sr-only" role="status" data-offer-status></p>
+        <p class="sr-only" id="otto-offer-desc" data-offer-status></p>
       </div>
       <p class="sr-only">Otto is Omar’s robot host: a white, rounded robot with a black glass visor, glowing lime eyes and a screen on his chest. He waves, talks and can take you on a tour of Omar’s projects.</p>
     </div>
@@ -283,6 +283,8 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
   .agent[data-handoff] .otto-stage { z-index: 4; }
   /* Taking his hand: the stage fills the screen for the dive into his chest. */
   .agent[data-handoff='take'] .otto-stage { position: fixed; inset: 0; height: auto; margin: 0; z-index: 150; background: #070807; transition: background-color 300ms; }
+  /* During the dive the hero (an isolated stacking context) rises above the fixed header. */
+  .agent[data-handoff='take'] { z-index: 60; }
   .agent[data-handoff] .agent__intro, .agent[data-handoff] .chat { opacity: .16; filter: blur(2px); pointer-events: none; transition: opacity 400ms ease-out, filter 400ms ease-out; }
   .chat__avatar { flex: none; display: grid; place-items: end center; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #2a2e28, #0b0d0a); overflow: hidden; }
   .chat__avatar :global(.robot--sm) { width: 46px; margin-bottom: -10px; }
@@ -305,6 +307,7 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
     .agent__proof, .agent__skip { display: none; }
     .otto-stage { height: clamp(340px, 52svh, 520px); margin: 4px calc(var(--margin) * -1) -40px; }
     .agent--otto .chat { height: min(560px, 70svh); min-height: 420px; }
+    .otto-stage__pad { bottom: calc(7% + 40px); } /* clear of the chat card's 40px overlap */
     .agent__toggle { position: static; justify-self: end; margin-top: 10px; }
     .agent__title { max-width: none; }
     .agent__title .voice { display: block; font-size: .58em; max-width: none; }

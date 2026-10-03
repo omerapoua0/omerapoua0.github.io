@@ -51,6 +51,7 @@ if (chat && log && form && input && chipRow) {
   let skip = false;
   let leadIndex = 0;
   let greetingDone = true; // false while the first-visit greeting is still playing
+  let greetingSecond: HTMLElement | null = null; // the greeting's second bubble, once it exists
   const history: string[] = store.get<string[]>('otto-history', []);
   let historyIndex = history.length;
 
@@ -276,10 +277,9 @@ if (chat && log && form && input && chipRow) {
       const line = `${said.text.startsWith('Language') ? 'Language! But fine. ' : ''}${name}? Good choice. Let me take you inside.`;
       const turn = await ottoTurn(said, true, query, line);
       const info = insideInfo(intent.id) ?? { name: intent.id };
-      session.set('otto-inside', intent.id);
+      // otto-handoff stores 'otto-inside' only once the visitor actually takes his hand.
       const choice = await handoff(intent.id, info);
       if (choice === 'take') return;
-      session.take('otto-inside');
       status.textContent = 'Staying here.';
       turn.remove();
       await ottoTurn(said, false);
@@ -321,7 +321,9 @@ if (chat && log && form && input && chipRow) {
   const finishGreeting = () => {
     if (greetingDone) return;
     greetingDone = true;
-    if (greetingNode) greetingNode.textContent = otto.greeting.join(' ');
+    // If the second greeting bubble already exists, each bubble keeps its own line.
+    if (greetingNode) greetingNode.textContent = greetingSecond ? otto.greeting[0] : otto.greeting.join(' ');
+    if (greetingSecond) greetingSecond.textContent = otto.greeting[1];
   };
   const ask = async (raw: string, preset?: string) => {
     const question = raw.trim().slice(0, 200);
@@ -489,10 +491,11 @@ if (chat && log && form && input && chipRow) {
         await sleep(650);
         if (greetingDone) { greetingNode.textContent = otto.greeting.join(' '); return; }
         const second = el('div', 'turn turn--agent');
+        greetingSecond = bubble(second);
         log.append(second);
         window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: otto.greeting[1] } }));
         robot('welcome', 1800);
-        await streamInto(bubble(second), otto.greeting[1], () => greetingDone);
+        await streamInto(greetingSecond, otto.greeting[1], () => greetingDone);
         greetingDone = true;
         follow();
       })();

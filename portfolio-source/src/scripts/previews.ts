@@ -1,5 +1,6 @@
-/* Concept-visual previews: play only while visible, never with reduced motion
-   or data saving, and only for the active item inside a project pane. */
+/* Concept-visual previews: play only while visible, never with reduced motion,
+   Pause motion (html[data-motion='off']) or data saving, and only for the
+   active item inside a project pane. */
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
 const videos = [...document.querySelectorAll<HTMLVideoElement>('video[data-preview]')];
@@ -7,7 +8,7 @@ const visible = new Set<HTMLVideoElement>();
 
 function evaluate(video: HTMLVideoElement) {
   const inactivePane = video.closest('[data-pane-item]:not([data-active])');
-  const allowed = !reduce.matches && !saveData && visible.has(video) && !inactivePane && video.offsetParent !== null;
+  const allowed = !reduce.matches && document.documentElement.dataset.motion !== 'off' && !saveData && visible.has(video) && !inactivePane && video.offsetParent !== null;
   if (allowed) {
     if (!video.getAttribute('src') && video.dataset.src) video.src = video.dataset.src;
     video.play().catch(() => {});
@@ -30,5 +31,6 @@ if ('IntersectionObserver' in window && videos.length) {
 }
 document.addEventListener('previews:update', () => videos.forEach(evaluate));
 reduce.addEventListener('change', () => videos.forEach(evaluate));
+window.addEventListener('omar:motion', () => videos.forEach(evaluate));
 
 export {};

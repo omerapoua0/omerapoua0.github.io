@@ -263,16 +263,20 @@ function watch(page) {
     assert.deepEqual(errors.filter(e => !/GPU stall|WebGL|swiftshader/i.test(e)), []);
     await context.close();
   });
-  await check('otto: hand-off on phone (SVG Otto): countdown takes you inside on its own', async () => {
+  await check('otto: hand-off on phone (SVG Otto): a tapped ask counts down and takes you inside; the ring shows it', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await modeSettled(page);
     await page.fill('[data-chat-input]', 'what is nookbase');
-    await page.press('[data-chat-input]', 'Enter');
+    await page.tap('.chat__send');
     await page.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 10000 });
     assert.equal(await page.locator('[data-otto-offer]').getAttribute('data-anchor'), 'dock', 'docked offer on phones');
     assert.ok(await page.locator('[data-otto-offer]').evaluate(el => el.hasAttribute('data-counting')), 'countdown runs');
+    assert.equal(await page.locator('[data-offer-take] [data-offer-ring]').count(), 1, 'countdown ring present');
+    await page.waitForTimeout(1200);
+    assert.ok(await page.locator('[data-offer-ring]').evaluate(el => parseFloat(el.style.getPropertyValue('--p')) > .1), 'ring fills');
+    assert.match(await page.locator('#otto-offer-desc').textContent(), /about 4 seconds/, 'the timer is described to screen readers');
     const box = await page.locator('[data-otto-offer]').boundingBox();
     assert.ok(box && box.x >= 0 && box.x + box.width <= 391 && box.y + box.height <= 845, 'offer fully on screen');
     await page.waitForURL(/inside\/nookbase/, { timeout: 12000 });
@@ -287,12 +291,15 @@ function watch(page) {
     await page.press('[data-chat-input]', 'Enter');
     await page.locator('[data-offer-stay]').waitFor({ state: 'visible', timeout: 10000 });
     assert.ok(!(await page.locator('[data-otto-offer]').evaluate(el => el.hasAttribute('data-counting'))), 'no countdown with reduced motion');
+    assert.ok(await page.locator('[data-chat]').evaluate(el => el.inert), 'dimmed chat is inert during the offer');
     await page.waitForTimeout(4500);
     assert.ok(page.url().endsWith('/index.html'), 'never leaves without a choice when motion is reduced');
     await page.locator('[data-offer-stay]').click();
     await settled(page);
     assert.ok(page.url().endsWith('/index.html'), 'stayed');
     assert.ok(!(await page.locator('[data-hero]').getAttribute('data-handoff')), 'stage reset');
+    assert.ok(!(await page.locator('[data-chat]').evaluate(el => el.inert)), 'chat usable again');
+    assert.ok(await page.evaluate(() => !!document.activeElement && document.activeElement !== document.body), 'focus returned, not dropped to body');
     assert.match(await lastOtto(page).locator('.bubble').textContent(), /Bloomberg/);
     assert.equal(await lastOtto(page).locator('a.card[href="/inside/bp.html"]').count(), 1, 'inside card offered');
     await page.fill('[data-chat-input]', 'show me bitget');
@@ -303,6 +310,25 @@ function watch(page) {
     assert.ok(page.url().endsWith('/index.html'), 'Esc stays');
     assert.ok(await page.locator('[data-otto-offer]').evaluate(el => el.hidden), 'offer closed');
     await context.close();
+    // Motion on, keyboard ask: Take gets keyboard focus, so nothing counts down; the command menu's Esc is its own.
+    const live = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    const page2 = await live.newPage();
+    await page2.goto(`${base}/index.html?otto3d=off`, { waitUntil: 'networkidle' });
+    await page2.waitForTimeout(500);
+    await page2.focus('[data-chat-input]');
+    await page2.keyboard.type('show me katana');
+    await page2.keyboard.press('Enter');
+    await page2.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 10000 });
+    await page2.waitForTimeout(5000);
+    assert.ok(page2.url().includes('/index.html'), 'a keyboard ask never auto-navigates');
+    await page2.keyboard.press('Control+k');
+    assert.ok(await page2.locator('[data-palette]').evaluate(el => el.open), 'menu opens over the offer');
+    await page2.keyboard.press('Escape');
+    assert.ok(!(await page2.locator('[data-palette]').evaluate(el => el.open)), 'Esc closes the menu');
+    assert.ok(await page2.locator('[data-otto-offer]').isVisible(), '…and leaves the offer open');
+    await page2.keyboard.press('Escape');
+    assert.ok(await page2.locator('[data-otto-offer]').evaluate(el => el.hidden), 'then Esc declines the offer');
+    await live.close();
   });
   await check('otto: routing over scripts/otto-questions.json (with context)', async () => {
     const questions = JSON.parse(await fs.readFile(path.join(__dirname, 'otto-questions.json'), 'utf8'));

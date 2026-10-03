@@ -51,9 +51,14 @@ function initStage(stage: HTMLElement) {
 
   // Speech bubble: the latest thing Otto says, kept short, near his head, and
   // nudged sideways so it stays in the free space (never under the chat card).
+  // Inside tours write their own (full) narration lines: data-bubble-owner="page".
+  const ownBubble = !!bubble && stage.dataset.bubbleOwner !== 'page';
+  let anchorY = NaN; // the 3D head anchor, before clamping
   const place = () => {
-    if (!bubble) return;
+    if (!bubble || !ownBubble) return;
     const width = stage.clientWidth;
+    // Never let the bubble grow out of the top of the stage (short phone stages).
+    if (stage.dataset.mode === '3d' && Number.isFinite(anchorY)) stage.style.setProperty('--by', `${Math.round(Math.max(anchorY, bubble.offsetHeight + 8))}px`);
     const gx = parseFloat(stage.style.getPropertyValue('--gx')), gw = parseFloat(stage.style.getPropertyValue('--gw'));
     const lo = gw > 0 ? gx - gw / 2 + 8 : 8, hi = gw > 0 ? gx + gw / 2 - 8 : width - 8;
     bubble.style.maxWidth = `${Math.round(Math.max(150, hi - lo))}px`;
@@ -64,7 +69,7 @@ function initStage(stage: HTMLElement) {
   };
   let hideTimer = 0;
   window.addEventListener('otto:say', event => {
-    if (!bubble) return;
+    if (!bubble || !ownBubble) return;
     const text = String((event as CustomEvent<{ text?: string }>).detail?.text ?? '').trim();
     if (!text) { bubble.removeAttribute('data-show'); return; }
     // Short sentences travel together ("KATANA? Good choice. Let me take you inside.").
@@ -84,8 +89,9 @@ function initStage(stage: HTMLElement) {
     if (stage.dataset.mode !== '3d' || !bubble) return;
     const { x, y } = (event as CustomEvent<{ x: number; y: number }>).detail;
     const box = stage.getBoundingClientRect();
+    anchorY = y - box.top;
     stage.style.setProperty('--bx', `${Math.round(x - box.left)}px`);
-    stage.style.setProperty('--by', `${Math.round(y - box.top)}px`);
+    stage.style.setProperty('--by', `${Math.round(Math.max(anchorY, bubble.offsetHeight + 8))}px`);
     if (bubble.hasAttribute('data-show')) place();
   });
   window.addEventListener('otto:mode', place);
@@ -113,40 +119,60 @@ function initStage(stage: HTMLElement) {
   }
 
   if (!canvas || !capable(dock)) { toSvg(canvas ? 'gate' : 'no-canvas'); return; }
-  const gl = canvas.getContext('webgl2', { antialias: (window.devicePixelRatio || 1) < 2, alpha: true, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: flag !== 'force' }) as WebGL2RenderingContext | null;
-  if (!gl) { toSvg('no-webgl'); session.set('otto3d', 'off'); return; }
-  // CPU-rendered WebGL (SwiftShader, llvmpipe…) can't carry Otto smoothly.
-  // Firefox reports it in RENDERER; Chromium/WebKit only through the debug extension.
-  let renderer = String(gl.getParameter(gl.RENDERER) ?? '');
-  if (/^webkit webgl$/i.test(renderer)) {
-    const info = gl.getExtension('WEBGL_debug_renderer_info');
-    if (info) renderer = String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) ?? '');
-  }
-  if (flag !== 'force' && /swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) {
-    toSvg('software'); session.set('otto3d', 'off');
-    gl.getExtension('WEBGL_lose_context')?.loseContext();
-    return;
-  }
 
+  const hero = dock ? null : stage.closest<HTMLElement>('[data-hero]');
   const deadline = window.setTimeout(() => { if (!settled) toSvg('deadline'); }, DEADLINE);
   window.addEventListener('otto:fail', () => { session.set('otto3d', 'off'); handle = null; toSvg('fail'); });
+  // An offer made before 3D arrives is played by the SVG Otto, start to finish.
+  window.addEventListener('otto:handoff', event => {
+    if ((event as CustomEvent<{ phase?: string }>).detail?.phase === 'offer' && stage.dataset.mode === 'pending') toSvg('handoff');
+  });
+  const reveal = () => {
+    stage.dataset.mode = '3d';
+    window.dispatchEvent(new CustomEvent('otto:mode', { detail: { mode: '3d' } }));
+  };
   window.addEventListener('otto:ready', event => {
     settled = true;
     window.clearTimeout(deadline);
     const tier = (event as CustomEvent<{ tier?: string }>).detail?.tier ?? 'hi';
     if (session.get('otto3d') !== 'lo') session.set('otto3d', tier);
-    stage.dataset.mode = '3d';
-    window.dispatchEvent(new CustomEvent('otto:mode', { detail: { mode: '3d' } }));
+    // Never swap robots in the middle of an offer: wait until it's declined.
+    if (hero?.hasAttribute('data-handoff')) {
+      const later = (next: Event) => {
+        if ((next as CustomEvent<{ phase?: string }>).detail?.phase !== 'cancel') return;
+        window.removeEventListener('otto:handoff', later);
+        reveal();
+      };
+      window.addEventListener('otto:handoff', later);
+    } else reveal();
   }, { once: true });
 
   const start = async () => {
+    // The WebGL context is only created now (after load, idle and on screen), so
+    // visitors who never reach Otto, or only ever see the SVG one, never pay for it.
+    const gl = canvas.getContext('webgl2', { antialias: (window.devicePixelRatio || 1) < 2, alpha: true, powerPreference: 'default', failIfMajorPerformanceCaveat: flag !== 'force' }) as WebGL2RenderingContext | null;
+    if (!gl) { window.clearTimeout(deadline); toSvg('no-webgl'); session.set('otto3d', 'off'); return; }
+    // CPU-rendered WebGL (SwiftShader, llvmpipe…) can't carry Otto smoothly.
+    // Firefox reports it in RENDERER; Chromium/WebKit only through the debug extension.
+    let renderer = String(gl.getParameter(gl.RENDERER) ?? '');
+    if (/^webkit webgl$/i.test(renderer)) {
+      const info = gl.getExtension('WEBGL_debug_renderer_info');
+      if (info) renderer = String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) ?? '');
+    }
+    if (flag !== 'force' && /swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) {
+      window.clearTimeout(deadline);
+      toSvg('software'); session.set('otto3d', 'off');
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      return;
+    }
     try {
       const { mount } = await import('./otto3d/stage');
-      const late = stage.dataset.mode === 'svg';
       const first = !session.get('otto-entered');
-      const entrance = dock || late || still() ? 'none' : first ? 'fly' : 'rise';
       session.set('otto-entered', '1');
-      handle = await mount(canvas, gl, { mode: dock ? 'dock' : 'hero', entrance, still: still(), force: flag === 'force' });
+      // Decided after warm-up: if the SVG Otto already stood in, the 3D one just appears.
+      const entrance = () => dock || stage.dataset.mode === 'svg' || still() ? 'none' as const : first ? 'fly' as const : 'rise' as const;
+      const tier = session.get('otto3d') === 'lo' ? 'lo' as const : 'hi' as const;
+      handle = await mount(canvas, gl, { mode: dock ? 'dock' : 'hero', entrance, still: still(), tier, force: flag === 'force' });
     } catch (error) {
       console.warn('Otto 3D unavailable:', error);
       session.set('otto3d', 'off');

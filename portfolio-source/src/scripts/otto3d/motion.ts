@@ -146,8 +146,9 @@ export function createDirector(rig: Rig) {
     if (live && time > glance.next && !pointer.active) {
       glance = { x: (Math.random() * 2 - 1) * .6, y: (Math.random() * 2 - 1) * .3, until: time + .9, next: time + 4 + Math.random() * 4 };
     }
-    const lookX = handoff || entrance ? 0 : pointer.active ? pointer.x : time < glance.until ? glance.x : 0;
-    const lookY = handoff || entrance ? 0 : pointer.active ? pointer.y : time < glance.until ? glance.y : 0;
+    // With motion off he looks straight ahead (as the SVG Otto keeps his eyes still).
+    const lookX = handoff || entrance || !live ? 0 : pointer.active ? pointer.x : time < glance.until ? glance.x : 0;
+    const lookY = handoff || entrance || !live ? 0 : pointer.active ? pointer.y : time < glance.until ? glance.y : 0;
     target('yaw', clamp(lookX, -1, 1) * .49, OMEGA.head);
     target('pitch', clamp(lookY, -1, 1) * .28, OMEGA.head);
     target('lean', current.lean, OMEGA.body);
