@@ -1,1 +1,0 @@
-import{t as e}from"./SplineRobot.astro_astro_type_script_index_0_lang.4c1ZWInz.js";var t,n,r=!1,i=new Promise(e=>{t=e}),a=!1;function o(){if(r=!0,!a)return n||=async function(){let n=await e(()=>import(`./opentype.BC5JPJ1W.js`),[]);t(n),a=!0}()}export{o as n,r,i as t};

@@ -237,13 +237,36 @@ Organisation and project marks retain their respective owners' rights. They are 
 
 Project concept images and videos must not be described as screenshots of a live product unless independently established. The original portrait is used without generating a replacement face or body.
 
-## 3D robot preview (21st.dev / Spline)
+## Otto, the robot host
 
-- Used only on the noindex comparison page `/preview-3d.html` while the user chooses between robots.
-- Component idea: "Spline Scene" by serafimcloud on 21st.dev (https://21st.dev/community/components/serafimcloud/splite), listed there under MIT. Re-implemented here without React as `src/components/SplineRobot.astro` + `src/scripts/spline-robot.ts`.
-- 3D scene: `https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode`, created and hosted by its Spline author and loaded from Spline's servers at runtime; it is not copied into this repository. Rights remain with its author under Spline's terms.
-- Runtime: `@splinetool/runtime` 2.0.66 from npm (Spline). The npm package declares no licence field; its terms are Spline's. Remove the dependency if the 3D robot is not chosen.
-- Otto, the robot on `/preview-otto.html` and the inside pages, is an original SVG drawing made for this portfolio.
+- Otto is an original character made for this portfolio. The SVG Otto (`src/components/Robot.astro`) is an original drawing; the 3D Otto (`src/scripts/otto3d/`) is built in code from primitive shapes (rounded boxes, capsules, an extruded visor) with canvas-drawn faces. No third-party models, textures, scenes or characters are used.
+- The 3D Otto is rendered with three.js 0.185.1 (core plus the `RoundedBoxGeometry` and `RoomEnvironment` add-ons), bundled into a lazily loaded script. three.js is distributed under the MIT License:
+
+```text
+The MIT License
+
+Copyright © 2010-2026 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
+
+- Previously used (noindex comparison preview only, removed in October 2026): the 21st.dev "Spline Scene" component idea by serafimcloud (https://21st.dev/community/components/serafimcloud/splite, listed there under MIT), a Spline scene loaded at runtime from `https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode` (rights remain with its author under Spline's terms) and `@splinetool/runtime` 2.0.66. None of these ship with the site any more.
 
 ## Other dependencies
 

@@ -1,1 +1,0 @@
-import"./runtime-chunk-BVVSZMXD.D1AYhCn7.js";import{w as e}from"./runtime-chunk-K3UQCG3P.fe_o4yqh.js";export{e as updateDocumentSchema};
