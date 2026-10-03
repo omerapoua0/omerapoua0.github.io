@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check:portfolio": "tsc --noEmit --skipLibCheck --jsx react-jsx --module ESNext --moduleResolution bundler --target ES2022 --allowImportingTsExtensions --strict src/scripts/site.ts src/scripts/hero-graph.ts src/scripts/hero-motion.ts src/scripts/cursor.ts src/scripts/agent-chat.ts src/scripts/agent-match.ts src/scripts/palette.ts src/scripts/forms.ts src/scripts/previews.ts src/scripts/project-index.ts src/data/site.ts src/data/projects.ts src/data/experience.ts src/data/capabilities.ts src/data/agent.ts",
+    "check:portfolio": "tsc --noEmit --skipLibCheck --jsx react-jsx --module ESNext --moduleResolution bundler --target ES2022 --allowImportingTsExtensions --strict src/scripts/site.ts src/scripts/hero-graph.ts src/scripts/hero-motion.ts src/scripts/cursor.ts src/scripts/agent-chat.ts src/scripts/agent-match.ts src/scripts/palette.ts src/scripts/robot.ts src/scripts/otto-brain.ts src/scripts/otto-chat.ts src/scripts/spline-robot.ts src/scripts/inside.ts src/scripts/forms.ts src/scripts/previews.ts src/scripts/project-index.ts src/data/site.ts src/data/projects.ts src/data/experience.ts src/data/capabilities.ts src/data/agent.ts src/data/otto.ts",
     "astro": "astro"
   },
   "devDependencies": {
@@ -32,6 +32,7 @@
     "@react-spring/three": "^10.1.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@splinetool/runtime": "2.0.66",
     "astro": "^7.1.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

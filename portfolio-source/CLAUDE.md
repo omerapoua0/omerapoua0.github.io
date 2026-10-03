@@ -38,6 +38,21 @@ required. This is a static portfolio, not a hosted backend.
 - `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
   (enquiry engine), `project-index.ts`, `previews.ts`.
 
+- **Robot comparison (October 2026, in preview):** `src/components/OttoHero.astro`
+  (`variant="otto" | "3d"`) on the noindex pages `/preview-otto.html` and
+  `/preview-3d.html`. Otto = `Robot.astro` (original SVG rig) + `robot.ts`
+  (poses via the `otto:state` event). Brain: `src/data/otto.ts` (third-person
+  answers, follow-up details, social replies) + `src/scripts/otto-brain.ts`
+  (typo snapping, small talk/troll handling, context, multi-intent) +
+  `otto-chat.ts` (greeting, mood dialogue, teleport to `/inside/<id>.html`).
+  Inside pages: `src/pages/inside/[id].astro` + `inside.ts`. The 3D variant
+  lazy-loads `@splinetool/runtime` and the 21st.dev Spline scene from
+  prod.spline.design (blocked in the cloud container, so Otto stands in during
+  QA). The live homepage still uses `AgentHero`. When the user picks a robot:
+  promote it to `index.astro`, drop the other variant (remove the Spline
+  dependency if Otto wins), retire `AgentHero`/`agent-chat.ts`, remove noindex
+  from the inside pages and add them to the command palette and sitemap.
+
 The CrafterUI wheel was replaced at the user's request for a full redesign;
 keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
@@ -78,7 +93,7 @@ Do not claim trading performance or provide investment recommendations.
 
 Project videos are concept visuals, not actual product recordings. Omar's real
 portrait is used on About & CV and as the hero avatar (sized crops
-portrait-hero/portrait-avatar).
+portrait-hero/portrait-avatar, and the head-and-shoulders portrait-bust).
 Never generate or alter a face/body or present stock actors as Omar. Marks retain
 their respective owners' rights. Retain LICENSE and both notices (including the previously used film credits).
 

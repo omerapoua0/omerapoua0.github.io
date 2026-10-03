@@ -1,0 +1,165 @@
+---
+/* Otto, the robot host. A hand-built SVG rig; src/scripts/robot.ts drives
+   data-state (idle, wave, talk, think, confused, cheeky, point, pew), blinks
+   and eye tracking. Reduced or paused motion keeps a still pose. */
+interface Props { size?: 'lg' | 'sm'; label?: string; id?: string }
+const { size = 'lg', label = 'Otto, Omar’s robot host', id = 'otto' } = Astro.props;
+const uid = `${id}-${size}`;
+---
+<div class:list={['robot', `robot--${size}`]} data-robot data-state="idle" role="img" aria-label={label}>
+  <svg class="robot__svg" viewBox="0 0 200 240" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id={`${uid}-shell`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#5b6157" />
+        <stop offset=".42" stop-color="#2c3029" />
+        <stop offset="1" stop-color="#141612" />
+      </linearGradient>
+      <linearGradient id={`${uid}-glass`} x1="0" y1="0" x2=".4" y2="1">
+        <stop offset="0" stop-color="#1a1e17" />
+        <stop offset="1" stop-color="#050605" />
+      </linearGradient>
+      <radialGradient id={`${uid}-sheen`} cx=".3" cy=".2" r=".8">
+        <stop offset="0" stop-color="#ffffff" stop-opacity=".22" />
+        <stop offset=".5" stop-color="#ffffff" stop-opacity=".04" />
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+      </radialGradient>
+      <radialGradient id={`${uid}-shadow`} cx=".5" cy=".5" r=".5">
+        <stop offset="0" stop-color="#d9ff3f" stop-opacity=".35" />
+        <stop offset="1" stop-color="#d9ff3f" stop-opacity="0" />
+      </radialGradient>
+      <linearGradient id={`${uid}-rim`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ffffff" stop-opacity=".35" />
+        <stop offset=".5" stop-color="#ffffff" stop-opacity=".06" />
+        <stop offset="1" stop-color="#d9ff3f" stop-opacity=".55" />
+      </linearGradient>
+      <filter id={`${uid}-glow`} x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="2.4" result="blur" />
+        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+      </filter>
+    </defs>
+
+    <ellipse class="robot__shadow" cx="100" cy="226" rx="50" ry="8" fill={`url(#${uid}-shadow)`} />
+
+    <g class="robot__body">
+      <!-- left arm (viewer's left) -->
+      <g class="robot__arm robot__arm--l">
+        <rect x="47" y="146" width="17" height="46" rx="8.5" fill={`url(#${uid}-shell)`} stroke="#ffffff24" />
+        <circle cx="55.5" cy="194" r="9.5" fill="#1a1d18" stroke="#ffffff2e" />
+      </g>
+      <!-- torso -->
+      <rect x="60" y="136" width="80" height="70" rx="32" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} stroke-width="1.4" />
+      <rect x="60" y="136" width="80" height="70" rx="32" fill={`url(#${uid}-sheen)`} />
+      <circle cx="100" cy="171" r="12" fill="#0b0d0a" stroke="#d9ff3f" stroke-width="2" class="robot__badge" />
+      <text x="100" y="175.5" text-anchor="middle" class="robot__badge-text">O</text>
+      <!-- neck -->
+      <rect x="90" y="124" width="20" height="16" rx="6" fill="#151713" stroke="#ffffff1f" />
+
+      <!-- head -->
+      <g class="robot__head">
+        <line x1="100" y1="46" x2="100" y2="26" stroke="#3a3f37" stroke-width="4" stroke-linecap="round" />
+        <circle class="robot__bead" cx="100" cy="21" r="6" fill="#d9ff3f" filter={`url(#${uid}-glow)`} />
+        <rect x="31" y="76" width="11" height="28" rx="5.5" fill="#1a1d18" stroke="#ffffff24" />
+        <rect x="158" y="76" width="11" height="28" rx="5.5" fill="#1a1d18" stroke="#ffffff24" />
+        <circle cx="36.5" cy="90" r="2" fill="#d9ff3f" opacity=".8" />
+        <circle cx="163.5" cy="90" r="2" fill="#d9ff3f" opacity=".8" />
+        <rect x="38" y="44" width="124" height="88" rx="32" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} stroke-width="1.6" />
+        <rect x="38" y="44" width="124" height="88" rx="32" fill={`url(#${uid}-sheen)`} />
+        <rect x="50" y="56" width="100" height="64" rx="22" fill={`url(#${uid}-glass)`} stroke="#00000080" />
+        <path d="M60 64 Q76 58 98 59 L70 112 Q57 104 56 86 Z" fill="#ffffff" opacity=".06" />
+        <g class="robot__face" filter={`url(#${uid}-glow)`}>
+          <g class="robot__eyes">
+            <rect class="robot__eye robot__eye--l" x="74" y="74" width="15" height="21" rx="7.5" fill="#d9ff3f" />
+            <rect class="robot__eye robot__eye--r" x="111" y="74" width="15" height="21" rx="7.5" fill="#d9ff3f" />
+            <circle cx="85" cy="79" r="2.2" fill="#ffffff" opacity=".85" class="robot__glint" />
+            <circle cx="122" cy="79" r="2.2" fill="#ffffff" opacity=".85" class="robot__glint" />
+          </g>
+          <path class="robot__brow robot__brow--l" d="M72 68 L90 64" stroke="#d9ff3f" stroke-width="3" stroke-linecap="round" />
+          <path class="robot__brow robot__brow--r" d="M110 64 L128 68" stroke="#d9ff3f" stroke-width="3" stroke-linecap="round" />
+          <g class="robot__mouth">
+            <rect x="89" y="103" width="5" height="5" rx="2.5" fill="#d9ff3f" />
+            <rect x="97.5" y="103" width="5" height="5" rx="2.5" fill="#d9ff3f" />
+            <rect x="106" y="103" width="5" height="5" rx="2.5" fill="#d9ff3f" />
+          </g>
+        </g>
+        <text class="robot__q" x="168" y="46">?</text>
+      </g>
+      <!-- right arm (viewer's right): waves and points -->
+      <g class="robot__arm robot__arm--r">
+        <rect x="136" y="146" width="17" height="46" rx="8.5" fill={`url(#${uid}-shell)`} stroke="#ffffff24" />
+        <rect class="robot__finger" x="141" y="196" width="7" height="16" rx="3.5" fill="#d9ff3f" />
+        <circle cx="144.5" cy="194" r="9.5" fill="#1a1d18" stroke="#ffffff2e" />
+      </g>
+    </g>
+  </svg>
+  <span class="robot__beam" aria-hidden="true"></span>
+</div>
+
+<style>
+  .robot { --ex: 0px; --ey: 0px; position: relative; display: inline-block; flex: none; line-height: 0; -webkit-tap-highlight-color: transparent; }
+  .robot--lg { width: 150px; }
+  .robot--sm { width: 92px; }
+  .robot__svg { width: 100%; height: auto; overflow: visible; }
+  .robot__badge-text { font: 600 13px var(--font-mono, monospace); fill: #d9ff3f; }
+  .robot__q { font: 700 26px var(--font-sans, sans-serif); fill: #d9ff3f; opacity: 0; }
+  .robot__brow { opacity: 0; }
+  .robot__finger { opacity: 0; }
+  .robot__body, .robot__head, .robot__arm, .robot__eyes, .robot__eye, .robot__mouth, .robot__mouth rect, .robot__brow, .robot__q, .robot__finger { transform-box: view-box; }
+  .robot__head { transform-origin: 100px 130px; }
+  .robot__arm--l { transform-origin: 55.5px 152px; }
+  .robot__arm--r { transform-origin: 144.5px 152px; }
+  .robot__eyes { transform: translate(var(--ex), var(--ey)); }
+  .robot__eye--l { transform-origin: 81.5px 84.5px; }
+  .robot__eye--r { transform-origin: 118.5px 84.5px; }
+  .robot__mouth { transform-origin: 100px 105.5px; }
+  .robot__mouth rect { transform-origin: center 105.5px; }
+  .robot[data-blink] .robot__glint, .robot[data-state='cheeky'] .robot__glint, .robot[data-state='confused'] .robot__glint { opacity: 0; }
+  .robot[data-blink] .robot__eye { transform: scaleY(.12); }
+
+  /* Poses (apply with or without motion; transitions only when motion is on). */
+  .robot[data-state='think'] { --ex: 4px; --ey: -5px; }
+  .robot[data-state='think'] .robot__head { transform: rotate(-4deg); }
+  .robot[data-state='confused'] .robot__head { transform: rotate(9deg); }
+  .robot[data-state='confused'] .robot__eye--r { transform: scaleY(.45); }
+  .robot[data-state='confused'] .robot__q { opacity: 1; }
+  .robot[data-state='confused'] .robot__brow--l { opacity: 1; transform: translateY(-2px) rotate(-8deg); }
+  .robot[data-state='cheeky'] .robot__head { transform: rotate(-6deg); }
+  .robot[data-state='cheeky'] .robot__brow--r { opacity: 1; transform: translateY(-4px); }
+  .robot[data-state='cheeky'] .robot__eye--l { transform: scaleY(.35); }
+  .robot[data-state='cheeky'] .robot__mouth { transform: translate(5px, -1px) rotate(-8deg); }
+  .robot[data-state='wave'] .robot__arm--r { transform: rotate(-160deg); }
+  .robot[data-state='point'] .robot__arm--r, .robot[data-state='pew'] .robot__arm--r { transform: rotate(-98deg); }
+  .robot[data-state='point'] .robot__finger, .robot[data-state='pew'] .robot__finger { opacity: 1; }
+  .robot[data-state='point'] .robot__head, .robot[data-state='pew'] .robot__head { transform: rotate(-3deg); }
+  .robot[data-state='point'], .robot[data-state='pew'] { --ex: 5px; --ey: 0px; }
+  .robot[data-state='point'] .robot__arm--l { transform: rotate(12deg); }
+
+  .robot__beam { position: absolute; left: 92%; top: 40%; width: min(70vw, 720px); height: 3px; border-radius: 3px; background: linear-gradient(90deg, #d9ff3f, #f4ffc2 40%, #d9ff3f00); box-shadow: 0 0 18px 4px #d9ff3f80; transform-origin: left center; transform: scaleX(0); opacity: 0; pointer-events: none; z-index: 5; }
+  .robot--sm .robot__beam { top: 38%; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='off'])) .robot__body { animation: robot-float 3.2s ease-in-out infinite; }
+    :global(html:not([data-motion='off'])) .robot__shadow { animation: robot-shadow 3.2s ease-in-out infinite; transform-origin: 100px 226px; transform-box: view-box; }
+    :global(html:not([data-motion='off'])) .robot__bead { animation: robot-bead 2.4s ease-in-out infinite; }
+    .robot__head, .robot__arm, .robot__brow, .robot__q, .robot__finger, .robot__mouth { transition: transform 420ms cubic-bezier(.34, 1.56, .64, 1), opacity 200ms ease-out; }
+    .robot__eyes { transition: transform 160ms ease-out; }
+    .robot__eye { transition: transform 90ms ease-out; }
+    :global(html:not([data-motion='off'])) .robot[data-state='wave'] .robot__arm--r { animation: robot-wave 1.1s ease-in-out; }
+    :global(html:not([data-motion='off'])) .robot[data-state='talk'] .robot__mouth rect { animation: robot-talk 360ms ease-in-out infinite; }
+    :global(html:not([data-motion='off'])) .robot[data-state='talk'] .robot__mouth rect:nth-child(2) { animation-delay: 120ms; }
+    :global(html:not([data-motion='off'])) .robot[data-state='talk'] .robot__mouth rect:nth-child(3) { animation-delay: 240ms; }
+    :global(html:not([data-motion='off'])) .robot[data-state='talk'] .robot__head { animation: robot-nod 900ms ease-in-out infinite; }
+    :global(html:not([data-motion='off'])) .robot[data-state='think'] .robot__bead { animation-duration: .6s; }
+    :global(html:not([data-motion='off'])) .robot[data-state='pew'] .robot__beam { animation: robot-beam 520ms cubic-bezier(.2, .8, .2, 1) both; }
+    :global(html:not([data-motion='off'])) .robot[data-state='pew'] .robot__body { animation: robot-recoil 300ms ease-out; }
+  }
+  @keyframes robot-float { 50% { transform: translateY(-6px); } }
+  @keyframes robot-shadow { 50% { transform: scale(.82); opacity: .7; } }
+  @keyframes robot-bead { 50% { opacity: .45; } }
+  @keyframes robot-wave { 0%, 100% { transform: rotate(-160deg); } 20%, 60% { transform: rotate(-182deg); } 40%, 80% { transform: rotate(-138deg); } }
+  @keyframes robot-talk { 50% { transform: scaleY(2.4); } }
+  @keyframes robot-nod { 50% { transform: rotate(2deg) translateY(1px); } }
+  @keyframes robot-beam { 0% { transform: scaleX(0); opacity: 1; } 55% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+  @keyframes robot-recoil { 30% { transform: translateX(-6px); } }
+</style>
+
+<script>import '../scripts/robot';</script>

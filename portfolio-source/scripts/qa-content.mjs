@@ -72,10 +72,52 @@ for (const page of pages) {
   expect(js <= 20 * 1024, `${page}: JS ${js}B gz exceeds 20KB`);
   expect(css <= 30 * 1024, `${page}: CSS ${css}B gz exceeds 30KB`);
 }
+// Otto preview and inside pages: disclosure, noindex while in preview, facts, JS budget.
+const jsWeight = async (source, { dynamic }) => {
+  const assets = [...source.matchAll(/(?:src|href)="(\/_astro\/[^"]+\.js)"/g)].map(match => match[1]);
+  const queue = [...new Set(assets)], seen = new Set();
+  let js = 0;
+  while (queue.length) {
+    const asset = queue.shift();
+    if (seen.has(asset)) continue;
+    seen.add(asset);
+    const file = await readFile(path.join(dist, asset));
+    js += gzipSync(file).length;
+    const pattern = dynamic ? /(?:from|import)\s*\(?\s*["'](\.\/[^"']+\.js)["']/g : /(?:from|import)\s*["'](\.\/[^"']+\.js)["']/g;
+    for (const match of file.toString().matchAll(pattern)) queue.push(path.posix.join(path.posix.dirname(asset), match[1]));
+  }
+  for (const match of source.matchAll(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g)) js += gzipSync(match[1]).length;
+  return js;
+};
+const otto = await readFile(path.join(dist, 'preview-otto.html'), 'utf8');
+const ottoText = otto.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+expect(/No AI model; nothing you type leaves this page/.test(ottoText), 'preview-otto: chat disclosure missing');
+expect(/I’m Otto, Omar’s robot/.test(ottoText), 'preview-otto: greeting missing');
+for (const file of ['preview-otto.html', 'preview-3d.html', ...['katana', 'nookbase', 'inos', 'bitget', 'bp'].map(id => `inside/${id}.html`)]) {
+  const source = await readFile(path.join(dist, file), 'utf8');
+  expect(source.includes('<meta name="robots" content="noindex">'), `${file}: should be noindex while in preview`);
+}
+const ottoJs = await jsWeight(otto, { dynamic: true });
+// Otto's brain, voice, rig and teleport cost ~13KB over the chat-only homepage:
+// still less than one web font. The old first-person answers drop out on promotion.
+info.push(`preview-otto: JS ${(ottoJs / 1024).toFixed(1)}KB gz (budget 34KB)`);
+expect(ottoJs <= 34 * 1024, `preview-otto: JS ${ottoJs}B gz exceeds 34KB`);
+const threeD = await jsWeight(await readFile(path.join(dist, 'preview-3d.html'), 'utf8'), { dynamic: false });
+info.push(`preview-3d: JS ${(threeD / 1024).toFixed(1)}KB gz before the lazy Spline runtime`);
+for (const id of ['katana', 'nookbase', 'inos', 'bitget', 'bp']) {
+  const source = await readFile(path.join(dist, 'inside', `${id}.html`), 'utf8');
+  if (id === 'katana') expect(/programme(’|&#39;|')s direction|programme direction/i.test(source), 'inside/katana: Level 4 caveat missing');
+  if (id === 'bitget') expect(/no claim of trading performance|not investment advice/i.test(source), 'inside/bitget: no-performance caveat missing');
+  if (id === 'inos') expect(/wider R&amp;D|wider R&D/i.test(source), 'inside/inos: wider R&D caveat missing');
+  const weight = await jsWeight(source, { dynamic: true });
+  expect(weight <= 20 * 1024, `inside/${id}: JS ${weight}B gz exceeds 20KB`);
+}
+
 // Every link the chat can show (cards and sources) must resolve to a built page and anchor.
-const agentSource = await readFile(path.resolve('src/data/agent.ts'), 'utf8');
+const agentSource = (await readFile(path.resolve('src/data/agent.ts'), 'utf8')) + (await readFile(path.resolve('src/data/otto.ts'), 'utf8'));
 for (const [, href] of agentSource.matchAll(/href: '([^']+)'/g)) {
   if (/^https?:/.test(href)) continue;
+  if (href.includes('${')) continue;
   const [file, anchor] = href.split('#');
   const page = file.replace(/^\//, '').replace(/\.html(\?.*)?$/, '');
   if (file.endsWith('.pdf')) { expect((await readdir(dist)).includes(file.slice(1)), `agent link ${href}: missing file`); continue; }
@@ -92,4 +134,4 @@ expect(!media.some(file => /^hero-(editorial|still)/.test(file)), 'Stock hero fi
 
 info.forEach(line => console.log(line));
 if (failures.length) { failures.forEach(line => console.error('FAIL', line)); process.exitCode = 1; }
-else console.log(`Content checks passed (${required.length + 7} rules).`);
+else console.log(`Content checks passed (${required.length + 13} rules).`);
