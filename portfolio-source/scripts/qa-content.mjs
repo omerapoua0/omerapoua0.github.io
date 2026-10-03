@@ -24,7 +24,7 @@ expect(/Nothing has been sent/.test(text.tutoring) && /Nothing has been sent/.te
 
 // Attribution and status wording that must stay visible.
 const required = [
-  ['index', /Hi, I’m/, 'First-person greeting'],
+  ['index', /Hi, I’m Otto/, 'No-JS greeting from Otto'],
   ['index', /No AI model; nothing you type leaves this page/, 'Chat disclosure under the composer'],
   ['work', /programme direction/i, 'KATANA Level 4 described as programme direction'],
   ['work', /wider R&D/i, 'INOS described as part of wider R&D'],
@@ -48,71 +48,65 @@ const required = [
 ];
 for (const [page, pattern, label] of required) expect(pattern.test(text[page]), `${page}: missing "${label}"`);
 
-// Size budgets (gzip): JS per page <= 20KB, CSS per page <= 30KB.
-for (const page of pages) {
-  const assets = [...html[page].matchAll(/(?:src|href)="(\/_astro\/[^"]+\.(js|css))"/g)].map(match => match[1]);
-  let js = 0, css = 0;
-  // Follow static and dynamic relative imports so the whole module graph counts.
-  const queue = [...new Set(assets)];
-  const seen = new Set();
+// Size budgets (gzip). First-load JS follows static imports only; the 3D Otto
+// (three.js) is a dynamic import fetched after the load event, measured below.
+const staticImport = /(?:from|import)\s*["'](\.\/[^"']+\.js)["']/g;
+const anyImport = /(?:from|import)\s*\(?\s*["'`](\.\/[^"'`]+\.js)["'`]/g;
+const walk = async (entries, pattern, skip = new Set()) => {
+  const queue = [...new Set(entries)], seen = new Set();
+  let bytes = 0;
   while (queue.length) {
     const asset = queue.shift();
-    if (seen.has(asset)) continue;
-    seen.add(asset);
-    const source = await readFile(path.join(dist, asset));
-    if (asset.endsWith('.js')) {
-      js += gzipSync(source).length;
-      for (const match of source.toString().matchAll(/(?:from|import)\s*\(?\s*["'](\.\/[^"']+\.js)["']/g)) queue.push(path.posix.join(path.posix.dirname(asset), match[1]));
-    } else css += gzipSync(source).length;
-  }
-  // Inline scripts/styles count too.
-  for (const match of html[page].matchAll(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g)) js += gzipSync(match[1]).length;
-  for (const match of html[page].matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) css += gzipSync(match[1]).length;
-  info.push(`${page}: JS ${(js / 1024).toFixed(1)}KB gz, CSS ${(css / 1024).toFixed(1)}KB gz`);
-  // The homepage carries the motion pass (3D orbit, slider, tilt, ~2.5KB) on top of the chat.
-  const jsBudget = page === 'index' ? 24 : 20;
-  expect(js <= jsBudget * 1024, `${page}: JS ${js}B gz exceeds ${jsBudget}KB`);
-  expect(css <= 30 * 1024, `${page}: CSS ${css}B gz exceeds 30KB`);
-}
-// Otto preview and inside pages: disclosure, noindex while in preview, facts, JS budget.
-const jsWeight = async (source, { dynamic }) => {
-  const assets = [...source.matchAll(/(?:src|href)="(\/_astro\/[^"]+\.js)"/g)].map(match => match[1]);
-  const queue = [...new Set(assets)], seen = new Set();
-  let js = 0;
-  while (queue.length) {
-    const asset = queue.shift();
-    if (seen.has(asset)) continue;
+    if (seen.has(asset) || skip.has(asset)) continue;
     seen.add(asset);
     const file = await readFile(path.join(dist, asset));
-    js += gzipSync(file).length;
-    const pattern = dynamic ? /(?:from|import)\s*\(?\s*["'](\.\/[^"']+\.js)["']/g : /(?:from|import)\s*["'](\.\/[^"']+\.js)["']/g;
-    for (const match of file.toString().matchAll(pattern)) queue.push(path.posix.join(path.posix.dirname(asset), match[1]));
+    bytes += gzipSync(file).length;
+    if (asset.endsWith('.js')) for (const match of file.toString().matchAll(pattern)) queue.push(path.posix.join(path.posix.dirname(asset), match[1]));
   }
-  for (const match of source.matchAll(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g)) js += gzipSync(match[1]).length;
-  return js;
+  return { bytes, seen };
 };
-const otto = await readFile(path.join(dist, 'preview-otto.html'), 'utf8');
-const ottoText = otto.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-expect(/No AI model; nothing you type leaves this page/.test(ottoText), 'preview-otto: chat disclosure missing');
-expect(/I’m Otto, Omar’s robot/.test(ottoText), 'preview-otto: greeting missing');
-for (const file of ['preview-otto.html', 'preview-3d.html', ...['katana', 'nookbase', 'inos', 'bitget', 'bp'].map(id => `inside/${id}.html`)]) {
-  const source = await readFile(path.join(dist, file), 'utf8');
-  expect(source.includes('<meta name="robots" content="noindex">'), `${file}: should be noindex while in preview`);
+const inlineJs = source => [...source.matchAll(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g)].reduce((sum, match) => sum + gzipSync(match[1]).length, 0);
+const inside = ['katana', 'nookbase', 'inos', 'bitget', 'bp'];
+const insideHtml = Object.fromEntries(await Promise.all(inside.map(async id => [id, await readFile(path.join(dist, 'inside', `${id}.html`), 'utf8')])));
+// Index: Otto's brain, voice, stage loader and hand-off plus the motion pass
+// (~2.5KB) and command menu. Inside tours: narration plus the stage loader.
+const budgets = { index: 34, inside: 22, other: 20 };
+let lazy = null;
+for (const [name, source] of [...pages.map(page => [page, html[page]]), ...inside.map(id => [`inside/${id}`, insideHtml[id]])]) {
+  const scripts = [...source.matchAll(/src="(\/_astro\/[^"]+\.js)"/g)].map(match => match[1]);
+  const styles = [...source.matchAll(/href="(\/_astro\/[^"]+\.css)"/g)].map(match => match[1]);
+  const first = await walk(scripts, staticImport);
+  const js = first.bytes + inlineJs(source);
+  const css = (await walk(styles, staticImport)).bytes + [...source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].reduce((sum, match) => sum + gzipSync(match[1]).length, 0);
+  const budget = name === 'index' ? budgets.index : name.startsWith('inside/') ? budgets.inside : budgets.other;
+  info.push(`${name}: first-load JS ${(js / 1024).toFixed(1)}KB gz (budget ${budget}KB), CSS ${(css / 1024).toFixed(1)}KB gz`);
+  expect(js <= budget * 1024, `${name}: first-load JS ${js}B gz exceeds ${budget}KB`);
+  expect(css <= 30 * 1024, `${name}: CSS ${css}B gz exceeds 30KB`);
+  // The lazy 3D graph: everything reachable through dynamic imports but not loaded up front.
+  const all = await walk(scripts, anyImport);
+  const extra = [...all.seen].filter(asset => !first.seen.has(asset));
+  const weight = extra.length ? (await walk(extra, staticImport, first.seen)).bytes : 0;
+  if (lazy === null) lazy = weight;
+  expect(Math.abs(weight - lazy) < 2048, `${name}: lazy JS differs from other pages (${weight}B vs ${lazy}B)`);
+  expect(!/rel="modulepreload"[^>]*stage|stage[^"]*"[^>]*rel="modulepreload"/.test(source) && !extra.some(asset => source.includes(asset)), `${name}: the 3D module must not be preloaded`);
 }
-const ottoJs = await jsWeight(otto, { dynamic: true });
-// Otto's brain, voice, rig and teleport cost ~13KB over the chat-only homepage:
-// still less than one web font. The motion pass adds ~2.5KB. The old first-person answers drop out on promotion.
-info.push(`preview-otto: JS ${(ottoJs / 1024).toFixed(1)}KB gz (budget 38KB)`);
-expect(ottoJs <= 38 * 1024, `preview-otto: JS ${ottoJs}B gz exceeds 38KB`);
-const threeD = await jsWeight(await readFile(path.join(dist, 'preview-3d.html'), 'utf8'), { dynamic: false });
-info.push(`preview-3d: JS ${(threeD / 1024).toFixed(1)}KB gz before the lazy Spline runtime`);
-for (const id of ['katana', 'nookbase', 'inos', 'bitget', 'bp']) {
-  const source = await readFile(path.join(dist, 'inside', `${id}.html`), 'utf8');
+info.push(`lazy 3D Otto (three.js rig, faces, motion, stage): ${((lazy ?? 0) / 1024).toFixed(1)}KB gz, fetched after load on capable devices only`);
+expect(lazy > 40 * 1024 && lazy <= 170 * 1024, `3D Otto chunk ${lazy}B gz outside 40–170KB`);
+
+// Homepage Otto: disclosure and greeting. Inside tours: indexable, in the sitemap, honest caveats.
+const sitemap = (await readdir(dist)).filter(file => /^sitemap.*\.xml$/.test(file));
+const sitemapText = (await Promise.all(sitemap.map(file => readFile(path.join(dist, file), 'utf8')))).join(' ');
+expect(/I’m Otto, Omar’s robot/.test(text.index), 'index: Otto’s greeting missing');
+expect(!/preview-(otto|3d)/.test(Object.values(html).join(' ')), 'A link to a retired preview page remains');
+for (const id of inside) {
+  const source = insideHtml[id];
+  expect(!/<meta name="robots" content="[^"]*noindex/.test(source), `inside/${id}: should be indexable`);
+  expect(new RegExp(`/inside/${id}(\\.html)?<`).test(sitemapText), `inside/${id}: missing from the sitemap`);
+  expect(/data-otto-stage/.test(source) && /data-stage-mode="dock"/.test(source), `inside/${id}: Otto's dock missing`);
   if (id === 'katana') expect(/programme(’|&#39;|')s direction|programme direction/i.test(source), 'inside/katana: Level 4 caveat missing');
   if (id === 'bitget') expect(/no claim of trading performance|not investment advice/i.test(source), 'inside/bitget: no-performance caveat missing');
   if (id === 'inos') expect(/wider R&amp;D|wider R&D/i.test(source), 'inside/inos: wider R&D caveat missing');
-  const weight = await jsWeight(source, { dynamic: true });
-  expect(weight <= 20 * 1024, `inside/${id}: JS ${weight}B gz exceeds 20KB`);
+  if (id === 'nookbase') expect(/pre-launch/i.test(source), 'inside/nookbase: pre-launch status missing');
 }
 
 // Every link the chat can show (cards and sources) must resolve to a built page and anchor.

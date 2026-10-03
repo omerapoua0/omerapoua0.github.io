@@ -15,55 +15,71 @@ required. This is a static portfolio, not a hosted backend.
 
 ## Active architecture ("Proof" redesign, October 2026)
 
-- Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React and three remain
-  declared for lockfile stability but no page ships a React island.
-- Seven pages: index, work, automations, research, cv, tutoring, contact.
+- Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React remains
+  declared for lockfile stability but no page ships a React island. three.js
+  (already a dependency) renders the 3D Otto in a lazily loaded chunk.
+- Pages: index, work, automations, research, cv, tutoring, contact, plus the
+  five inside tours `/inside/{katana,nookbase,inos,bitget,bp}.html`.
 - `src/data/*.ts`: the single typed source of facts (projects, experience,
   capabilities, site/status vocabulary). Change facts here, not in markup.
-- `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer.
+- `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer,
+  the inline head script (restores Pause motion; marks a portal arrival).
 - `src/styles/tokens.css`, `base.css`, `layout.css`, `forms.css`; component
   styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt;
   the dark homepage hero uses a single signal lime (#d9ff3f).
-- `src/components/AgentHero.astro` ("Ask Omar" chat hero) + `src/data/agent.ts`
-  (intents: answers, weighted keywords, cards, sources, follow-ups, slash
-  commands, disclosure) + `src/scripts/agent-match.ts` (local matcher) +
-  `src/scripts/agent-chat.ts` (trace, streaming, persistence, `?ask=`, sound).
-  `hero-graph.ts` draws the signal network behind it; `hero-motion.ts` is the
-  "Pause motion" switch (`html[data-motion]`/`omar:motion`). `CommandPalette.astro`
-  + `palette.ts`: site-wide ⌘K/Ctrl+K menu. `Ticker.astro`, `Stats.astro`
-  (count-up CV numbers), `cursor.ts` (trailing ring), `[data-reveal]`/
-  `[data-reveal-stagger]` scroll reveals. `ProjectIndex` (filters, list/grid
-  switch), `CaseStudy`, `ProjectMedia` (duotone plates), `CapabilityMatrix`,
-  `Timeline`, `Figure` (explanatory schematics).
+- **Homepage hero: Otto, Omar's robot host** (`src/components/OttoHero.astro`).
+  - Stage: `src/scripts/otto-stage.ts` decides per `[data-otto-stage]` (hero
+    or inside-page dock) whether to load the 3D Otto: after `load`, idle and
+    on screen, with WebGL 2 (no software GL), no Save-Data/2G/low memory, and
+    a 3 s deadline. `data-mode` pending → 3d | svg; `?otto3d=off|force` for
+    testing; sessionStorage `otto3d` remembers hi/lo/off for the session.
+  - 3D Otto: `src/scripts/otto3d/` — `rig.ts` (procedural ceramic robot:
+    rounded shell, black glass visor, jointed arms and fingers, thruster),
+    `face.ts` (canvas-drawn eyes/mouth and chest screen), `motion.ts`
+    (spring-driven director: fly-in, wave, welcome, talk, offer/grab/pull),
+    `stage.ts` (renderer, lights, camera, adaptive resolution and frame cap,
+    slow-device bail-out, offscreen/hidden-tab pause, `window.__otto` debug).
+  - SVG Otto: `Robot.astro` + `robot.ts` (poses via `otto:state`); the poster
+    before 3D arrives and the fallback everywhere 3D is not used.
+  - Brain: `src/data/otto.ts` + `src/data/agent.ts` (third-person answers,
+    follow-up details, social replies, inside cards) and
+    `src/scripts/otto-brain.ts` (typo snapping, small talk/troll handling,
+    context, multi-intent) via `agent-match.ts`. `otto-chat.ts`: greeting after
+    Otto lands, mood dialogue, streaming, persistence, `?ask=`, slash commands.
+  - Hand-off: `otto-handoff.ts`. For a project, Otto offers his hand next to
+    a real "Take Otto's hand" button (+ "Stay here", Esc). A 4 s countdown
+    runs only with motion on and pauses on hover/focus. Take: grab, pull, the
+    camera dives into his chest screen (showing the project poster), a portal
+    opens and the browser navigates to `/inside/<id>.html`, morphing via the
+    shared `view-transition-name: portal` where supported.
+  - Events: `otto:state|say|anchor|palm|handoff|handoff-done|ready|landed|fail|mode`,
+    `omar:motion|ask|sound`.
+- Inside tours: `src/pages/inside/[id].astro` + `inside.ts` (six chapters
+  narrated by Otto, chapter rail, Back to Otto/Esc, Otto docked).
+- `hero-motion.ts` is the "Pause motion" switch (`html[data-motion]`,
+  `omar:motion`, remembered per session). `CommandPalette.astro` +
+  `palette.ts`: site-wide ⌘K/Ctrl+K menu (pages, inside tours, Ask Otto).
+  `Ticker.astro`, `Stats.astro`, `Orbit.astro` (3D project ring), `Columns`,
+  `slider.ts`, `fx.ts`, `cursor.ts`, `[data-reveal]` scroll reveals.
+  `ProjectIndex` (filters, list/grid switch), `CaseStudy`, `ProjectMedia`
+  (duotone plates), `CapabilityMatrix`, `Timeline`, `Figure`.
 - `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
   (enquiry engine), `project-index.ts`, `previews.ts`.
-
-- **Robot comparison (October 2026, in preview):** `src/components/OttoHero.astro`
-  (`variant="otto" | "3d"`) on the noindex pages `/preview-otto.html` and
-  `/preview-3d.html`. Otto = `Robot.astro` (original SVG rig) + `robot.ts`
-  (poses via the `otto:state` event). Brain: `src/data/otto.ts` (third-person
-  answers, follow-up details, social replies) + `src/scripts/otto-brain.ts`
-  (typo snapping, small talk/troll handling, context, multi-intent) +
-  `otto-chat.ts` (greeting, mood dialogue, teleport to `/inside/<id>.html`).
-  Inside pages: `src/pages/inside/[id].astro` + `inside.ts`. The 3D variant
-  lazy-loads `@splinetool/runtime` and the 21st.dev Spline scene from
-  prod.spline.design (blocked in the cloud container, so Otto stands in during
-  QA). The live homepage still uses `AgentHero`. When the user picks a robot:
-  promote it to `index.astro`, drop the other variant (remove the Spline
-  dependency if Otto wins), retire `AgentHero`/`agent-chat.ts`, remove noindex
-  from the inside pages and add them to the command palette and sitemap.
 
 The CrafterUI wheel was replaced at the user's request for a full redesign;
 keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
 ## Important behaviour
 
-The hero has no stock video (the user rejected it as generic). The chat is
-scripted and must say so: keep the disclosure under the composer, never call a
-model or send what visitors type anywhere, keep every answer within the CV and
-`src/data/*.ts` facts with a source link, and keep the honest fallback for
-anything not written. After changing intents, rerun a 50+ question routing
-check. Keep the visible "Pause motion" switch (WCAG 2.2.2), reduced-motion
+The hero has no stock video (the user rejected it as generic). Otto must stay
+light for everyone: the 3D chunk never loads before `load`, never on refused
+or software WebGL, Save-Data or low-memory devices, and the SVG Otto is always
+a complete experience. The chat is scripted and must say so: keep the
+disclosure under the composer, never call a model or send what visitors type
+anywhere, keep every answer within the CV and `src/data/*.ts` facts with a
+source link, and keep the honest fallback for anything not written. After
+changing intents, rerun the routing check (`scripts/otto-questions.json`, 150+
+cases). Keep the visible "Pause motion" switch (WCAG 2.2.2), reduced-motion
 instant answers, offscreen/hidden-tab pausing, and readable content without
 JavaScript (intro answer and links).
 

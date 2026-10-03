@@ -2,7 +2,7 @@
 /* Otto, the robot host. A hand-built SVG rig; src/scripts/robot.ts drives
    data-state (idle, wave, talk, think, confused, cheeky, point, pew), blinks
    and eye tracking. Reduced or paused motion keeps a still pose. */
-interface Props { size?: 'lg' | 'sm'; label?: string; id?: string }
+interface Props { size?: 'xl' | 'lg' | 'sm'; label?: string; id?: string }
 const { size = 'lg', label = 'Otto, Omar’s robot host', id = 'otto' } = Astro.props;
 const uid = `${id}-${size}`;
 ---
@@ -10,17 +10,17 @@ const uid = `${id}-${size}`;
   <svg class="robot__svg" viewBox="0 0 200 240" aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id={`${uid}-shell`} x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#5b6157" />
-        <stop offset=".42" stop-color="#2c3029" />
-        <stop offset="1" stop-color="#141612" />
+        <stop offset="0" stop-color="#fbfcf8" />
+        <stop offset=".5" stop-color="#e3e6de" />
+        <stop offset="1" stop-color="#a9ada2" />
       </linearGradient>
       <linearGradient id={`${uid}-glass`} x1="0" y1="0" x2=".4" y2="1">
         <stop offset="0" stop-color="#1a1e17" />
         <stop offset="1" stop-color="#050605" />
       </linearGradient>
       <radialGradient id={`${uid}-sheen`} cx=".3" cy=".2" r=".8">
-        <stop offset="0" stop-color="#ffffff" stop-opacity=".22" />
-        <stop offset=".5" stop-color="#ffffff" stop-opacity=".04" />
+        <stop offset="0" stop-color="#ffffff" stop-opacity=".6" />
+        <stop offset=".5" stop-color="#ffffff" stop-opacity=".08" />
         <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
       </radialGradient>
       <radialGradient id={`${uid}-shadow`} cx=".5" cy=".5" r=".5">
@@ -96,6 +96,7 @@ const uid = `${id}-${size}`;
 
 <style>
   .robot { --ex: 0px; --ey: 0px; position: relative; display: inline-block; flex: none; line-height: 0; -webkit-tap-highlight-color: transparent; }
+  .robot--xl { width: 260px; }
   .robot--lg { width: 150px; }
   .robot--sm { width: 92px; }
   .robot__svg { width: 100%; height: auto; overflow: visible; }

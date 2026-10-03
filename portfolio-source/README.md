@@ -1,21 +1,23 @@
 # Omar Aboelella portfolio
 
-Seven-page static Astro portfolio, redesigned in October 2026 as **Proof**:
+Static Astro portfolio (seven pages plus five inside tours), redesigned in October 2026 as **Proof**:
 cool paper and deep ink with a cobalt accent (the dark homepage hero uses one signal lime), Onest with Old Standard TT italic
 accents and JetBrains Mono metadata. Read [CLAUDE.md](CLAUDE.md) first. The
 previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for
 history only; its wheel and charcoal/ivory/oxblood styling are retired.
 
-- **Hero:** "Ask me anything. *Well, almost.*" A chat over answers I wrote
-  from my CV (`src/data/agent.ts`), matched in the browser by weighted keywords
-  (`src/scripts/agent-match.ts`). Answers show a short tool trace, stream in,
-  and end with cards, sources, copy/link buttons and follow-up chips; an
-  honest fallback says when I haven't written about something. Slash commands
-  (`/help`, Tab completion, ↑/↓ history), `?ask=` permalinks, a remembered
-  transcript with Clear and opt-in sound. No model, nothing leaves the page,
-  and the composer says so. A code-drawn signal network moves behind it.
-- **Everywhere:** a ⌘K / Ctrl+K command menu (pages, case studies, questions
-  for the chat, copy email, theme, sound).
+- **Hero: Otto, my robot host.** "Ask Otto anything. *Well, almost. About
+  Omar.*" A big 3D Otto (three.js, built in code, lazy-loaded after the page
+  is ready) flies in, waves and asks how you are; the SVG Otto stands in on
+  devices where 3D isn't worth it. He chats from answers I wrote
+  (`src/data/agent.ts`, `src/data/otto.ts`), matched in the browser
+  (`src/scripts/otto-brain.ts`: typos, small talk, trolls, follow-ups). Ask
+  about a project and he offers his hand: take it and he pulls you through his
+  chest screen into a guided tour, `/inside/<project>.html`. Slash commands,
+  `?ask=` permalinks, a remembered transcript, opt-in sound and a Pause motion
+  switch. No model, nothing leaves the page, and the composer says so.
+- **Everywhere:** a ⌘K / Ctrl+K command menu (pages, case studies, inside
+  tours, questions for Otto, copy email, theme, sound).
 - **Projects:** a server-rendered project index with a sticky duotone preview
   pane, area filters and a remembered list/grid switch, case studies with explicit stage notes, and a
   capability matrix linking each skill to where the CV shows it in use.
@@ -45,9 +47,12 @@ NODE_PATH=/path/to/node_modules/with/playwright node scripts/qa.cjs
 Playwright and axe-core are intentionally not project dependencies, so the
 lockfile stays unchanged; point `NODE_PATH`/`AXE_PATH` at an isolated install.
 `qa.cjs` covers 7 routes × 5 widths × 2 themes, axe WCAG 2.2 AA, links and legacy
-anchors, no-JS fallbacks, the chat (streaming, cards, sources, free-text routing,
-honest fallback, slash commands, Tab, history, persistence, Clear, `?ask=`, and
-routing for every question in `scripts/agent-questions.json`),
+anchors, no-JS fallbacks, Otto (3D mode via `?otto3d=force`, since headless
+Chromium only has software WebGL, which the site refuses by design; the SVG
+fallback; the hand-off with Take, countdown, Stay and Esc; reduced motion), the
+chat (greeting, moods, trolls, follow-ups, slash commands, history,
+persistence, `?ask=`, and routing for every case in
+`scripts/otto-questions.json`), the inside tours,
 the command menu, the list/grid switch, the motion switch and reduced motion,
 count-ups, scroll reveals, project index and matrix interaction, the mobile
 menu, both enquiry journeys and throttled LCP/CLS. Reports go to `.qa/` (ignored).

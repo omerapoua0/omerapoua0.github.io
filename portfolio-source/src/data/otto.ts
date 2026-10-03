@@ -114,3 +114,9 @@ export const insideCard = (id: string): AgentCard | undefined => {
   const project = byProject.get(id);
   return project ? { title: `Inside ${project.name}`, meta: 'Otto’s tour', href: `/inside/${id}.html` } : undefined;
 };
+
+/** Name and poster for Otto's chest screen during the hand-off. */
+export const insideInfo = (id: string) => {
+  const project = byProject.get(id);
+  return project ? { name: project.name, media: project.media?.image } : undefined;
+};

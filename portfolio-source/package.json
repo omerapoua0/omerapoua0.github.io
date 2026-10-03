@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check:portfolio": "tsc --noEmit --skipLibCheck --jsx react-jsx --module ESNext --moduleResolution bundler --target ES2022 --allowImportingTsExtensions --strict src/scripts/site.ts src/scripts/hero-graph.ts src/scripts/hero-motion.ts src/scripts/cursor.ts src/scripts/agent-match.ts src/scripts/palette.ts src/scripts/robot.ts src/scripts/otto-brain.ts src/scripts/otto-chat.ts src/scripts/inside.ts src/scripts/orbit.ts src/scripts/slider.ts src/scripts/fx.ts src/scripts/forms.ts src/scripts/previews.ts src/scripts/project-index.ts src/data/site.ts src/data/projects.ts src/data/experience.ts src/data/capabilities.ts src/data/agent.ts src/data/otto.ts",
+    "check:portfolio": "tsc --noEmit --skipLibCheck --jsx react-jsx --module ESNext --moduleResolution bundler --target ES2022 --allowImportingTsExtensions --strict src/scripts/site.ts src/scripts/hero-motion.ts src/scripts/cursor.ts src/scripts/agent-match.ts src/scripts/palette.ts src/scripts/robot.ts src/scripts/otto-brain.ts src/scripts/otto-chat.ts src/scripts/otto-stage.ts src/scripts/otto-handoff.ts src/scripts/otto3d/rig.ts src/scripts/otto3d/face.ts src/scripts/otto3d/motion.ts src/scripts/otto3d/stage.ts src/scripts/inside.ts src/scripts/orbit.ts src/scripts/slider.ts src/scripts/fx.ts src/scripts/forms.ts src/scripts/previews.ts src/scripts/project-index.ts src/data/site.ts src/data/projects.ts src/data/experience.ts src/data/capabilities.ts src/data/agent.ts src/data/otto.ts",
     "astro": "astro"
   },
   "devDependencies": {

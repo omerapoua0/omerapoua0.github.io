@@ -5,7 +5,9 @@
  * the pointer or the last touch. With reduced or paused motion Otto still
  * changes pose, but nothing loops and his eyes stay put.
  */
-export type RobotState = 'idle' | 'wave' | 'talk' | 'think' | 'confused' | 'cheeky' | 'point' | 'pew';
+export type RobotState = 'idle' | 'wave' | 'talk' | 'think' | 'confused' | 'cheeky' | 'point' | 'pew' | 'welcome' | 'offer' | 'grab' | 'pull';
+// States the 3D Otto has that the SVG Otto shows with its nearest pose.
+const svgPose: Partial<Record<RobotState, RobotState>> = { welcome: 'wave', offer: 'point', grab: 'pew', pull: 'pew' };
 
 const robots = [...document.querySelectorAll<HTMLElement>('[data-robot]')];
 const root = document.documentElement;
@@ -14,7 +16,8 @@ const still = () => reduce.matches || root.dataset.motion === 'off';
 
 if (robots.length) {
   let back = 0;
-  const set = (state: RobotState, ms = 0) => {
+  const set = (requested: RobotState, ms = 0) => {
+    const state = svgPose[requested] ?? requested;
     window.clearTimeout(back);
     robots.forEach(robot => {
       robot.dataset.state = state;

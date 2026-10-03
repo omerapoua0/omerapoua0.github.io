@@ -54,7 +54,9 @@ const person = {
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <script is:inline>
-      (function(){var d=document.documentElement;d.classList.add('js');try{var t=localStorage.getItem('omar-theme');if(t==='light'||t==='dark')d.dataset.theme=t}catch(e){}})();
+      (function(){var d=document.documentElement;d.classList.add('js');try{var t=localStorage.getItem('omar-theme');if(t==='light'||t==='dark')d.dataset.theme=t}catch(e){}
+      try{var m=sessionStorage.getItem('omar-motion');if(m==='on'||m==='off')d.dataset.motion=m}catch(e){}
+      try{var h=JSON.parse(sessionStorage.getItem('otto-handoff')||'null');if(h&&Date.now()-h.t<10000){d.dataset.arrive='portal';if(!('onpagereveal' in window))d.classList.add('arrive-css')}}catch(e){}})();
     </script>
   </head>
   <body class:list={[home ? 'is-home' : 'is-page']}>
@@ -67,5 +69,7 @@ const person = {
     <script>import '../scripts/previews';</script>
     <script>import '../scripts/cursor';</script>
     <script>import '../scripts/fx';</script>
+    <script>import '../scripts/hero-motion';</script>
+    <script>import '../scripts/otto-stage';</script>
   </body>
 </html>

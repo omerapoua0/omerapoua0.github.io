@@ -6,7 +6,8 @@
  * /inside/<id>.html (with a "Stay here" escape). Nothing leaves the page.
  */
 import { commands, type AgentCard } from '../data/agent';
-import { otto, ottoIntents, social, ottoFallback, leads, insideCard, type Mood, type OttoIntent } from '../data/otto';
+import { otto, ottoIntents, social, ottoFallback, leads, insideCard, insideInfo, type Mood, type OttoIntent } from '../data/otto';
+import { handoff } from './otto-handoff';
 import { createBrain, type Context, type Reply } from './otto-brain';
 
 type Chip = { ask?: string; say?: string; label: string };
@@ -49,6 +50,7 @@ if (chat && log && form && input && chipRow) {
   let busy = false;
   let skip = false;
   let leadIndex = 0;
+  let greetingDone = true; // false while the first-visit greeting is still playing
   const history: string[] = store.get<string[]>('otto-history', []);
   let historyIndex = history.length;
 
@@ -60,7 +62,7 @@ if (chat && log && form && input && chipRow) {
     return node;
   };
   const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, instant() || skip ? 0 : ms));
-  const robot = (state: Mood | 'pew', ms = 0) => window.dispatchEvent(new CustomEvent('otto:state', { detail: { state, ms } }));
+  const robot = (state: Mood | 'pew' | 'welcome', ms = 0) => window.dispatchEvent(new CustomEvent('otto:state', { detail: { state, ms } }));
   const pick = <T>(list: T[]) => list[Math.floor(Math.random() * list.length)];
   const nearBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 90;
   let stick = true;
@@ -182,11 +184,11 @@ if (chat && log && form && input && chipRow) {
     chipRow.querySelectorAll('button').forEach(button => { button.disabled = state; });
   };
 
-  const streamInto = async (target: HTMLElement, text: string) => {
+  const streamInto = async (target: HTMLElement, text: string, stop?: () => boolean) => {
     if (instant() || skip) { target.textContent = text; return; }
     const words = text.split(' ');
     for (let i = 0; i < words.length; i++) {
-      if (skip) { target.textContent = text; return; }
+      if (skip || stop?.()) { target.textContent = text; return; }
       target.append(el('span', 'w', `${words[i]}${i < words.length - 1 ? ' ' : ''}`));
       if (i % 4 === 0) follow();
       await sleep(24);
@@ -234,6 +236,7 @@ if (chat && log && form && input && chipRow) {
     const paragraph = bubble(turn);
     const shown = shortLine ?? said.text;
     if (live) {
+      window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: shown } }));
       const mood = said.kind === 'social' ? social[said.id as keyof typeof social]?.mood : said.kind === 'miss' ? 'confused' : 'talk';
       robot(mood === 'cheeky' || mood === 'confused' ? mood : 'talk');
       await streamInto(paragraph, shown);
@@ -261,25 +264,6 @@ if (chat && log && form && input && chipRow) {
     return turn;
   };
 
-  /* ---------- teleport ---------- */
-  const teleport = async (id: string, origin: HTMLElement) => {
-    session.set('otto-inside', id);
-    const hand = chat.querySelector('[data-robot]')?.getBoundingClientRect() ?? origin.getBoundingClientRect();
-    root.style.setProperty('--tx', `${Math.round(((hand.right) / innerWidth) * 100)}%`);
-    root.style.setProperty('--ty', `${Math.round(((hand.top + hand.height * .45) / innerHeight) * 100)}%`);
-    status.textContent = `Taking you to ${byId.get(id)?.ask ?? id}…`;
-    if (!instant()) {
-      robot('point');
-      await sleep(380);
-      robot('pew');
-      blip([990, 1320, 1760], 'triangle');
-      await sleep(240);
-      root.classList.add('is-teleporting');
-      await sleep(520);
-    }
-    location.assign(`/inside/${id}.html`);
-  };
-
   /* ---------- answering ---------- */
   const say = async (said: Said, query: string) => {
     setBusy(true);
@@ -291,18 +275,11 @@ if (chat && log && form && input && chipRow) {
       const name = intent.ask.replace(/^(Show me|What’s|What's|What did Omar do (on|at)|What did Omar build at)\s*/i, '').replace(/\?$/, '') || intent.id;
       const line = `${said.text.startsWith('Language') ? 'Language! But fine. ' : ''}${name}? Good choice. Let me take you inside.`;
       const turn = await ottoTurn(said, true, query, line);
-      const row = el('div', 'teleport-row');
-      const wait = instant() ? 1800 : 1200;
-      const bar = el('span', 'teleport-bar'); bar.append(el('i')); bar.style.setProperty('--wait', `${wait}ms`);
-      const stay = el('button', undefined, 'Stay here'); stay.type = 'button';
-      row.append(el('span', undefined, 'Teleporting'), bar, stay);
-      turn.append(row); follow();
-      let cancelled = false;
-      stay.addEventListener('click', () => { cancelled = true; });
-      const started = performance.now();
-      while (!cancelled && performance.now() - started < wait) await new Promise(resolve => window.setTimeout(resolve, 50));
-      row.remove();
-      if (!cancelled) { status.textContent = ''; await teleport(intent.id, turn); return; }
+      const info = insideInfo(intent.id) ?? { name: intent.id };
+      session.set('otto-inside', intent.id);
+      const choice = await handoff(intent.id, info);
+      if (choice === 'take') return;
+      session.take('otto-inside');
       status.textContent = 'Staying here.';
       turn.remove();
       await ottoTurn(said, false);
@@ -340,9 +317,16 @@ if (chat && log && form && input && chipRow) {
     return { kind: 'miss', text: ottoFallback.text, near: reply.near };
   };
 
+  /** If the visitor speaks before Otto finished saying hello, finish it at once. */
+  const finishGreeting = () => {
+    if (greetingDone) return;
+    greetingDone = true;
+    if (greetingNode) greetingNode.textContent = otto.greeting.join(' ');
+  };
   const ask = async (raw: string, preset?: string) => {
     const question = raw.trim().slice(0, 200);
     if (busy || (!question && !preset)) return;
+    finishGreeting();
     const intent = preset ? byId.get(preset) : undefined;
     const shown = question || intent?.ask || '';
     if (shown.startsWith('/')) return runCommand(shown);
@@ -434,7 +418,7 @@ if (chat && log && form && input && chipRow) {
     chat.scrollIntoView({ behavior: instant() ? 'auto' : 'smooth', block: 'center' });
     if (detail.id && byId.has(detail.id)) void ask('', detail.id); else if (detail.text) void ask(detail.text);
   });
-  // Back/forward cache: undo the teleport effect if the page is restored.
+  // Back/forward cache: welcome the visitor back from a tour.
   const welcomeBack = (id: string | null) => {
     if (!id || !byId.has(id)) return;
     const back: Said = { kind: 'say', text: otto.returned, chips: byId.get(id)!.follow };
@@ -445,8 +429,6 @@ if (chat && log && form && input && chipRow) {
     follow();
   };
   addEventListener('pageshow', event => {
-    root.classList.remove('is-teleporting');
-    robot('idle');
     if (event.persisted) { setBusy(false); welcomeBack(session.take('otto-inside')); }
   });
 
@@ -484,23 +466,37 @@ if (chat && log && form && input && chipRow) {
     setChips(chipsFor(lastSaid()));
     welcomeBack(returnedFrom);
   } else if (!permalink) {
-    // First visit: Otto waves and says hello in two short bubbles.
+    // First visit: once Otto has landed (or the SVG Otto is standing in),
+    // he waves, says hello and asks how you are, in two short bubbles.
     ctx.awaiting = 'mood';
+    const landed = new Promise<void>(resolve => {
+      const done = () => { window.removeEventListener('otto:landed', done); window.clearTimeout(cap); resolve(); };
+      const cap = window.setTimeout(done, 4200);
+      window.addEventListener('otto:landed', done);
+      if (!document.querySelector('[data-otto-stage][data-stage-mode="hero"]:not([data-landed])')) done();
+    });
     if (greetingNode && !instant()) {
       greetingNode.textContent = '';
+      greetingDone = false;
       void (async () => {
-        await sleep(650);
+        await landed;
+        await sleep(350);
+        if (greetingDone) return; // the visitor already started talking
+        window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: otto.greeting[0] } }));
         robot('wave', 1300);
-        await streamInto(greetingNode, otto.greeting[0]);
-        await sleep(450);
+        await streamInto(greetingNode, otto.greeting[0], () => greetingDone);
+        if (greetingDone) { greetingNode.textContent = otto.greeting.join(' '); return; }
+        await sleep(650);
+        if (greetingDone) { greetingNode.textContent = otto.greeting.join(' '); return; }
         const second = el('div', 'turn turn--agent');
         log.append(second);
-        robot('talk');
-        await streamInto(bubble(second), otto.greeting[1]);
-        robot('idle');
+        window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: otto.greeting[1] } }));
+        robot('welcome', 1800);
+        await streamInto(bubble(second), otto.greeting[1], () => greetingDone);
+        greetingDone = true;
         follow();
       })();
-    }
+    } else void landed.then(() => window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: otto.greeting.join(' ') } })));
     setChips(chipsFor(undefined));
   }
   if (permalink) void ask(byId.has(permalink) ? '' : permalink, byId.has(permalink) ? permalink : undefined);

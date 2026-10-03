@@ -1,17 +1,16 @@
 ---
-/* Homepage hero with Otto, Omar's robot host. Otto greets visitors, chats
-   about Omar from answers Omar wrote (src/data/otto.ts, matched in the
-   browser by scripts/otto-brain.ts) and teleports to /inside/<project>.html.
-   */
+/* Homepage hero with Otto, Omar's robot host: a big 3D Otto (lazy-loaded
+   three.js; the SVG Otto stands in when 3D isn't available) who flies in,
+   waves, chats about Omar from answers Omar wrote (src/data/agent.ts +
+   otto.ts, matched in the browser by otto-brain.ts) and, for a project,
+   offers his hand to take you inside (/inside/<project>.html). */
 import Robot from './Robot.astro';
 import { otto } from '../data/otto';
 import { site } from '../data/site';
-const variant = 'otto';
 const headline = ['Ask', 'Otto', 'anything.'];
 const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS & OctiMind'], ['bitget', 'Bitget models'], ['bp', 'BP pipeline']];
 ---
-<section class:list={['agent', `agent--${variant}`]} aria-labelledby="hero-title" data-hero data-graph-host>
-  <canvas class="agent__graph" data-graph data-skills="[]" aria-hidden="true"></canvas>
+<section class="agent agent--otto" aria-labelledby="hero-title" data-hero>
   <div class="agent__mesh" aria-hidden="true"></div>
   <div class="agent__inner">
     <div class="agent__intro">
@@ -32,10 +31,23 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
       <p class="agent__skip"><a href="#work">Skip the chat, browse everything <span aria-hidden="true">↓</span></a></p>
     </div>
 
+    <div class="otto-stage" data-otto-stage data-stage-mode="hero" data-mode="pending">
+      <canvas class="otto-stage__canvas" data-otto-canvas aria-hidden="true"></canvas>
+      <div class="otto-stage__poster"><Robot size="xl" id="otto-hero" /></div>
+      <p class="otto-stage__pad" aria-hidden="true"><span></span>Otto is on his way…</p>
+      <p class="otto-bubble" data-otto-bubble aria-hidden="true"></p>
+      <div class="otto-offer" data-otto-offer hidden>
+        <button type="button" class="otto-offer__take" data-offer-take><span class="otto-offer__ring" data-offer-ring aria-hidden="true"></span><span class="otto-offer__hand" aria-hidden="true">✋</span><span data-offer-label>Take Otto’s hand</span></button>
+        <button type="button" class="otto-offer__stay" data-offer-stay>Stay here</button>
+        <p class="sr-only" role="status" data-offer-status></p>
+      </div>
+      <p class="sr-only">Otto is Omar’s robot host: a white, rounded robot with a black glass visor, glowing lime eyes and a screen on his chest. He waves, talks and can take you on a tour of Omar’s projects.</p>
+    </div>
+
     <div class="chat" data-chat data-otto>
       <span class="chat__glow" aria-hidden="true"></span>
-      <div class="chat__robot"><Robot /></div>
       <div class="chat__head">
+        <span class="chat__avatar" aria-hidden="true"><Robot size="sm" id="otto-chat-avatar" /></span>
         <p><strong>Otto</strong><span><i class="live-dot" aria-hidden="true"></i> <span class="chat__sub-long">Omar’s robot ·&nbsp;</span>no AI model</span></p>
         <div class="chat__tools">
           <button type="button" class="chat__tool" data-chat-sound aria-pressed="false" hidden><span data-chat-sound-label>Sound off</span></button>
@@ -76,7 +88,6 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
     <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
     <span data-motion-label>Pause motion</span>
   </button>
-  <div class="teleport" aria-hidden="true"></div>
 </section>
 
 <style>
@@ -86,7 +97,6 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
     position: relative; isolation: isolate; min-height: max(720px, 100svh); overflow: hidden; color: var(--ink-1); background: #070807;
     display: grid; align-items: center; padding: calc(var(--header) + 28px) var(--margin) 72px;
   }
-  .agent__graph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; opacity: .5; }
   .agent__mesh { position: absolute; inset: 0; z-index: -1; pointer-events: none;
     background: radial-gradient(48% 52% at 78% 42%, #d9ff3f17 0%, transparent 70%), radial-gradient(40% 50% at 8% 100%, #3f5bff14 0%, transparent 70%), linear-gradient(180deg, #07080700 60%, #070807 100%); }
   .agent__mesh::after { content: ''; position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay;
@@ -185,12 +195,12 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
     :global(.chat__chip:disabled) { opacity: .4; }
   :global(.thinking) { font-family: var(--font-mono); font-size: 11.5px; color: #7d8277; background: linear-gradient(90deg, #7d8277 0%, #f2f3ee 50%, #7d8277 100%) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
-  @media (min-width: 1000px) {
+  @media (min-width: 1024px) {
     .agent__inner { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); }
     .agent__intro { grid-column: 1 / span 5; }
     .chat { grid-column: 7 / span 6; }
   }
-  @media (max-width: 999px) {
+  @media (max-width: 1023px) {
     .agent { align-items: start; padding-top: calc(var(--header) + 18px); padding-bottom: 28px; min-height: auto; }
     .agent__intro { gap: 16px; }
     .agent__title { max-width: none; font-size: clamp(2.6rem, 1.2rem + 7vw, 4.6rem); }
@@ -212,6 +222,7 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
     .agent__title .voice { font-size: .8em; }
     .chat__hint { display: none; }
     .chat__jump { bottom: 128px; }
+    .otto-stage { margin-inline: -12px; }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -237,39 +248,75 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
   @keyframes turn { to { transform: rotate(360deg); } }
   @keyframes shimmer { to { background-position: -200% 0; } }
 
-  /* Otto */
-  .chat__robot { position: absolute; left: 0; top: -112px; z-index: 4; view-transition-name: otto; }
-  .chat__robot::before { content: ''; position: absolute; inset: 10% -20% 20%; background: radial-gradient(closest-side, #d9ff3f26, transparent); z-index: -1; pointer-events: none; }
-  .chat__robot :global(.robot--lg) { width: 150px; }
-  .agent--otto .chat { margin-top: 112px; overflow: visible; }
-  .agent--otto .chat__head { border-radius: 22px 22px 0 0; }
-  .agent--otto .chat__head { padding-left: 160px; min-height: 76px; }
-  .agent--3d .agent__proof { display: none; }
-  .chat__dot-bot { flex: none; font-style: normal; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #0b0d0a; border: 2px solid var(--lime); color: var(--lime); font: 600 13px var(--font-mono); }
+  /* ---------- Otto's stage ---------- */
+  .agent--otto .agent__inner { position: static; }
+  .agent__intro, .chat { position: relative; z-index: 2; }
+  .otto-stage { --bx: 50%; --by: 18%; position: relative; z-index: 1; pointer-events: none; min-width: 0; container-type: size; }
+  .otto-stage__canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 400ms ease-out; }
+  .otto-stage[data-mode='3d'] .otto-stage__canvas { opacity: 1; }
+  .otto-stage__poster { position: absolute; left: 50%; bottom: 6%; width: min(46cqw, 52cqh, 380px); transform: translateX(-50%); opacity: 0; transition: opacity 300ms ease-out; }
+  .otto-stage__poster :global(.robot--xl) { width: 100%; }
+  .otto-stage[data-mode='svg'] .otto-stage__poster { opacity: 1; }
+  :global(html:not(.js)) .otto-stage__poster { opacity: 1; }
+  .otto-stage__pad { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); display: grid; justify-items: center; gap: 14px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; transition: opacity 300ms ease-out; }
+  .otto-stage__pad span { width: 160px; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, #d9ff3f66, #d9ff3f10 70%, transparent); box-shadow: 0 0 40px #d9ff3f26; }
+  .otto-stage:not([data-mode='pending']) .otto-stage__pad, :global(html:not(.js)) .otto-stage__pad { opacity: 0; }
+  .otto-bubble { position: absolute; left: var(--bx); top: var(--by); max-width: min(32ch, 70vw); padding: 10px 14px; border-radius: 16px 16px 16px 5px; background: #f2f3ee; color: #0b0d0a; font-size: 14.5px; font-weight: 520; line-height: 1.4; box-shadow: 0 18px 40px -18px #000; transform: translate(-12%, -100%) scale(.92); transform-origin: 12% 100%; opacity: 0; transition: opacity 220ms ease-out, transform 320ms cubic-bezier(.34, 1.56, .64, 1); }
+  .otto-bubble[data-show] { opacity: 1; transform: translate(-12%, -100%) scale(1); }
+  /* With the SVG Otto, the bubble sits just above his antenna. */
+  .otto-stage[data-mode='svg'] .otto-bubble { left: 50%; top: auto; bottom: calc(6% + min(46cqw, 52cqh, 380px) * 1.2 + 4px); transform: translate(-12%, 0) scale(.92); transform-origin: 12% 100%; }
+  .otto-stage[data-mode='svg'] .otto-bubble[data-show] { transform: translate(-12%, 0) scale(1); }
+  @media (max-width: 1099px) { :global(html:not(.js)) .agent--otto { padding-top: calc(var(--header) + 72px); } }
+  /* The hand-off: Otto's offered hand and the two choices. */
+  .otto-offer { position: absolute; left: var(--ox, 50%); top: var(--oy, 50%); z-index: 3; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; pointer-events: auto; }
+  .otto-offer[data-anchor='dock'] { left: 50%; top: auto; bottom: 14px; transform: translateX(-50%); justify-content: center; width: max-content; max-width: calc(100% - 24px); }
+  .otto-offer[hidden] { display: none; }
+  .otto-offer__take { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 22px 0 16px; border: 0; border-radius: 999px; background: var(--lime); color: #0b0d0a; font-size: 16px; font-weight: 640; box-shadow: 0 0 0 6px #d9ff3f2e, 0 18px 40px -12px #d9ff3f80; }
+  .otto-offer__take:focus-visible { outline: 3px solid #f2f3ee; outline-offset: 3px; }
+  .otto-offer__hand { font-size: 20px; }
+  .otto-offer__ring { position: absolute; inset: -6px; border-radius: inherit; pointer-events: none; background: conic-gradient(#f2f3ee calc(var(--p, 0) * 360deg), transparent 0); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; padding: 3px; opacity: 0; }
+  .otto-offer[data-counting] .otto-offer__ring { opacity: 1; }
+  .otto-offer__stay { min-height: 48px; padding: 0 18px; border: 1px solid #ffffff4d; border-radius: 999px; background: #070807cc; color: var(--ink-1); font-size: 14.5px; backdrop-filter: blur(6px); }
+  .otto-offer__stay:hover { border-color: var(--lime); color: var(--lime); }
+  .otto-offer__stay:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  /* While Otto offers his hand, he steps in front of everything else. */
+  .agent[data-handoff] .otto-stage { z-index: 4; }
+  /* Taking his hand: the stage fills the screen for the dive into his chest. */
+  .agent[data-handoff='take'] .otto-stage { position: fixed; inset: 0; height: auto; margin: 0; z-index: 150; background: #070807; transition: background-color 300ms; }
+  .agent[data-handoff] .agent__intro, .agent[data-handoff] .chat { opacity: .16; filter: blur(2px); pointer-events: none; transition: opacity 400ms ease-out, filter 400ms ease-out; }
+  .chat__avatar { flex: none; display: grid; place-items: end center; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #2a2e28, #0b0d0a); overflow: hidden; }
+  .chat__avatar :global(.robot--sm) { width: 46px; margin-bottom: -10px; }
   .chat__nojs-intro { margin-bottom: 8px; }
   .agent__who img { width: 64px; height: 64px; }
-  /* Teleport flash: a lime iris that floods the hero before navigation. */
-  .teleport { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--tx, 30%) var(--ty, 40%), #d9ff3f 0, #d9ff3f66 12%, #070807 46%); }
-  :global(html.is-teleporting) .teleport { animation: teleport 560ms cubic-bezier(.7, 0, .84, 0) forwards; }
-  :global(html.is-teleporting) main { transition: transform 520ms cubic-bezier(.7, 0, .84, 0), filter 520ms; transform: scale(1.06); filter: blur(3px); }
-  @keyframes teleport { 0% { opacity: 0; } 40% { opacity: .9; } 100% { opacity: 1; } }
-  :global(.teleport-row) { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 11.5px; color: #a7aca0; }
-  :global(.teleport-row button) { min-height: 32px; padding: 0 12px; border: 1px solid #ffffff2e; border-radius: 999px; background: transparent; color: #f2f3ee; font: inherit; text-transform: uppercase; letter-spacing: .05em; }
-  :global(.teleport-row button:hover) { border-color: #d9ff3f; color: #d9ff3f; }
-  :global(.teleport-bar) { width: 90px; height: 3px; border-radius: 3px; background: #ffffff1f; overflow: hidden; }
-  :global(.teleport-bar i) { display: block; height: 100%; width: 100%; background: #d9ff3f; transform-origin: left; animation: teleport-bar var(--wait, 1200ms) linear both; }
-  @keyframes teleport-bar { from { transform: scaleX(0); } }
-  @media (max-width: 999px) {
-    .agent--otto .chat { margin-top: 64px; }
-    .chat__robot { top: -62px; left: 4px; }
-    .chat__robot :global(.robot--lg) { width: 88px; }
-    .agent--otto .chat__head { padding-left: 100px; min-height: 60px; }
-    .agent__who img { width: 52px; height: 52px; }
+
+  @media (min-width: 1024px) {
+    .agent--otto { min-height: max(760px, 100svh); }
+    .agent--otto .agent__inner { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+    .agent--otto .agent__intro { grid-column: 1 / span 4; grid-row: 1; }
+    .agent--otto .chat { grid-column: 9 / span 4; grid-row: 1; height: min(620px, 74svh); }
+    .otto-stage { position: absolute; inset: 0; }
+    .agent--otto .agent__title { font-size: clamp(2.6rem, .8rem + 3.4vw, 4.8rem); }
+  }
+  @media (max-width: 1023px) {
+    .agent--otto { min-height: auto; align-items: start; padding-top: calc(var(--header) + 16px); padding-bottom: 28px; }
+    .agent--otto .agent__inner { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .agent__proof, .agent__skip { display: none; }
+    .otto-stage { height: clamp(340px, 52svh, 520px); margin: 4px calc(var(--margin) * -1) -40px; }
+    .agent--otto .chat { height: min(560px, 70svh); min-height: 420px; }
+    .agent__toggle { position: static; justify-self: end; margin-top: 10px; }
     .agent__title { max-width: none; }
     .agent__title .voice { display: block; font-size: .58em; max-width: none; }
   }
+  @media (max-width: 719px) {
+    .otto-stage { height: clamp(340px, 46svh, 440px); }
+    .agent__who img { width: 52px; height: 52px; }
+    .otto-bubble { font-size: 13.5px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .otto-stage__pad span { animation: pad 1.6s ease-in-out infinite; }
+    :global(html[data-motion='off']) .otto-stage__pad span { animation: none; }
+  }
+  @keyframes pad { 50% { transform: scale(1.12); opacity: .7; } }
 </style>
 
 <script>import '../scripts/otto-chat';</script>
-<script>import '../scripts/hero-graph';</script>
-<script>import '../scripts/hero-motion';</script>
