@@ -5,7 +5,7 @@ import { stats } from '../data/site';
   <ol class="stats__list wrap" data-reveal-stagger>
     {stats.map(stat => (
       <li>
-        <p class="stats__value"><span>{stat.prefix}</span><span data-count-to={stat.value}>{stat.value}</span></p>
+        <p class="stats__value" data-fx="drift"><span>{stat.prefix}</span><span data-count-to={stat.value}>{stat.value}</span></p>
         <p class="stats__label">{stat.label}</p>
       </li>
     ))}

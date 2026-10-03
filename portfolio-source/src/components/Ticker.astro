@@ -21,6 +21,9 @@ const rows = [
 <style>
   .ticker { overflow: hidden; background: var(--bg); border-bottom: 1px solid var(--line); padding: clamp(14px, 2vw, 24px) 0; display: grid; gap: 4px; }
   .ticker__row { overflow: hidden; }
+  /* Leans with scroll speed (fx.ts sets --scroll-vel between -1 and 1). */
+  .ticker__track { transform-origin: center; }
+  .ticker__set { transform: skewX(calc(var(--scroll-vel, 0) * -14deg)); }
   .ticker__track { display: flex; width: max-content; }
   .ticker__set { display: flex; flex: none; }
   .ticker__word { display: inline-flex; align-items: center; gap: .5em; padding-right: .5em; font-size: clamp(1.8rem, 1rem + 3.4vw, 4.2rem); font-weight: 600; letter-spacing: -.045em; line-height: 1.12; white-space: nowrap; color: var(--ink); }

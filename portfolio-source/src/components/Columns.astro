@@ -1,0 +1,94 @@
+---
+/* "A bit of everything": columns of tiles that glide up and down in opposite
+   directions, mixing concept visuals, schematics, Omar's photo and CV facts.
+   Decorative (every fact is elsewhere on the page), so hidden from assistive
+   tech; it stops with reduced motion or the Pause motion switch. */
+import Figure from './Figure.astro';
+
+type Tile =
+  | { kind: 'img'; src: string; label: string; tall?: boolean }
+  | { kind: 'fig'; fig: 'bitget' | 'bp' | 'ai-he'; label: string }
+  | { kind: 'word'; big: string; small: string; tone?: 'lime' | 'ink' | 'outline' };
+const columns: Tile[][] = [
+  [
+    { kind: 'img', src: '/project-katana-v14.jpg', label: 'KATANA · concept visual', tall: true },
+    { kind: 'word', big: 'MAPE-K', small: 'closed-loop reasoning', tone: 'lime' },
+    { kind: 'fig', fig: 'bitget', label: 'Bitget · forecasting' },
+    { kind: 'word', big: '~150', small: 'NOOKBASE beta users', tone: 'ink' },
+  ],
+  [
+    { kind: 'word', big: 'GCSE → A\u2011level', small: 'maths & physics lessons', tone: 'outline' },
+    { kind: 'img', src: '/portrait-hero.jpg', label: 'Omar', tall: true },
+    { kind: 'word', big: 'Level 1 → 4', small: 'KATANA’s direction', tone: 'lime' },
+    { kind: 'img', src: '/project-nookbase.jpg', label: 'NOOKBASE · concept visual' },
+  ],
+  [
+    { kind: 'fig', fig: 'bp', label: 'BP · weekly pipeline' },
+    { kind: 'word', big: 'Birkbeck ’28', small: 'CS & Mathematics', tone: 'ink' },
+    { kind: 'img', src: '/project-inos.jpg', label: 'INOS · concept visual', tall: true },
+    { kind: 'word', big: 'Santander', small: 'research placement · 2027', tone: 'lime' },
+    { kind: 'fig', fig: 'ai-he', label: 'AI in higher education' },
+  ],
+];
+---
+<section class="cols-section" aria-labelledby="cols-title">
+  <div class="cols-copy" data-reveal>
+    <p class="label"><span class="section-mark">§</span> A bit of everything</p>
+    <h2 id="cols-title">Code, maths <em class="voice">and classrooms.</em></h2>
+    <p class="muted">Agents at Digis Squared, a startup on the side, GCSE maths and physics at Southfields and linear algebra at Birkbeck. It all moves at once.</p>
+    <a class="link-arrow" href="/cv.html">The full story <span aria-hidden="true">↗</span></a>
+  </div>
+  <div class="cols" aria-hidden="true" data-fx="wipe">
+    {columns.map((tiles, column) => (
+      <div class:list={['cols__col', `cols__col--${column}`]}>
+        <div class="cols__track">
+          {[0, 1].map(() => tiles.map(tile => (
+            <figure class:list={['tile', `tile--${tile.kind}`, tile.kind === 'img' && tile.tall && 'tile--tall', tile.kind === 'word' && `tile--${tile.tone}`]}>
+              {tile.kind === 'img' && <img src={tile.src} alt="" loading="lazy" decoding="async" width="600" height="750" />}
+              {tile.kind === 'fig' && <span class="tile__fig"><Figure kind={tile.fig} /></span>}
+              {tile.kind === 'word' && <><span class="tile__big">{tile.big}</span><span class="tile__small">{tile.small}</span></>}
+              {tile.kind !== 'word' && <figcaption>{tile.label}</figcaption>}
+            </figure>
+          )))}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<style>
+  .cols-section { display: grid; gap: var(--s-7); padding: var(--s-9, 96px) var(--margin); max-width: calc(var(--max) + var(--margin) * 2); margin-inline: auto; align-items: center; }
+  .cols-copy { display: grid; gap: var(--s-4); max-width: 34ch; }
+  .cols-copy h2 { font-size: var(--step-h2); letter-spacing: -.045em; line-height: 1; }
+  .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; height: clamp(460px, 70vh, 680px); overflow: hidden; mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+  .cols__col { overflow: hidden; }
+  .cols__track { display: grid; gap: 12px; }
+  .tile { position: relative; margin: 0; border-radius: 16px; overflow: hidden; aspect-ratio: 4 / 3.4; background: var(--surface); border: 1px solid var(--line); }
+  .tile--tall { aspect-ratio: 4 / 5; }
+  .tile img { width: 100%; height: 100%; object-fit: cover; }
+  .tile figcaption { position: absolute; left: 10px; bottom: 10px; padding: 3px 8px; border-radius: 999px; background: #070807b3; color: #f2f3ee; font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; backdrop-filter: blur(4px); }
+  .tile__fig { display: grid; place-items: center; height: 100%; padding: 10px; background: #f1f2ef; color: #0d1015; }
+  .tile__fig :global(svg) { width: 100%; height: 100%; }
+  .tile--word { display: grid; align-content: end; gap: 6px; padding: 16px; aspect-ratio: 4 / 3; }
+  .tile__big { font-size: clamp(1.4rem, .9rem + 1.6vw, 2.4rem); font-weight: 640; letter-spacing: -.05em; line-height: .95; }
+  .tile__small { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; opacity: .75; }
+  .tile--lime { background: #d9ff3f; color: #0b0d0a; border-color: #d9ff3f; }
+  .tile--ink { background: #0b0d0a; color: #f2f3ee; border-color: #0b0d0a; }
+  .tile--outline { background: transparent; color: var(--ink); }
+  .tile--outline .tile__big { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
+  @media (min-width: 900px) {
+    .cols-section { grid-template-columns: 5fr 7fr; gap: var(--gutter); }
+  }
+  @media (max-width: 640px) {
+    .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); height: 520px; }
+    .cols__col--2 { display: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .cols__track { animation: cols-up 46s linear infinite; }
+    .cols__col--1 .cols__track { animation-name: cols-down; animation-duration: 54s; }
+    .cols__col--2 .cols__track { animation-duration: 40s; }
+    .cols:hover .cols__track, :global(html[data-motion='off']) .cols__track { animation-play-state: paused; }
+  }
+  @keyframes cols-up { from { transform: translateY(0); } to { transform: translateY(calc(-50% - 6px)); } }
+  @keyframes cols-down { from { transform: translateY(calc(-50% - 6px)); } to { transform: translateY(0); } }
+</style>

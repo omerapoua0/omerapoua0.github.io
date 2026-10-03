@@ -25,7 +25,9 @@ const widths = [360, 390, 768, 1280, 1440];
 const results = [];
 const outbound = [];
 
+const only = process.env.QA_ONLY ? new RegExp(process.env.QA_ONLY, 'i') : null; // e.g. QA_ONLY=orbit
 async function check(name, run) {
+  if (only && !only.test(name)) return;
   try { await run(); results.push({ name, status: 'pass' }); }
   catch (error) { results.push({ name, status: 'fail', message: error.message.split('\n')[0] }); console.error('FAIL', name, '-', error.message.split('\n')[0]); }
 }
@@ -109,7 +111,7 @@ function watch(page) {
     const page = await context.newPage();
     const ids = {};
     const links = new Set();
-    for (const route of routes) {
+    for (const route of [...routes, 'inside/katana', 'inside/nookbase', 'inside/inos', 'inside/bitget', 'inside/bp']) {
       await page.goto(`${base}/${route}.html`);
       ids[`/${route}.html`] = await page.evaluate(() => [...document.querySelectorAll('[id]')].map(el => el.id));
       (await page.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href')))).forEach(href => links.add(`${route}|${href}`));
@@ -480,6 +482,56 @@ function watch(page) {
       });
     }
   }
+
+  /* 5d. Motion pass: 3D orbit, sliding columns, question slider, Pause motion. */
+  await check('orbit: drifts, drag spins without opening a card, arrows step, tap opens; slider and columns move; Pause stops them', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    const errors = watch(page);
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.locator('[data-orbit]').scrollIntoViewIfNeeded();
+    const spin = () => page.locator('[data-orbit-ring]').evaluate(el => parseFloat(el.style.getPropertyValue('--spin')) || 0);
+    const a = await spin(); await page.waitForTimeout(700);
+    assert.notEqual(await spin(), a, 'drifts on its own');
+    const box = await page.locator('[data-orbit]').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 220, box.y + box.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(900);
+    assert.ok(page.url().endsWith('/index.html'), 'drag did not open a card');
+    const before = await page.locator('[data-orbit-count]').textContent();
+    await page.click('[data-orbit-next]');
+    await page.waitForTimeout(800);
+    assert.notEqual(await page.locator('[data-orbit-count]').textContent(), before, 'arrow steps');
+    const front = await page.evaluate(() => { const items = [...document.querySelectorAll('[data-orbit-item]')]; return items.sort((x, y) => parseFloat(getComputedStyle(y).getPropertyValue('--o')) - parseFloat(getComputedStyle(x).getPropertyValue('--o')))[0].querySelector('a').getAttribute('href'); });
+    await Promise.all([page.waitForURL(url => url.pathname === front), page.evaluate(href => document.querySelector(`[data-orbit] a[href="${href}"]`).click(), front)]);
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    const track = page.locator('.cols__track').first();
+    assert.notEqual(await track.evaluate(el => getComputedStyle(el).animationName), 'none', 'columns glide');
+    await page.locator('[data-slider]').scrollIntoViewIfNeeded();
+    const left = await page.locator('[data-slider-track]').evaluate(el => el.scrollLeft);
+    await page.click('[data-slider-next]');
+    await page.waitForTimeout(900);
+    assert.ok(await page.locator('[data-slider-track]').evaluate(el => el.scrollLeft) > left, 'slider advances');
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.click('[data-motion-toggle]');
+    await page.locator('[data-orbit]').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    const b = await spin(); await page.waitForTimeout(800);
+    assert.equal(await spin(), b, 'orbit stops when motion is paused');
+    assert.equal(await track.evaluate(el => getComputedStyle(el).animationPlayState), 'paused', 'columns pause');
+    assert.deepEqual(errors, []);
+    await context.close();
+  });
+  await check('orbit without JavaScript is a swipeable row of links', async () => {
+    const context = await isolated(browser, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`);
+    assert.equal(await page.locator('.orbit__ring').evaluate(el => getComputedStyle(el).display), 'flex');
+    assert.ok(await page.locator('[data-orbit] a[href="/inside/katana.html"]').isVisible());
+    await context.close();
+  });
 
   /* 5b. Numbers and scroll motion. */
   await check('numbers count up to their CV values', async () => {

@@ -7,7 +7,7 @@ const media = project.media;
 const figureKind = project.id === 'bitget' ? 'bitget' : project.id === 'bp' ? 'bp' : 'ai-he';
 ---
 {media ? (
-  <figure class:list={['plate', className]}>
+  <figure class:list={['plate', className]} data-fx="zoom">
     <img src={media.image} alt={media.alt} width="1600" height="900" loading={eager ? 'eager' : 'lazy'} decoding="async" />
     {video && media.video && <video data-preview data-src={media.video} muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>}
     {media.logo && <img class="plate__logo" src={media.logo} alt="" width="40" height="40" loading="lazy" />}

@@ -5,6 +5,8 @@ import Ticker from './Ticker.astro';
 import ProjectIndex from './ProjectIndex.astro';
 import CapabilityMatrix from './CapabilityMatrix.astro';
 import SectionHead from './SectionHead.astro';
+import Orbit from './Orbit.astro';
+import Columns from './Columns.astro';
 import { projects } from '../data/projects';
 
 const now = [
@@ -45,6 +47,8 @@ const questions = [
   </div>
 </section>
 
+<Orbit />
+
 <section class="section wrap" id="work" aria-labelledby="work-title">
   <SectionHead mark="1" label="Selected work" id="work-title">What I’ve been <em class="voice">building.</em>
     <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. For each one I say what I did, what the wider team did and what stage it’s at.</p>
@@ -62,12 +66,14 @@ const questions = [
   </div>
 </section>
 
+<Columns />
+
 <section class="section wrap" aria-labelledby="paths-title">
   <SectionHead mark="3" label="Work with me" id="paths-title">Three ways to <em class="voice">work with me.</em></SectionHead>
   <ol class="paths" data-reveal-stagger>
     {paths.map(path => (
       <li>
-        <a class="path" href={path.href}>
+        <a class="path" href={path.href} data-tilt>
           <span class="path__top"><span class="num">{path.num}</span><span class="label">{path.verb}</span></span>
           <span class="path__title">{path.title}</span>
           <span class="path__copy">{path.copy}</span>
@@ -82,17 +88,24 @@ const questions = [
   <SectionHead mark="4" label="Open questions" id="questions-title">Questions I’m <em class="voice">chasing.</em>
     <p slot="aside">Maths is the thread through everything I do. These are the questions I’m exploring alongside engineering, labelled honestly. Nothing here is published work.</p>
   </SectionHead>
-  <ol class="questions" data-reveal-stagger>
-    {questions.map((item, index) => (
-      <li>
-        <a href={item.href}>
-          <span class="num">Q{index + 1}</span>
-          <span class="questions__q">{item.q}</span>
-          <span class:list={['chip', `chip--${item.status}`]}>{item.statusText}</span>
-        </a>
-      </li>
-    ))}
-  </ol>
+  <div class="qslider" data-slider>
+    <ol class="questions" data-slider-track aria-label="Open questions">
+      {questions.map((item, index) => (
+        <li data-slide>
+          <a href={item.href} data-tilt>
+            <span class="num">Q{index + 1} / {questions.length}</span>
+            <span class="questions__q">{item.q}</span>
+            <span class:list={['chip', `chip--${item.status}`]}>{item.statusText}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+    <div class="qslider__bar">
+      <button type="button" class="qslider__btn" data-slider-prev aria-label="Previous question">←</button>
+      <span class="qslider__progress" aria-hidden="true"><i data-slider-progress></i></span>
+      <button type="button" class="qslider__btn" data-slider-next aria-label="Next question">→</button>
+    </div>
+  </div>
   <p class="more" data-reveal><a class="link-arrow" href="/research.html">Research notebook <span aria-hidden="true">↗</span></a></p>
 </section>
 
@@ -111,6 +124,12 @@ const questions = [
     .now__list li:first-child { padding-left: 0; }
   }
   .more { margin-top: var(--s-7); }
+  /* Things arrive from alternating sides, and the three paths flip up in 3D. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .now__list > li:not(.is-in):nth-child(odd) { transform: translateX(-56px); }
+    :global(html.js) .now__list > li:not(.is-in):nth-child(even) { transform: translateX(56px); }
+    :global(html.js) .paths > li:not(.is-in) { transform: perspective(900px) rotateX(-28deg) translateY(48px); transform-origin: top center; }
+  }
 
   .paths { display: grid; border-top: 1px solid var(--line); }
   .path { display: grid; gap: var(--s-4); padding: var(--s-6) 0 var(--s-7); border-bottom: 1px solid var(--line); text-decoration: none; height: 100%; }
@@ -129,14 +148,22 @@ const questions = [
     .paths { border-bottom: 1px solid var(--line); }
   }
 
-  .questions { border-top: 1px solid var(--line); }
-  .questions a { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px 16px; padding: 24px 0; border-bottom: 1px solid var(--line); text-decoration: none; align-items: baseline; }
+  .qslider { position: relative; }
+  .questions { display: flex; gap: var(--gutter); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 2px 8px; overscroll-behavior-x: contain; }
+  .questions::-webkit-scrollbar { display: none; }
+  .questions li { flex: none; width: min(560px, 84%); scroll-snap-align: start; }
+  .questions a { display: grid; align-content: space-between; gap: var(--s-6); height: 100%; min-height: 300px; padding: clamp(20px, 3vw, 36px); border: 1px solid var(--line-strong); border-radius: 22px; text-decoration: none; background: var(--surface); transition: border-color var(--d-2), background-color var(--d-2); }
   .questions .num { font-size: 12px; color: var(--muted); }
-  .questions__q { font-size: clamp(1.2rem, 1rem + .9vw, 1.75rem); letter-spacing: -.03em; line-height: 1.2; font-weight: 500; max-width: 36ch; }
-  .questions .chip { grid-column: 2; justify-self: start; }
+  .questions__q { font-size: clamp(1.35rem, 1rem + 1.4vw, 2.1rem); letter-spacing: -.035em; line-height: 1.15; font-weight: 520; }
+  .questions .chip { justify-self: start; }
+  .questions a:hover { border-color: var(--accent); }
   .questions a:hover .questions__q { color: var(--accent); }
-  @media (min-width: 900px) {
-    .questions a { grid-template-columns: 60px minmax(0, 1fr) 240px; }
-    .questions .chip { grid-column: 3; justify-self: end; }
-  }
+  .qslider__bar { display: flex; align-items: center; gap: 14px; margin-top: var(--s-5); }
+  .qslider__btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; font-size: 17px; }
+  .qslider__btn:hover { border-color: var(--accent); color: var(--accent); }
+  .qslider__progress { flex: 1; height: 2px; background: var(--line); overflow: hidden; border-radius: 2px; }
+  .qslider__progress i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; transform: scaleX(var(--p, .25)); transition: transform 400ms var(--ease-out); }
+  :global(html:not(.js)) .qslider__bar { display: none; }
 </style>
+
+<script>import '../scripts/slider';</script>
