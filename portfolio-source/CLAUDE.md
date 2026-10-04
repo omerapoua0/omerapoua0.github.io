@@ -51,12 +51,24 @@ required. This is a static portfolio, not a hosted backend.
     status, persistence of the transcript and last choices, `?ask=<intent id>`
     (anything else is ignored). Back from a tour: "Back from the inside! Where
     next?" with the other projects.
-  - Hand-off: `otto-handoff.ts`. For a project, Otto offers his hand next to
-    a real "Take Otto's hand" button (+ "Stay here", Esc). A 4 s countdown
-    runs only with motion on and pauses on hover/focus. Take: grab, pull, the
-    camera dives into his chest screen (showing the project poster), a portal
-    opens and the browser navigates to `/inside/<id>.html`, morphing via the
-    shared `view-transition-name: portal` where supported.
+  - Hand-off: `otto-handoff.ts`. For a project, Otto offers his hand: a big
+    "Take Otto's hand" button tethered to his palm on wide screens, a tray
+    right under him (his hand reaching down to it) on phones, plus "Stay
+    here"/Esc. A 4 s countdown runs only with motion on and pauses on
+    hover/focus. Take is one continuous move in every browser, with no view
+    transition: the button squeezes into his hand, he grips and pulls, then
+    3D: the camera dives into his chest screen ("ENTERING <NAME>",
+    `otto3d/stage.ts`) and `OttoCover.astro` grows out of that rectangle;
+    SVG: he zooms toward you as a lime iris opens from his chest badge. Only
+    once the cover is opaque does the browser go to `/inside/<id>.html`. The
+    inline head script in `Base.astro` (sessionStorage `otto-handoff`
+    {id, t}) marks `html[data-arrive="portal"]`, so the tour paints the
+    identical cover at first paint; CSS then completes the bar, collapses it
+    into the tour's monitor (rects measured by an inline script in
+    `inside/[id].astro`) and flies a big SVG Otto into his dock; native
+    cross-document view transitions are skipped for these page changes.
+    "Back to Otto" uses the same cover as a quick shutter (`otto-return`).
+    Reduced motion/Pause: a <= 200 ms cover fade on each side, no flight.
   - Events: `otto:state|say|anchor|palm|handoff|handoff-done|ready|landed|fail|mode`,
     `omar:motion|ask|sound` (`omar:ask` takes `{ id }` of an intent; free
     text is ignored).

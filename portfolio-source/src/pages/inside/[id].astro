@@ -41,7 +41,7 @@ const [arrival, ...chapters] = tour;
 const total = pad(chapters.length);
 const chapter = (index: number) => tour[index];
 ---
-<Base title={`Inside ${project.name}`} description={`Otto’s guided tour of ${project.name}: the problem, what Omar Aboelella did, how it works and where it stands.`}>
+<Base title={`Inside ${project.name}`} description={`Otto’s guided tour of ${project.name}: the problem, what Omar Aboelella did, how it works and where it stands.`} cover={{ id: project.id, name: project.name, media: project.media?.image }}>
   <div class="tour" data-tour data-inside={project.id}>
     <div class="tour__inner">
       <div class="tour__bar">
@@ -72,7 +72,6 @@ const chapter = (index: number) => tour[index];
                   </div>
                 )}
                 <span class="monitor__scan" aria-hidden="true"></span>
-                <span class="monitor__power" aria-hidden="true"></span>
               </div>
             </div>
 
@@ -193,6 +192,19 @@ const chapter = (index: number) => tour[index];
       </div>
     </div>
   </div>
+  {/* Hand-off arrival (html[data-arrive="portal"]): before first paint, measure
+      where OttoCover collapses to (this tour's monitor screen) and where the
+      flying Otto lands (his dock), so the CSS arrival needs no module script. */}
+  <script is:inline>
+    (function(){var d=document.documentElement;if(d.dataset.arrive!=='portal')return;
+    var c=document.querySelector('[data-otto-cover]'),m=document.querySelector('[data-tour] .monitor__screen'),k=document.querySelector('[data-stage-mode="dock"] .robot'),f=c&&c.querySelector('[data-cover-otto]');if(!c||!m)return;
+    var b=c.getBoundingClientRect(),W=b.width,H=b.height,r=m.getBoundingClientRect(),q=Math.max(r.width/W,r.height/H),x=function(v){return Math.round(v*10)/10+'px'};
+    if(!W||!H||!r.width||r.bottom<=0)return;
+    c.style.setProperty('--to-clip','inset('+x(r.top-b.top)+' '+x(b.right-r.right)+' '+x(b.bottom-r.bottom)+' '+x(r.left-b.left)+' round '+(getComputedStyle(m).borderTopLeftRadius||'12px')+')');
+    c.style.setProperty('--to-inner','translate('+x(r.left+r.width/2-b.left-W/2)+', '+x(r.top+r.height/2-b.top-H/2)+') scale('+q.toFixed(4)+')');
+    if(f&&k){var a=f.getBoundingClientRect(),g=k.getBoundingClientRect();if(a.width&&g.width)c.style.setProperty('--fly','translate('+x(g.left-a.left)+', '+x(g.top-a.top)+') scale('+(g.width/a.width).toFixed(4)+')')}
+    c.setAttribute('data-measured','')})();
+  </script>
 </Base>
 
 <style>
@@ -323,14 +335,12 @@ const chapter = (index: number) => tour[index];
   .monitor__ch { margin-left: auto; white-space: nowrap; }
   .monitor__ch b { font-weight: 500; color: var(--lime); }
   .monitor__screen { position: relative; overflow: hidden; width: 100%; aspect-ratio: 16 / 9; max-height: 50svh; border-radius: 12px; background: #070807; isolation: isolate; }
-  :global(html[data-arrive='portal']) .monitor__screen { view-transition-name: portal; }
   .monitor__media { position: absolute; inset: 0; }
   .monitor__media :global(.plate) { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; }
   .monitor__media :global(.plate)::after { background: linear-gradient(160deg, #d9ff3f, #2a3a00); opacity: .34; }
   .monitor__media :global(.plate__caption) { left: 14px; bottom: 12px; padding: 3px 7px; background: #070807b3; color: #d3d7cc; }
   :global(html[data-motion='off']) .monitor__media :global(video) { display: none; }
   .monitor__scan { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: repeating-linear-gradient(180deg, #d9ff3f0f 0 1px, transparent 1px 3px), radial-gradient(120% 100% at 50% 50%, transparent 55%, #000000a6); }
-  .monitor__power { display: none; }
 
   .titlecard { position: absolute; inset: 0; display: grid; align-content: center; justify-items: start; gap: 10px; padding: clamp(20px, 5vw, 56px); background: linear-gradient(#d9ff3f14 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(90deg, #d9ff3f14 1px, transparent 1px) 0 0 / 28px 28px, radial-gradient(70% 70% at 30% 40%, #d9ff3f1f, transparent 70%), #080a07; font-family: var(--font-mono); }
   .titlecard__path { font-size: clamp(11px, 1vw, 13px); color: var(--t-muted); }
@@ -419,18 +429,18 @@ const chapter = (index: number) => tour[index];
     .rail ol::after { transition: height 600ms var(--ease-out); }
 
     /* Direct visits: the arrival settles in, once (inside.ts sets data-tour-entered
-       when it's over, so lifting Pause or leaving the page never replays it). */
-    :global(html:not([data-motion='off']):not([data-tour-entered]):not([data-arrive='portal']):not(.arrive-css)) .monitor { animation: tour-rise 760ms var(--ease-out) both; }
+       when it's over, so lifting Pause or leaving the page never replays it).
+       After a hand-off, OttoCover collapses into the monitor instead, and the
+       title rises as it opens. */
+    :global(html:not([data-motion='off']):not([data-tour-entered]):not([data-arrive='portal'])) .monitor { animation: tour-rise 760ms var(--ease-out) both; }
     :global(html:not([data-motion='off']):not([data-tour-entered])) .arrival > * { animation: tour-rise 700ms var(--ease-out) both; animation-delay: calc(160ms + var(--k, 0) * 70ms); }
+    :global(html[data-arrive='portal']:not([data-motion='off']):not([data-tour-entered])) .arrival > * { animation-delay: calc(380ms + var(--k, 0) * 60ms); }
     .arrival > :nth-child(2) { --k: 1; }
     .arrival > :nth-child(3) { --k: 2; }
     .arrival > :nth-child(4) { --k: 3; }
     :global(html:not([data-motion='off'])) .titlecard__cursor { animation: tour-blink 1.1s steps(1) infinite; }
-
-    /* No view transition: the monitor powers on, a lime line opening into the picture. */
-    :global(html.arrive-css:not([data-motion='off']):not([data-tour-entered])) .monitor__power { display: block; position: absolute; inset: 0; z-index: 4; background: #070807; pointer-events: none; animation: tour-power-off 340ms ease-out 520ms both; }
-    :global(html.arrive-css:not([data-motion='off']):not([data-tour-entered])) .monitor__power::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #d9ff3f00, #d9ff3f66 30%, #f4ffc2 50%, #d9ff3f66 70%, #d9ff3f00); box-shadow: 0 0 40px #d9ff3f99; transform: scaleY(.004); animation: tour-power-line 520ms cubic-bezier(.7, 0, .3, 1) both; }
-    :global(html.arrive-css:not([data-motion='off']):not([data-tour-entered])) .monitor__media, :global(html.arrive-css:not([data-motion='off']):not([data-tour-entered])) .titlecard { animation: tour-fade 420ms ease-out 480ms both; }
+    /* Hand-off: the docked Otto appears as the big one lands on him. */
+    :global(html[data-arrive='portal']:not([data-motion='off'])) .otto-dock :global(.robot) { animation: tour-dock-wait 880ms linear; }
 
     /* Chapters rise in as they arrive (only once inside.ts is running). */
     :global(html[data-tour-ready]:not([data-motion='off'])) .chapter:not(.chapter--arrival) :is(.chapter__head, .chapter__body) { transition: opacity 760ms var(--ease-out), transform 760ms var(--ease-out); transition-delay: var(--rise-delay, 0ms); }
@@ -443,10 +453,8 @@ const chapter = (index: number) => tour[index];
     :global(html[data-motion='off']) .otto-dock__bubble[data-show] { animation: none; }
   }
   @keyframes tour-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-  @keyframes tour-fade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes tour-blink { 50% { opacity: 0; } }
-  @keyframes tour-power-line { 0% { transform: scaleY(.004); opacity: 1; } 100% { transform: scaleY(1); opacity: .9; } }
-  @keyframes tour-power-off { to { opacity: 0; } }
+  @keyframes tour-dock-wait { 0%, 91% { opacity: 0; } 100% { opacity: 1; } }
   @keyframes tour-bubble { from { opacity: 0; transform: translateY(6px) scale(.97); } }
 </style>
 

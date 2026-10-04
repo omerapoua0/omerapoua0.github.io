@@ -13,6 +13,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+/* Nothing in the content may widen the page sideways (e.g. an item waiting
+   off to the side for its scroll reveal): on phones that widens the layout
+   viewport, so the page zooms or pans and fixed layers (Otto's hand-off
+   cover) misalign. On <main>, not <body>, because body's overflow would pass
+   to the viewport (which phones still widen); clip, unlike hidden, makes no
+   scroll container, so sticky and fixed descendants are unaffected. */
+main { overflow-x: clip; }
 img, video, svg { display: block; max-width: 100%; }
 img, video { height: auto; }
 h1, h2, h3, h4, p, ol, ul, dl, dd, figure, blockquote { margin: 0; }
@@ -113,21 +120,10 @@ button { cursor: pointer; }
     html:not([data-motion='off']) [data-fx~='drift'] { animation: fx-drift linear both; animation-timeline: view(); animation-range: cover; }
   }
 }
-/* Otto's portal: grows out of his chest screen, then becomes the inside page's
-   monitor (shared view-transition-name "portal"). */
-.otto-portal { position: fixed; inset: 0; z-index: 200; pointer-events: none; background: repeating-linear-gradient(#d9ff3f0f 0 1px, transparent 1px 4px), var(--img, none) center / cover no-repeat, #070807; view-transition-name: portal; animation: portal-fade 200ms ease-out both; }
-.otto-portal[data-from='chest'] { animation: portal-open 280ms cubic-bezier(.7, 0, .84, 0) both; }
-@keyframes portal-fade { from { opacity: 0; } }
-@keyframes portal-open { from { clip-path: var(--from); filter: brightness(1.6); } to { clip-path: inset(0 round 0); filter: brightness(1); } }
-@media (prefers-reduced-motion: no-preference) {
-  html[data-arrive='portal']::view-transition-old(root) { animation: vt-fade 180ms ease-in both; }
-  html[data-arrive='portal']::view-transition-new(root) { animation: vt-fade 360ms ease-out 240ms reverse both; }
-  html[data-arrive='portal']::view-transition-group(portal) { animation-duration: 700ms; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
-  html[data-arrive='portal']::view-transition-new(portal) { animation: portal-on 420ms cubic-bezier(.16, 1, .3, 1) 160ms both; }
-  html[data-arrive='portal']::view-transition-old(portal) { animation: vt-fade 300ms ease-in both; }
-}
-@keyframes vt-fade { to { opacity: 0; } }
-@keyframes portal-on { from { clip-path: inset(49.6% 0); filter: brightness(2.4); } to { clip-path: inset(0); filter: brightness(1); } }
+/* Otto's hand-off to an inside tour (and Back to Otto) does not use a view
+   transition: OttoCover.astro carries it in every browser, and the inline head
+   script in Base.astro skips the native one for those page changes, so the two
+   never play at once. Every other page change keeps the wipe above. */
 @keyframes vt-out { to { opacity: .15; transform: translateY(-3%) scale(.97); } }
 @keyframes vt-in { from { clip-path: inset(100% 0 0 0); transform: translateY(8%); } to { clip-path: inset(0); transform: none; } }
 @keyframes fx-zoom { from { transform: scale(1.2); } to { transform: scale(1); } }

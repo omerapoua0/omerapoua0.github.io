@@ -5,11 +5,14 @@
  *   `otto:state` (talk, then the chapter's pose). The same lines are printed
  *   as kickers, so nothing here is needed to read the page.
  * - Arrival: after a hand-off (sessionStorage `otto-handoff`, < 10s old) the
- *   h1 takes focus without scrolling and Otto says "We're in". Focus is never
- *   moved otherwise. The entrance plays once (html[data-tour-entered]), and
- *   leaving clears the portal arrival so the monitor isn't captured again.
- * - "Back to Otto" (and Esc) returns to Otto: history when we came straight
- *   from the homepage, otherwise a fresh visit to the homepage.
+ *   head script has already painted OttoCover and CSS plays the arrival (the
+ *   cover collapses into the monitor, Otto flies to his dock). Here the h1
+ *   takes focus without scrolling, Otto says "We're in" as he lands, and the
+ *   cover is cleared once it's done. Focus is never moved otherwise. The
+ *   entrance plays once (html[data-tour-entered]).
+ * - "Back to Otto" (and Esc) returns to Otto behind a quick cover shutter:
+ *   history when we came straight from the homepage, otherwise a fresh visit
+ *   to the homepage (which lifts the same cover: sessionStorage otto-return).
  * - Pause: html[data-motion] + `omar:motion`, remembered for the session.
  *   The concept video only plays with motion on (previews.ts does the rest).
  *   With reduced motion nothing on the page moves, so there's no toggle.
@@ -20,6 +23,10 @@ type Pose = 'idle' | 'wave' | 'talk' | 'think' | 'confused' | 'cheeky' | 'point'
 
 const ARRIVE_SAY = 700;
 const ENTRANCE = 1500;
+/* The CSS arrival (OttoCover.astro): Otto lands in his dock at ~0.82 s; all over by 0.9 s. */
+const LANDED = 840;
+const ARRIVAL_DONE = 1400;
+const STILL_DONE = 350;
 const NARRATE = 900;
 const POSE_HOLD = 1600;
 const BUBBLE_HIDE = 3200;
@@ -55,7 +62,8 @@ function syncMotion() {
 }
 /* Once the entrance is over (or the visitor has touched the switch) it never replays. */
 const entered = () => { root.dataset.tourEntered = ''; };
-window.setTimeout(entered, ENTRANCE);
+const portal = root.dataset.arrive === 'portal';
+window.setTimeout(entered, portal ? ARRIVAL_DONE : ENTRANCE);
 if (toggle) {
   toggle.hidden = reduce.matches;
   toggle.addEventListener('click', () => {
@@ -85,14 +93,13 @@ const handoff = (() => {
   return Number.isFinite(age) && age >= 0 && age < HANDOFF_MAX_AGE;
 })();
 if (handoff) document.querySelector<HTMLElement>('#tour-title')?.focus({ preventScroll: true });
-const arrived = () => handoff || root.dataset.arrive === 'portal' || root.classList.contains('arrive-css');
-/* The portal name is for arriving only: leaving (next tour, case study, Back)
-   must not capture the monitor as "portal" with no partner on the next page. */
-window.addEventListener('pageswap', () => {
-  entered();
-  delete root.dataset.arrive;
-  root.classList.remove('arrive-css');
-});
+const arrived = () => handoff || portal;
+const cover = document.querySelector<HTMLElement>('[data-otto-cover]');
+/* The CSS arrival hides the cover itself (even if this script is late); this
+   only tidies up once it's over, so it can be reused for "Back to Otto". */
+const clearArrival = () => { if (root.dataset.arrive === 'portal') delete root.dataset.arrive; };
+if (portal) window.setTimeout(clearArrival, motionOn() ? ARRIVAL_DONE : STILL_DONE);
+window.addEventListener('pageswap', () => { entered(); clearArrival(); });
 
 /* ---- Back to Otto ----------------------------------------------------- */
 /* History only when the previous page is Otto's (the homepage); from anywhere
@@ -100,12 +107,32 @@ window.addEventListener('pageswap', () => {
 const referrer = (() => { try { return document.referrer ? new URL(document.referrer) : null; } catch { return null; } })();
 const fromOtto = !!referrer && referrer.origin === location.origin && (referrer.pathname === '/' || referrer.pathname === '/index.html');
 const canGoBack = fromOtto && history.length > 1;
-const goBack = () => { if (canGoBack) history.back(); else location.href = '/index.html'; };
+/* The cover comes down ("Back to Otto"), then we leave; the homepage lifts it. */
+let leaving = false;
+const goBack = () => {
+  if (leaving) return;
+  leaving = true;
+  const go = () => { if (canGoBack) history.back(); else location.href = '/index.html'; };
+  if (!cover) return go();
+  clearArrival();
+  cover.dataset.kind = 'back';
+  const text = (key: string, value: string) => { const node = cover.querySelector(`[data-cover-${key}]`); if (node) node.textContent = value; };
+  text('path', 'otto://home'); text('kicker', 'Back to'); text('name', 'Otto'); text('status', 'Returning to Otto');
+  cover.dataset.state = 'back';
+  session.set('otto-return', JSON.stringify({ t: Date.now() }));
+  window.setTimeout(go, motionOn() ? 300 : 170);
+};
 document.querySelectorAll<HTMLAnchorElement>('[data-inside-back]').forEach(link => link.addEventListener('click', event => {
-  if (!canGoBack || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
-  history.back();
+  goBack();
 }));
+/* Back here from the next page (bfcache): lift the cover so the tour is usable again. */
+window.addEventListener('pageshow', event => {
+  if (!event.persisted || !leaving) return;
+  leaving = false;
+  cover?.removeAttribute('data-state');
+});
 /* Capture phase, so an open menu sheet (closed by site.ts on Esc) is still seen as open. */
 window.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
@@ -179,10 +206,11 @@ if (chapters.length && 'IntersectionObserver' in window) {
     entries.forEach(entry => { if (entry.isIntersecting) inBand.add(entry.target); else inBand.delete(entry.target); });
     schedule();
   }, { rootMargin: '-45% 0px -45% 0px' });
+  /* After a hand-off Otto speaks as he lands in his dock ("We're in."). */
   window.setTimeout(() => {
     chapters.forEach(chapter => band.observe(chapter));
     window.addEventListener('scroll', schedule, { passive: true });
-  }, ARRIVE_SAY);
+  }, portal && motionOn() ? LANDED : ARRIVE_SAY);
 
   /* Chapters rise in once, as they arrive. */
   const reveal = new IntersectionObserver(entries => entries.forEach(entry => {

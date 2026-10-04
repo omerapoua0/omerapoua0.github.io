@@ -362,6 +362,219 @@ function watch(page) {
     assert.deepEqual(errors.filter(e => !/GPU stall|WebGL|swiftshader/i.test(e)), []);
     await context.close();
   });
+  /* The hand-off ("Take Otto's hand") as one continuous move in every browser.
+   * Each scenario starts the ask without typing (omar:ask), takes Otto's hand,
+   * holds the navigation request to prove the cover is fully opaque at the
+   * moment the page changes, then checks that the tour paints the identical
+   * cover at DOMContentLoaded, reveals itself within 1.2 s, lands Otto in his
+   * dock and puts focus on the tour's h1. Matrix: 3D (?otto3d=force) and SVG,
+   * desktop and phone, motion on / reduced / Pause, view transitions on and
+   * off (off: the CSS is rewritten to @view-transition { navigation: none },
+   * as in browsers without cross-document view transitions). */
+  const coverProbe = () => {
+    const c = document.querySelector('[data-otto-cover]');
+    if (!c) return null;
+    const s = getComputedStyle(c), r = c.getBoundingClientRect();
+    const box = el => { const b = el?.getBoundingClientRect(); return b ? [b.left, b.top, b.width, b.height].map(v => Math.round(v)) : null; };
+    const win = c.querySelector('.otto-cover__win'), inner = c.querySelector('.otto-cover__inner');
+    return {
+      state: c.dataset.state || null, display: s.display, visibility: s.visibility, opacity: Number(s.opacity),
+      rect: [r.left, r.top, r.width, r.height].map(v => Math.round(v)), vw: document.documentElement.clientWidth, vh: innerHeight,
+      winClip: win ? getComputedStyle(win).clipPath : null, innerTransform: inner ? getComputedStyle(inner).transform : null,
+      innerOpacity: inner ? Number(getComputedStyle(inner).opacity) : null, innerBg: inner ? getComputedStyle(inner).backgroundColor : null,
+      title: box(c.querySelector('.otto-cover__title b')), bar: box(c.querySelector('.otto-cover__bar')),
+      text: (c.querySelector('.otto-cover__hud')?.textContent || '').replace(/\s+/g, ' ').trim(),
+      barTransform: getComputedStyle(c.querySelector('.otto-cover__bar i')).transform,
+      cursor: getComputedStyle(c.querySelector('.otto-cover__cursor')).opacity,
+    };
+  };
+  const arrivalRecorder = probeSource => {
+    if (!/\/inside\//.test(location.pathname)) return;
+    const probe = new Function(`return (${probeSource})()`);
+    const rec = window.__arrival = {};
+    addEventListener('pagereveal', event => { rec.revealVT = !!event.viewTransition; });
+    // The first frame that has the cover in it: what the visitor sees at first paint.
+    requestAnimationFrame(function first(now) { if (document.querySelector('[data-otto-cover]')) { rec.first = probe(); rec.firstT = now; } else if (document.readyState === 'loading') requestAnimationFrame(first); });
+    document.addEventListener('DOMContentLoaded', () => {
+      rec.t0 = performance.now();
+      rec.arrive = document.documentElement.dataset.arrive || null;
+      rec.dcl = probe();
+      rec.vtAnimations = document.getAnimations().filter(a => String(a.effect?.pseudoElement || '').includes('view-transition')).length;
+      // Where the flying Otto lands: jump his flight to its last frame for one synchronous measurement.
+      const flyer = document.querySelector('[data-cover-otto]'), dock = document.querySelector('[data-stage-mode="dock"] .robot');
+      const fly = flyer?.getAnimations().find(a => a.animationName === 'cover-fly');
+      if (fly && dock) {
+        const keep = fly.currentTime;
+        fly.currentTime = fly.effect.getComputedTiming().endTime - 1;
+        const a = flyer.getBoundingClientRect(), b = dock.getBoundingClientRect();
+        rec.landing = { flyer: [a.left, a.top, a.width], dock: [b.left, b.top, b.width] };
+        fly.currentTime = keep;
+      }
+      // The designed reveal: when the cover's own CSS timeline ends (the
+      // observed time below adds this machine's frame delays).
+      const gone = document.querySelector('[data-otto-cover]')?.getAnimations().find(a => /^cover-(gone|fade-out)$/.test(a.animationName));
+      // CSS animations start with the first frame, so the designed reveal is
+      // measured from the first frame that showed the cover.
+      const designed = () => {
+        const from = rec.firstT ?? performance.getEntriesByType('paint').find(entry => entry.name === 'first-paint')?.startTime;
+        if (gone && gone.startTime !== null && from !== undefined && rec.revealAt === undefined) rec.revealAt = Math.round(Number(gone.startTime) + Number(gone.effect.getComputedTiming().endTime) - from);
+      };
+      const watch = () => {
+        designed();
+        const s = probe();
+        if (!s || s.display === 'none' || s.visibility === 'hidden' || s.opacity < .02) { rec.goneAt = Math.round(performance.now() - rec.t0); requestAnimationFrame(function late() { designed(); if (rec.revealAt === undefined && performance.now() - rec.t0 < 3000) requestAnimationFrame(late); }); return; }
+        requestAnimationFrame(watch);
+      };
+      watch();
+    }, { once: true });
+  };
+  const near = (a, b, tolerance = 2) => !!a && !!b && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) <= tolerance);
+  async function handoffScenario({ label, kind, device, motion = 'on', vt = true, id = 'katana', name = 'KATANA', back = false }) {
+    const phone = device === 'phone';
+    const options = phone ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : { viewport: { width: 1440, height: 900 } };
+    const context = await isolated(browser, { reducedMotion: motion === 'reduce' ? 'reduce' : 'no-preference', ...options });
+    if (!vt) await context.route('**/_astro/*.css', async route => {
+      const response = await route.fetch();
+      await route.fulfill({ response, body: (await response.text()).replace(/@view-transition\s*\{\s*navigation:\s*auto\s*;?\s*\}/g, '@view-transition{navigation:none}') });
+    });
+    if (motion === 'pause') await context.addInitScript(() => { try { sessionStorage.setItem('omar-motion', 'off'); } catch { /* storage unavailable */ } });
+    await context.addInitScript(arrivalRecorder, coverProbe.toString());
+    const page = await context.newPage();
+    const errors = watch(page);
+    const cdp = await context.newCDPSession(page); // attached before the hand-off (see below)
+    await page.goto(`${base}/index.html?otto3d=${kind === '3d' ? 'force' : 'off'}`, { waitUntil: 'load' });
+    if (kind === '3d') { await mode3d(page); assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d', `3D Otto (${await page.locator(heroStage).getAttribute('data-reason')})`); }
+    else await modeSettled(page);
+    await page.waitForTimeout(kind === '3d' ? 1500 : 600);
+    // Ask about the project without typing.
+    await page.evaluate(project => window.dispatchEvent(new CustomEvent('omar:ask', { detail: { id: project } })), id);
+    await page.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 20000 });
+    await page.waitForTimeout(kind === '3d' ? 1600 : 700); // his reach settles (3D frames are slow in software GL)
+    const anchor = await page.locator('[data-otto-offer]').getAttribute('data-anchor');
+    assert.equal(anchor, phone ? 'dock' : 'palm', phone ? 'phones get the tray under Otto' : 'the button is tethered to his palm');
+    const offerBox = await page.locator('[data-otto-offer]').boundingBox();
+    assert.ok(offerBox && offerBox.x >= 0 && offerBox.x + offerBox.width <= options.viewport.width + 1 && offerBox.y >= 0 && offerBox.y + offerBox.height <= options.viewport.height + 1, `offer fully on screen (${JSON.stringify(offerBox)})`);
+    const takeBox = await page.locator('[data-offer-take]').boundingBox();
+    assert.ok(takeBox.height >= 60, `a big Take button (${Math.round(takeBox.height)}px tall)`);
+    // Hold the navigation, so the leaving frame can be inspected.
+    let release, requested;
+    const navRequested = new Promise(resolve => { requested = resolve; });
+    await page.route(`**/inside/${id}.html`, route => {
+      if (!route.request().isNavigationRequest()) return route.continue();
+      release = () => route.continue();
+      requested();
+    });
+    // The leaving frame is recorded in the page at the instant it navigates
+    // ('otto:navigate' fires right before location.assign) and, while the
+    // request is held, captured over CDP (Playwright waits out a pending
+    // navigation before its own evaluate/screenshot).
+    await page.evaluate(probe => {
+      window.addEventListener('otto:handoff-done', event => { window.__chestRect = event.detail?.rect || null; }, { once: true });
+      window.addEventListener('otto:navigate', () => {
+        const cover = document.querySelector('[data-otto-cover]');
+        sessionStorage.setItem('qa-leaving', JSON.stringify({ ...new Function(`return (${probe})()`)(), navMs: Math.round(performance.now() - window.__clickT), chest: window.__chestRect || null, clipFrom: cover.style.getPropertyValue('--clip-from'), running: cover.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && !['cover-bar-load', 'cover-blink'].includes(a.animationName)).map(a => a.animationName) }));
+      }, { once: true });
+      window.__clickT = performance.now();
+      document.querySelector('[data-offer-take]').click();
+    }, coverProbe.toString());
+    await Promise.race([navRequested, page.waitForTimeout(40000)]);
+    assert.ok(release, 'the page navigated');
+    // While the request is held the old page stays painted: screenshot that
+    // frame (over CDP: Playwright's own calls wait for the navigation).
+    const shot = (await cdp.send('Page.captureScreenshot', { format: 'png' })).data;
+    await fs.writeFile(path.join(output, 'screens', `handoff-${label}-leaving.png`), Buffer.from(shot, 'base64'));
+    release();
+    await page.waitForURL(new RegExp(`/inside/${id}\\.html$`), { timeout: 20000 });
+    await page.waitForLoadState('load');
+    const leaving = await page.evaluate(() => JSON.parse(sessionStorage.getItem('qa-leaving') || 'null'));
+    assert.ok(leaving, 'the leaving frame was recorded');
+    // 1. Fully opaque at the moment of navigation.
+    assert.equal(leaving.state, 'on', 'cover settled (not mid-animation)');
+    assert.deepEqual(leaving.running, [], 'no cover animation still running');
+    assert.ok(leaving.display === 'block' && leaving.visibility === 'visible' && leaving.opacity === 1 && leaving.innerOpacity === 1, `cover visible and opaque (${JSON.stringify(leaving)})`);
+    assert.equal(leaving.winClip, 'none', 'cover window fully open');
+    assert.equal(leaving.innerTransform, 'none', 'cover at full size');
+    assert.match(leaving.innerBg, /^rgb\(7, 8, 7\)$/, 'cover background is solid');
+    assert.ok(near(leaving.rect, [0, 0, leaving.vw, leaving.vh], 1), `cover spans the viewport (${leaving.rect} vs ${leaving.vw}x${leaving.vh})`);
+    assert.equal(leaving.text.replace(/\s/g, ''), `otto://inside/${id}Inside${name}Entering${name}`.replace(/\s/g, ''), `the cover names the project (${leaving.text})`);
+    if (motion === 'on' && kind === '3d') assert.ok(leaving.chest && /^inset\(/.test(leaving.clipFrom), `the cover grew out of the chest screen (${leaving.clipFrom})`);
+    if (motion === 'on' && kind === 'svg') assert.match(leaving.clipFrom, /^circle\(/, 'the cover opened as an iris from his chest badge');
+    // 2. Navigation starts within 1.5 s of the tap (software WebGL paints a 3D frame every ~0.4 s, so 3D is reported, not judged).
+    results.push({ name: `handoff ${label}: tap → navigation`, status: 'info', message: `${leaving.navMs} ms` });
+    if (kind === 'svg') assert.ok(leaving.navMs <= 1500, `navigation ${leaving.navMs} ms after the tap`);
+    await page.waitForFunction(() => window.__arrival && 'goneAt' in window.__arrival && 'revealAt' in window.__arrival, null, { timeout: 8000 });
+    const arrival = await page.evaluate(() => ({ ...window.__arrival, vt: window.__ottoVT || '', active: document.activeElement?.id || null }));
+    // 3. The tour paints the identical cover at first paint.
+    assert.equal(arrival.arrive, 'portal', 'arrival marked before first paint');
+    const first = arrival.first ?? arrival.dcl;
+    assert.ok(first && first.display === 'block' && first.visibility === 'visible' && first.opacity === 1 && first.innerOpacity === 1, `the cover, opaque, in the first frame (${JSON.stringify(first)})`);
+    assert.ok(near(first.rect, [0, 0, first.vw, first.vh], 1), 'cover spans the viewport at first paint');
+    const dcl = arrival.dcl;
+    assert.ok(dcl && dcl.display === 'block' && dcl.visibility === 'visible' && dcl.opacity > (motion === 'on' ? .99 : 0), `the cover still on screen at DOMContentLoaded (${dcl && dcl.opacity})`);
+    assert.equal(first.text, leaving.text, 'same words on both sides');
+    assert.ok(near(first.title, leaving.title) && near(first.bar, leaving.bar), `same layout on both sides (title ${leaving.title} → ${first.title}, bar ${leaving.bar} → ${first.bar})`);
+    // 4. View transitions never double the move.
+    assert.equal(arrival.vtAnimations, 0, 'no view-transition animation on arrival');
+    if (vt) assert.ok(!arrival.revealVT || /pagereveal/.test(arrival.vt), `a native view transition, if any, was skipped (${arrival.vt})`);
+    else assert.ok(!arrival.revealVT && !arrival.vt, 'no view transition at all (as in Safari < 18.2 / Firefox)');
+    // 5. Revealed fast; Otto lands in his dock; focus on the tour.
+    results.push({ name: `handoff ${label}: tour revealed`, status: 'info', message: `${arrival.revealAt} ms after its first frame (CSS timeline); cover observed gone ${arrival.goneAt} ms after DOMContentLoaded` });
+    assert.ok(arrival.revealAt <= (motion === 'on' ? 1200 : 300), `the cover's timeline reveals the tour ${arrival.revealAt} ms after its first frame`);
+    assert.ok(arrival.goneAt <= 1500, `the cover is gone ${arrival.goneAt} ms after DOMContentLoaded`);
+    if (motion === 'on') {
+      assert.ok(arrival.landing, 'Otto flies to his dock');
+      assert.ok(near(arrival.landing.flyer, arrival.landing.dock, 3), `the big Otto lands exactly on the docked one (${arrival.landing.flyer} vs ${arrival.landing.dock})`);
+    } else assert.ok(!arrival.landing, 'no flight with motion reduced or paused');
+    assert.equal(arrival.active, 'tour-title', 'focus on the tour h1');
+    await page.waitForFunction(() => { const el = document.querySelector('[data-otto-stage][data-stage-mode="dock"] .robot'); return getComputedStyle(el).opacity === '1' || !!el.closest('[data-mode="3d"]'); }, null, { timeout: 2000 }); // Otto is in his dock
+    await page.waitForFunction(() => /We’re in\./.test(document.querySelector('[data-otto-bubble]')?.textContent || ''), null, { timeout: 5000 });
+    assert.ok((await page.locator('h1').textContent()).includes(name), 'the tour of that project');
+    await page.screenshot({ path: path.join(output, 'screens', `handoff-${label}-arrived.png`) });
+    // Pixel proof: the held leaving frame is the tour's own cover, pixel for
+    // pixel (nothing of the homepage shows through, nothing half-open). The
+    // tour's cover is held still at the leaving frame's bar and cursor state.
+    await page.evaluate(state => {
+      const c = document.querySelector('[data-otto-cover]');
+      delete document.documentElement.dataset.arrive;
+      c.dataset.state = 'on';
+      [c, ...c.querySelectorAll('*')].forEach(el => { el.style.animation = 'none'; });
+      c.querySelector('.otto-cover__bar i').style.transform = state.barTransform;
+      c.querySelector('.otto-cover__cursor').style.opacity = state.cursor;
+    }, leaving);
+    const reference = (await page.screenshot({ path: path.join(output, 'screens', `handoff-${label}-cover-reference.png`) })).toString('base64');
+    const diff = await page.evaluate(async ([a, b]) => {
+      const load = async src => { const img = new Image(); img.src = `data:image/png;base64,${src}`; await img.decode(); return img; };
+      const [x, y] = await Promise.all([load(a), load(b)]);
+      const w = Math.min(x.naturalWidth, y.naturalWidth), h = Math.min(x.naturalHeight, y.naturalHeight);
+      const read = img => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, w, h).data; };
+      const p = read(x), q = read(y);
+      let off = 0; for (let i = 0; i < p.length; i += 4) if (Math.abs(p[i] - q[i]) + Math.abs(p[i + 1] - q[i + 1]) + Math.abs(p[i + 2] - q[i + 2]) > 60) off++;
+      return off / (p.length / 4);
+    }, [shot, reference]);
+    results.push({ name: `handoff ${label}: leaving frame vs tour cover`, status: 'info', message: `${(diff * 100).toFixed(2)}% of pixels differ` });
+    assert.ok(diff < .01, `the leaving frame is the tour's cover (${(diff * 100).toFixed(2)}% of pixels differ)`);
+    await page.evaluate(() => { const c = document.querySelector('[data-otto-cover]'); c.removeAttribute('data-state'); [c, ...c.querySelectorAll('*')].forEach(el => { el.style.removeProperty('animation'); }); });
+    if (back) {
+      // Back to Otto: the cover comes down here and lifts on the homepage.
+      await Promise.all([page.waitForURL(/index\.html/, { timeout: 15000 }), page.evaluate(() => document.querySelector('[data-inside-back]').click())]);
+      await page.waitForFunction(() => /Back from the inside/.test(document.querySelector('[data-chat-log]')?.textContent || ''), null, { timeout: 15000 });
+      // (Software WebGL blocks the main thread for seconds while the 3D Otto compiles.)
+      await page.waitForFunction(() => { const c = document.querySelector('[data-otto-cover]'); const s = getComputedStyle(c); return s.display === 'none' || s.visibility === 'hidden'; }, null, { timeout: kind === '3d' ? 8000 : 1500 });
+      assert.ok(!(await page.locator('[data-hero]').getAttribute('data-handoff')), 'stage reset');
+    }
+    assert.deepEqual(errors.filter(e => !/GPU stall|WebGL|swiftshader/i.test(e)), []);
+    await context.close();
+  }
+  for (const scenario of [
+    { label: '3d-desktop-vt-on', kind: '3d', device: 'desktop', vt: true, back: true },
+    { label: '3d-phone-vt-off', kind: '3d', device: 'phone', vt: false },
+    { label: 'svg-desktop-vt-off', kind: 'svg', device: 'desktop', vt: false, id: 'nookbase', name: 'NOOKBASE' },
+    { label: 'svg-phone-vt-on', kind: 'svg', device: 'phone', vt: true, back: true },
+    { label: 'svg-phone-reduced', kind: 'svg', device: 'phone', motion: 'reduce', vt: true, id: 'bp', name: 'Competitor Intelligence Engine' },
+    { label: '3d-desktop-paused-vt-off', kind: '3d', device: 'desktop', motion: 'pause', vt: false, id: 'bitget', name: 'Crypto prediction models' },
+  ]) {
+    await check(`otto hand-off ${scenario.label}: opaque cover at navigation, identical cover at first paint, revealed ≤ 1.2 s, Otto docks, focus on h1`, () => handoffScenario(scenario));
+  }
   await check('otto: hand-off on phone (SVG Otto): a tapped project counts down and takes you inside; the ring shows it', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const page = await context.newPage();
@@ -400,6 +613,7 @@ function watch(page) {
     assert.ok(!(await page.locator('[data-hero]').getAttribute('data-handoff')), 'stage reset');
     assert.ok(!(await page.locator('[data-chat]').evaluate(el => el.inert)), 'chat usable again');
     assert.ok(await page.evaluate(() => !!document.activeElement && document.activeElement !== document.body), 'focus returned, not dropped to body');
+    assert.equal(await page.locator('[data-otto-cover]').evaluate(el => getComputedStyle(el).display), 'none', 'no cover when staying');
     assert.match(await lastOtto(page).locator('.bubble').textContent(), /Bloomberg/);
     assert.equal(await lastOtto(page).locator('a.card[href="/inside/bp.html"]').count(), 1, 'inside card offered');
     assert.deepEqual(await choices(page), ['Take me inside after all', 'Tell me more', 'Other projects', 'Back to topics']);
