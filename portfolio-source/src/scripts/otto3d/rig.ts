@@ -1,18 +1,16 @@
 /*
  * Otto's 3D body, built procedurally (no downloaded models). Scale: 1 unit is
- * about 10 cm; the floor is y = 0 and Otto faces +z (the camera).
+ * about 10 cm; Otto faces +z (the camera).
  *
- * A levitating companion: a glossy pebble head floats above a bean-shaped
- * body (no neck, a lime levitation glow in the gap), a wide black-glass face
- * band shows his LED-dot eyes, and his hands float free (no visible arms),
- * each held by a magnetic lime ring at the wrist. The arm joint chain still
- * exists (shoulder → elbow → wrist → fingers) so motion.ts can pose him; only
- * the hands are drawn. Surfaces are lathed superellipse profiles, and the
- * glass panels are rounded rectangles conformed to those surfaces. "lo" tier
- * swaps physical materials for standard ones and drops the soft glows.
+ * A realistic humanoid service robot, shown from the waist up like a product
+ * shot: a glossy black helmet faceplate (his lime LED eyes glow behind the
+ * glass), satin-white armour panels over a dark mechanical neck, spine and
+ * joints, and full arms with shoulder caps, hinged elbows and articulated
+ * hands. The joint chain (shoulder → elbow → wrist → fingers) is what
+ * motion.ts poses. "lo" tier swaps physical materials for standard ones.
  */
 import {
-  AdditiveBlending, BufferGeometry, CanvasTexture, CapsuleGeometry, Color, DoubleSide, EquirectangularReflectionMapping, Float32BufferAttribute,
+  AdditiveBlending, CylinderGeometry, DirectionalLight, BufferGeometry, CanvasTexture, CapsuleGeometry, Color, DoubleSide, EquirectangularReflectionMapping, Float32BufferAttribute,
   Group, LatheGeometry, Material, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D,
   PlaneGeometry, PointLight, SphereGeometry, SRGBColorSpace, Texture, TorusGeometry, Vector2,
 } from 'three';
@@ -119,217 +117,216 @@ export function buildRig(tier: Tier, faceMap: Texture, chestMap: Texture): Rig {
   };
   const seg = (n: number) => (hi ? n : Math.max(8, Math.round(n / 2)));
 
-  // Materials: pearl-white clearcoat shell, graphite, black glass, lime light.
+  // Materials: satin-white armour, dark graphite mechanics, black glass, lime light.
   const shell = mat(hi
-    ? new MeshPhysicalMaterial({ color: new Color('#f3f4ef'), roughness: .26, metalness: 0, clearcoat: 1, clearcoatRoughness: .05, specularIntensity: .6 })
-    : new MeshStandardMaterial({ color: new Color('#f3f4ef'), roughness: .3, metalness: 0 }));
-  const graphite = mat(new MeshStandardMaterial({ color: new Color('#17191a'), roughness: .32, metalness: .7 }));
-  // The black glass reflects its own small "studio" (an equirect canvas): a
-  // soft overhead light and two side strips, dark straight ahead, so the
-  // panels catch a highlight along their top edge but never a hot spot
-  // across the eyes.
+    ? new MeshPhysicalMaterial({ color: new Color('#dcded9'), roughness: .36, metalness: 0, clearcoat: .55, clearcoatRoughness: .18, sheen: .25, sheenRoughness: .6, sheenColor: new Color('#ffffff') })
+    : new MeshStandardMaterial({ color: new Color('#dcded9'), roughness: .4, metalness: 0 }));
+  const graphite = mat(hi
+    ? new MeshPhysicalMaterial({ color: new Color('#141516'), roughness: .3, metalness: .65, clearcoat: .35, clearcoatRoughness: .25 })
+    : new MeshStandardMaterial({ color: new Color('#141516'), roughness: .34, metalness: .6 }));
+  const steel = mat(new MeshStandardMaterial({ color: new Color('#5d6063'), roughness: .25, metalness: .9 }));
+  // The faceplate reflects a small "studio" (an equirect canvas): a soft
+  // overhead softbox and two tall side strips, dark straight ahead, so the
+  // helmet catches long product-shot highlights but never a hot spot across the eyes.
   const studio = tex(canvasTexture(256, (ctx, w) => {
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, 128);
     const sky = ctx.createLinearGradient(0, 0, 0, 64);
-    sky.addColorStop(0, '#d8dbd2'); sky.addColorStop(.42, '#6a6d66'); sky.addColorStop(.78, '#0c0d0c'); sky.addColorStop(1, '#000');
+    sky.addColorStop(0, '#e4e6df'); sky.addColorStop(.4, '#7a7d76'); sky.addColorStop(.75, '#0c0d0c'); sky.addColorStop(1, '#000');
     ctx.fillStyle = sky; ctx.fillRect(0, 0, w, 64);
-    for (const u of [.08, .42]) {
-      const strip = ctx.createLinearGradient(u * w - 10, 0, u * w + 10, 0);
-      strip.addColorStop(0, 'rgba(255,255,255,0)'); strip.addColorStop(.5, 'rgba(255,255,255,.55)'); strip.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = strip; ctx.fillRect(u * w - 10, 26, 20, 50);
+    for (const u of [.06, .44, .56]) {
+      const strip = ctx.createLinearGradient(u * w - 9, 0, u * w + 9, 0);
+      strip.addColorStop(0, 'rgba(255,255,255,0)'); strip.addColorStop(.5, 'rgba(255,255,255,.7)'); strip.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = strip; ctx.fillRect(u * w - 9, 18, 18, 64);
     }
   }, 128));
   studio.mapping = EquirectangularReflectionMapping;
-  const glass = mat(hi
-    ? new MeshPhysicalMaterial({ color: new Color('#010201'), roughness: .1, metalness: 0, clearcoat: 1, clearcoatRoughness: .06, envMap: studio, envMapIntensity: 2 })
-    : new MeshStandardMaterial({ color: new Color('#020302'), roughness: .14, metalness: .1, envMap: studio, envMapIntensity: 2 }));
+  const visorMat = mat(hi
+    ? new MeshPhysicalMaterial({ color: new Color('#030303'), roughness: .06, metalness: .15, clearcoat: 1, clearcoatRoughness: .03, envMap: studio, envMapIntensity: 2.2 })
+    : new MeshStandardMaterial({ color: new Color('#040404'), roughness: .1, metalness: .2, envMap: studio, envMapIntensity: 2 }));
+  const glass = mat(new MeshStandardMaterial({ color: new Color('#020302'), roughness: .12, metalness: .1, envMap: studio, envMapIntensity: 1.6 }));
   const lime = mat(new MeshBasicMaterial({ color: new Color('#d9ff3f'), toneMapped: false }));
-  const faceMat = mat(new MeshBasicMaterial({ map: faceMap, transparent: true, toneMapped: false, depthWrite: false }));
+  const faceMat = mat(new MeshBasicMaterial({ map: faceMap, transparent: true, toneMapped: false, depthWrite: false, blending: AdditiveBlending }));
   const chestMat = mat(new MeshBasicMaterial({ map: chestMap, transparent: true, toneMapped: false }));
-  // Additive glows need no back-then-front pass: one draw call each.
   const glow = (texture: Texture, opacity = 1) => mat(new MeshBasicMaterial({ map: tex(texture), transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, toneMapped: false, side: DoubleSide, forceSinglePass: true }));
-  const softLime = glow(radialTexture('rgba(217,255,63,0.9)', 'rgba(217,255,63,0)'));
 
   const root = new Group();
   const body = new Group();
   root.add(body);
+  // A cool white rim light from behind (hi only): the edge highlight that
+  // makes white armour read as a real object on a dark page.
+  if (hi) {
+    const rimLight = new DirectionalLight(new Color('#eef3ff'), 1.4);
+    rimLight.position.set(2.4, 2.6, -3.2);
+    root.add(rimLight);
+  }
 
-  // Levitation: a lime emitter ring under the body, a soft hanging glow (the
-  // "flame": small at rest, stretched while flying in) and a lime point light.
+  // A faint lime glow low behind him (the "flame": it flares as he flies in).
   const BOTTOM = .34;
-  const beamTexture = tex(canvasTexture(128, (ctx, s) => {
-    ctx.translate(s / 2, 0);
-    ctx.scale(1, 1.6);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s / 2);
-    g.addColorStop(0, 'rgba(236,255,140,0.95)');
-    g.addColorStop(.25, 'rgba(217,255,63,0.5)');
-    g.addColorStop(.6, 'rgba(217,255,63,0.12)');
-    g.addColorStop(1, 'rgba(217,255,63,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(-s / 2, 0, s, s);
-  }));
-  const beamGeometry = new PlaneGeometry(1.5, 1.5);
-  beamGeometry.translate(0, -.75, 0);
-  const flame = mesh(beamGeometry, glow(beamTexture, .9), body, 0, BOTTOM + .06, 0);
+  const beamGeometry = new PlaneGeometry(1.4, 1.4);
+  beamGeometry.translate(0, -.5, 0);
+  const flame = mesh(beamGeometry, glow(radialTexture('rgba(217,255,63,0.35)', 'rgba(217,255,63,0)'), .6), body, 0, BOTTOM, -.3);
   flame.renderOrder = 3;
-  const light = new PointLight('#d9ff3f', .9, 1.8);
-  light.position.set(0, BOTTOM - .1, .1);
+  // Kept for the rig contract (motion.ts drives its intensity), but placed
+  // out of reach: on white armour any lime fill reads as a green cast.
+  const light = new PointLight('#d9ff3f', .2, .3);
+  light.position.set(0, -2, -2);
   body.add(light);
 
-  // The bean body (fuller below, a touch narrower at the top), slightly
-  // flattened front to back. The torso group carries that scale; the arms
-  // and head hang off the unscaled waist so their rotations never shear.
   const waist = new Group();
   waist.position.y = BOTTOM;
   body.add(waist);
-  const torso = new Group();
-  torso.scale.z = .9;
-  waist.add(torso);
-  const bodyProfile = pebble(0, .45, 1, .48, .41, 2.5);
-  mesh(new LatheGeometry(bodyProfile.points(seg(52)), seg(80)), shell, torso);
-  if (hi) { // a fine parting line low on the body
-    const SEAM_Y = .22;
-    mesh(new TorusGeometry(bodyProfile.r(SEAM_Y) + .001, .0042, 6, 96), graphite, torso, 0, SEAM_Y, 0).rotation.x = Math.PI / 2;
-  }
-  const ring = mesh(new TorusGeometry(bodyProfile.r(.02), .016, seg(12), seg(64)), lime, torso, 0, .02, 0);
-  ring.rotation.x = Math.PI / 2;
 
-  // Chest screen: a black-glass panel conformed to the body, and the canvas
-  // screen on it. The screen's origin is its centre (the camera dives into it).
-  const CHEST_Y = .53;
-  mesh(surfacePatch(bodyProfile.r, .56, .4, .1, CHEST_Y, .004, seg(36), seg(16)), glass, torso);
-  const chestGeometry = surfacePatch(bodyProfile.r, .48, .32, .07, CHEST_Y, .009, seg(36), seg(14));
-  const chestZ = bodyProfile.r(CHEST_Y) + .009;
+  // Pelvis and a mechanical spine: graphite, ribbed like a bellows.
+  const pelvis = mesh(new SphereGeometry(.3, seg(40), seg(20), 0, Math.PI * 2, Math.PI * .45, Math.PI * .55), graphite, waist, 0, .2, 0);
+  pelvis.scale.set(1, .8, .72);
+  mesh(new CylinderGeometry(.17, .2, .42, seg(32)), graphite, waist, 0, .38, 0).scale.z = .8;
+  for (const y of [.24, .31, .38, .45, .52]) {
+    const rib = mesh(new TorusGeometry(.19 - (y - .24) * .08, .018, seg(8), seg(40)), steel, waist, 0, y, 0);
+    rib.rotation.x = Math.PI / 2; rib.scale.y = .8;
+  }
+
+  // Torso: a sculpted white shell (broad chest, narrower waist), flattened
+  // front to back. The torso group carries that scale; arms and head hang off
+  // the unscaled waist so their rotations never shear.
+  const torso = new Group();
+  torso.scale.z = .58;
+  waist.add(torso);
+  const torsoProfile = pebble(.46, .9, 1.1, .3, .44, 3.1);
+  mesh(new LatheGeometry(torsoProfile.points(seg(48)), seg(72)), shell, torso);
+  // Panel seams: a waist band and a yoke line across the upper chest.
+  if (hi) for (const y of [.62, 1.0]) {
+    mesh(new TorusGeometry(torsoProfile.r(y) + .002, .0045, 6, 96), graphite, torso, 0, y, 0).rotation.x = Math.PI / 2;
+  }
+  // Abdomen plate: dark, between the chest shell and the spine.
+  mesh(surfacePatch(torsoProfile.r, .3, .1, .04, .55, .004, seg(24), seg(8)), graphite, torso);
+
+  // Chest status display (the camera dives into it during the hand-off).
+  const CHEST_Y = .8;
+  mesh(surfacePatch(torsoProfile.r, .36, .24, .07, CHEST_Y, .004, seg(32), seg(14)), glass, torso);
+  const chestGeometry = surfacePatch(torsoProfile.r, .31, .2, .05, CHEST_Y, .009, seg(32), seg(12));
+  const chestZ = torsoProfile.r(CHEST_Y) + .009;
   chestGeometry.translate(0, -CHEST_Y, -chestZ);
   const chest = mesh(chestGeometry, chestMat, torso, 0, CHEST_Y, chestZ);
   chest.renderOrder = 1;
 
-  // The neck gap: a graphite socket ringed in lime on the body, a matching
-  // pad under the head, a soft lime glow in the gap and, just in front, a
-  // fainter spill that tints the head's underside and the body's top (a
-  // faked light: cheaper than a real one on every phone).
-  const TOP = 1;
-  const socket = mesh(new SphereGeometry(.17, seg(32), seg(12)), graphite, torso, 0, TOP - .035, 0);
-  socket.scale.y = .32;
-  const collar = mesh(new TorusGeometry(bodyProfile.r(TOP - .018), .011, seg(10), seg(56)), lime, torso, 0, TOP - .018, 0);
-  collar.rotation.x = Math.PI / 2;
-  const gapTexture = radialTexture('rgba(217,255,63,0.75)', 'rgba(217,255,63,0)');
-  mesh(new PlaneGeometry(.86, .2), glow(gapTexture), waist, 0, TOP + .05, 0).renderOrder = 3;
-  if (hi) mesh(new PlaneGeometry(1, .36), glow(radialTexture('rgba(217,255,63,0.5)', 'rgba(217,255,63,0)'), .55), waist, 0, TOP + .05, .56).renderOrder = 3;
+  // Neck: a graphite column with a collar, three cable runs and a thin lime ring.
+  const TOP = 1.12;
+  mesh(new CylinderGeometry(.2, .26, .06, seg(40)), graphite, waist, 0, TOP - .01, 0).scale.z = .7;
+  mesh(new CylinderGeometry(.075, .09, .17, seg(24)), graphite, waist, 0, TOP + .08, 0);
+  for (const [x, z, tilt] of [[-.065, .045, .18], [.065, .045, -.18], [0, -.07, 0]] as const) {
+    const cable = mesh(new CylinderGeometry(.016, .016, .17, seg(10)), steel, waist, x, TOP + .08, z);
+    cable.rotation.z = tilt;
+  }
+  const ring = mesh(new TorusGeometry(.095, .007, seg(8), seg(40)), lime, waist, 0, TOP + .06, 0);
+  ring.rotation.x = Math.PI / 2;
 
-  // Head: a wide pebble (cheeks a touch fuller), floating above the body.
+  // Head: a helmet. White shell at the back and crown, a glossy black
+  // faceplate wrapping the front, ear modules ringed in lime.
   const head = new Group();
-  head.position.y = TOP + .04;
+  head.position.y = TOP + .15;
   waist.add(head);
-  const HEAD_C = .44;
   const skull = new Group();
-  skull.position.y = HEAD_C;
-  skull.scale.z = .84;
+  skull.position.set(0, .27, -.01);
+  skull.scale.set(1, 1.13, 1.08);
   head.add(skull);
-  const headProfile = pebble(-.385, -.02, .385, .64, .58, 2.25);
-  mesh(new LatheGeometry(headProfile.points(seg(52)), seg(80)), shell, skull);
-  const chin = mesh(new SphereGeometry(.17, seg(32), seg(12)), graphite, skull, 0, -.37, 0);
-  chin.scale.y = .3;
-  // Face band: a thin graphite bezel, the black glass, then the LED canvas.
-  const BAND_Y = -.015;
-  mesh(surfacePatch(headProfile.r, 1.31, .42, .17, BAND_Y, .003, seg(64), seg(18)), graphite, skull);
-  mesh(surfacePatch(headProfile.r, 1.27, .385, .155, BAND_Y, .007, seg(64), seg(18)), glass, skull);
-  const face = mesh(surfacePatch(headProfile.r, 1.26, .38, .15, BAND_Y, .0095, seg(64), seg(18)), faceMat, skull);
-  face.renderOrder = 2;
-  // The band carries on round the back of the head as a fine parting line.
+  mesh(new SphereGeometry(.285, seg(48), seg(32)), shell, skull);
+  // The faceplate: a cap of a slightly larger sphere, centred on +z.
+  const PLATE = 2.05;
+  mesh(new SphereGeometry(.2935, seg(48), seg(32), Math.PI / 2 - PLATE / 2, PLATE, .5, 1.52), visorMat, skull);
+  // A graphite trim round the faceplate edge (hi only).
   if (hi) {
-    const bandAngle = .655 / (headProfile.r(BAND_Y) + .003);
-    mesh(new TorusGeometry(headProfile.r(BAND_Y) + .001, .0042, 6, 96, Math.PI * 2 - bandAngle * 2), graphite, skull, 0, BAND_Y, 0)
-      .rotation.set(Math.PI / 2, 0, bandAngle - Math.PI * 1.5);
+    const trim = mesh(new SphereGeometry(.2915, seg(48), seg(32), Math.PI / 2 - PLATE / 2 - .05, PLATE + .1, .46, 1.6), graphite, skull);
+    trim.renderOrder = -1;
+  }
+  // LED eyes behind the glass: the face canvas on a band of the faceplate.
+  const EYES = 1.25;
+  const face = mesh(new SphereGeometry(.296, seg(32), seg(8), Math.PI / 2 - EYES / 2, EYES, 1.2, .34), faceMat, skull);
+  face.renderOrder = 2;
+  for (const side of [-1, 1]) {
+    const ear = mesh(new CylinderGeometry(.08, .09, .06, seg(32)), graphite, skull, side * .283, -.02, -.03);
+    ear.rotation.z = Math.PI / 2;
+    const earRing = mesh(new TorusGeometry(.066, .006, seg(8), seg(32)), lime, skull, side * .316, -.02, -.03);
+    earRing.rotation.y = Math.PI / 2;
   }
 
-  // The "antenna": a little lime orb floating above the crown (it wobbles
-  // on landing and leans as he looks around).
+  // "Antenna": a small sensor nub on the crown (it still wobbles on landing).
   const antenna = new Group();
-  antenna.position.y = HEAD_C + .38;
+  antenna.position.y = .27 + .32;
   head.add(antenna);
-  mesh(new SphereGeometry(.036, seg(24), seg(16)), lime, antenna, 0, .09, 0);
-  if (hi) mesh(new PlaneGeometry(.2, .2), softLime, antenna, 0, .09, 0).renderOrder = 3;
+  mesh(new CylinderGeometry(.03, .045, .03, seg(16)), graphite, antenna, 0, 0, -.06);
+  mesh(new SphereGeometry(.012, seg(10), seg(8)), lime, antenna, 0, .018, -.06);
 
-  // Floating hands. The joint chain is invisible; each hand hangs from its
-  // wrist inside a magnetic lime ring. Palm faces +z (fingers curl that way).
-  const ringGlow = hi ? glow(canvasTexture(128, (ctx, s) => {
-    const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-    g.addColorStop(0, 'rgba(217,255,63,0)');
-    g.addColorStop(.6, 'rgba(217,255,63,0)');
-    g.addColorStop(.82, 'rgba(217,255,63,0.7)');
-    g.addColorStop(.92, 'rgba(217,255,63,0.16)');
-    g.addColorStop(1, 'rgba(217,255,63,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, s, s);
-  })) : null;
+  // Arms: a white shoulder cap over a graphite ball joint, a white upper arm,
+  // a graphite hinge at the elbow, a tapered white forearm and an articulated
+  // hand (graphite fingers, a white back plate). Palm faces +z when the arm hangs.
   const buildArm = (side: -1 | 1): Arm => {
     const shoulder = new Group();
-    shoulder.position.set(side * .58, 1.04, 0);
+    shoulder.position.set(side * .52, .98, 0);
     waist.add(shoulder);
+    mesh(new SphereGeometry(.105, seg(24), seg(16)), graphite, shoulder);
+    const cap = mesh(new SphereGeometry(.15, seg(32), seg(20), 0, Math.PI * 2, 0, Math.PI * .62), shell, shoulder, 0, .02, 0);
+    cap.scale.set(1.05, 1, .95);
+    cap.rotation.z = side * -.35;
+    mesh(new CapsuleGeometry(.085, .2, seg(8), seg(24)), shell, shoulder, 0, -.22, 0).scale.z = .92;
     const elbow = new Group();
-    elbow.position.y = -.3;
+    elbow.position.y = -.42;
     shoulder.add(elbow);
+    const hinge = mesh(new CylinderGeometry(.072, .072, .15, seg(24)), graphite, elbow);
+    hinge.rotation.z = Math.PI / 2;
+    if (hi) mesh(new TorusGeometry(.074, .006, 6, seg(32)), steel, elbow, side * .07, 0, 0).rotation.y = Math.PI / 2;
+    const forearm = mesh(new LatheGeometry([new Vector2(0, -.36), new Vector2(.058, -.35), new Vector2(.066, -.3), new Vector2(.084, -.12), new Vector2(.086, -.06), new Vector2(.07, -.02), new Vector2(0, -.01)], seg(28)), shell, elbow);
+    forearm.scale.z = .9;
     const wrist = new Group();
-    wrist.position.y = -.26;
+    wrist.position.y = -.38;
     elbow.add(wrist);
-    // The hand is tilted back a little at the wrist and turned a little
-    // toward you, so a resting hand shows three quarters (not its edge), a
-    // hand reaching toward you shows its palm and a waving hand faces you.
+    mesh(new CylinderGeometry(.048, .052, .05, seg(20)), graphite, wrist, 0, -.01, 0);
     const hand = new Group();
-    hand.rotation.set(.3, side * -.6, 0);
-    hand.scale.setScalar(1.3);
+    hand.rotation.set(.12, side * -.35, 0);
     wrist.add(hand);
-    // Wrist stub, with the magnetic ring floating round it, canted a little
-    // (like a gyroscope) so it reads as a ring from the front, not a line.
-    mesh(new CapsuleGeometry(.054, .05, seg(6), seg(20)), shell, hand, 0, -.06, 0).scale.z = .84;
-    const cuff = new Group();
-    cuff.position.y = -.058;
-    cuff.rotation.set(-.42, 0, side * .18);
-    hand.add(cuff);
-    mesh(new TorusGeometry(.083, .0105, seg(10), seg(48)), lime, cuff).rotation.x = Math.PI / 2;
-    if (ringGlow) mesh(new PlaneGeometry(.2, .2), ringGlow, cuff).rotation.x = -Math.PI / 2;
-    // A smooth pebble palm, three fanned fingers and a thumb, all in the shell.
-    const palm = mesh(new SphereGeometry(.1, seg(32), seg(24)), shell, hand, 0, -.145, 0);
-    palm.scale.set(1.04, 1, .5);
+    const palm = mesh(new CapsuleGeometry(.055, .05, seg(6), seg(20)), graphite, hand, 0, -.09, 0);
+    palm.scale.set(1.45, 1, .55);
+    const back = mesh(new CapsuleGeometry(.05, .045, seg(6), seg(20)), shell, hand, 0, -.085, -.022);
+    back.scale.set(1.4, 1, .38);
     const fingers: Arm['fingers'] = [];
-    for (const fx of [-.06, 0, .06]) {
+    for (const fx of [-.054, -.018, .018, .054]) {
       const base = new Group();
-      base.position.set(fx, -.215, 0);
-      base.rotation.z = fx * 2;
+      base.position.set(fx, -.15, 0);
+      base.rotation.z = fx * 1.2;
       hand.add(base);
-      mesh(new CapsuleGeometry(.029, .05, seg(6), seg(16)), shell, base, 0, -.035, 0);
+      mesh(new CapsuleGeometry(.0165, .04, seg(6), seg(12)), graphite, base, 0, -.03, 0);
       const tip = new Group();
-      tip.position.y = -.08;
+      tip.position.y = -.065;
       base.add(tip);
-      mesh(new CapsuleGeometry(.027, .036, seg(6), seg(16)), shell, tip, 0, -.032, 0);
+      mesh(new CapsuleGeometry(.0155, .03, seg(6), seg(12)), graphite, tip, 0, -.025, 0);
       fingers.push({ base, tip });
     }
-    // The thumb sits on the outer edge, as it does on a real open palm.
     const thumb = new Group();
-    thumb.position.set(side * .085, -.13, .02);
-    thumb.rotation.z = side * .75;
+    thumb.position.set(side * .08, -.07, .02);
+    thumb.rotation.z = side * .8;
     hand.add(thumb);
-    mesh(new CapsuleGeometry(.03, .07, seg(6), seg(16)), shell, thumb, 0, -.055, 0);
+    mesh(new CapsuleGeometry(.019, .055, seg(6), seg(12)), graphite, thumb, 0, -.045, 0);
     return { shoulder, elbow, wrist, fingers, thumb, palm };
   };
   const armL = buildArm(-1);
   const armR = buildArm(1);
 
-  // Floor: a soft contact shadow and a faint lime pool from the levitation light.
+  // Floor shadow and lime pool: kept for the rig contract, but he's framed
+  // from the waist up, so they stay hidden.
   const shadowMat = mat(new MeshBasicMaterial({ map: tex(radialTexture('rgba(0,0,0,0.75)', 'rgba(0,0,0,0)')), transparent: true, depthWrite: false }));
   const shadow = mesh(new PlaneGeometry(1.6, 1.6), shadowMat, root, 0, .002, 0);
   shadow.rotation.x = -Math.PI / 2;
+  shadow.visible = false;
   const poolMat = mat(new MeshBasicMaterial({ map: tex(radialTexture('rgba(217,255,63,0.6)', 'rgba(217,255,63,0)')), transparent: true, opacity: .2, blending: AdditiveBlending, depthWrite: false, toneMapped: false }));
   const pool = mesh(new PlaneGeometry(1.3, 1.3), poolMat, root, 0, .004, 0);
   pool.rotation.x = -Math.PI / 2;
+  pool.visible = false;
 
-  /** Curl 0 (open) → 1 (fist). With point, the middle finger stays straight. */
+  /** Curl 0 (open) → 1 (fist). With point, the index finger stays straight. */
   const setCurl = (arm: Arm, curl: number, point = false) => {
     arm.fingers.forEach((finger, index) => {
       const g = point && index === 1 ? 0 : curl;
-      finger.base.rotation.x = -1.4 * g;
-      finger.tip.rotation.x = -1.6 * g;
+      finger.base.rotation.x = -1.35 * g;
+      finger.tip.rotation.x = -1.5 * g;
     });
     arm.thumb.rotation.x = -.9 * curl;
   };

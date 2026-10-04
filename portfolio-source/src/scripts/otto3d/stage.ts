@@ -110,7 +110,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
 
   const key = new DirectionalLight(new Color('#fff4e6'), 2.4);
   key.position.set(2.5, 4, 3.5);
-  const rim = new DirectionalLight(new Color('#d9ff3f'), 1.6);
+  const rim = new DirectionalLight(new Color('#e6f2c4'), 1.1); // a cool, faintly lime rim: real white armour, brand light only in the accents
   rim.position.set(-3, 2.5, -2.5);
   const fill = new HemisphereLight(new Color('#cfd8ff'), new Color('#0a0b09'), .35);
   scene.add(key, rim, fill);
@@ -138,26 +138,29 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     shift = 0;
     if (dock) {
       // Frame the whole figure (antenna to thruster, both arms) in the small dock.
-      if (!dockBox) { rig.root.updateMatrixWorld(true); dockBox = new Box3().setFromObject(rig.body); }
+      // The dock shows him from the chest up (his waist would just be a sliver).
+      if (!dockBox) { rig.root.updateMatrixWorld(true); dockBox = new Box3().setFromObject(rig.body); dockBox.min.y = Math.max(dockBox.min.y, dockBox.max.y - 1.35); }
       const size = dockBox.getSize(new Vector3()), center = dockBox.getCenter(new Vector3());
       const t = Math.tan(home.fov * Math.PI / 360);
       const distance = Math.max(size.y * 1.14 / (2 * t), size.x * 1.24 / (2 * t * (width / height))) + size.z / 2;
       home.pos.set(0, center.y + .12, distance); home.look.set(0, center.y, 0);
     }
     else {
-      // Floating-hands Otto carries less visual mass than an armed robot, so
-      // the desktop camera sits a little closer (8.2, was 8.9) to keep him big.
-      let z = narrow ? 6.8 : 8.2;
+      // Product-shot framing: the humanoid Otto from the waist up, big, his
+      // waist running off the bottom of the stage (the canvas fades out there).
+      let z = narrow ? 3.7 : 4.4;
       const style = getComputedStyle(canvas.parentElement ?? canvas);
       const gx = parseFloat(style.getPropertyValue('--gx')), gw = parseFloat(style.getPropertyValue('--gw'));
       if (gx > 0 && gw > 0) {
         shift = gx - width / 2;
-        // Open-armed Otto is ~2.2 units wide (floating hands; was 2.3 with
-        // arms): back the camera off just enough that he fits the gap (10%
+        // His shoulders are ~1.45 units across: back the camera off just
+        // enough that they fit the gap between the intro and the chat (15%
         // grace), so he never sits behind the text.
-        z = Math.min(40, Math.max(z, 2.2 * height / (2 * Math.tan(home.fov * Math.PI / 360) * gw * 1.1)));
+        z = Math.min(40, Math.max(z, 1.45 * height / (2 * Math.tan(home.fov * Math.PI / 360) * gw * 1.15)));
       }
-      home.pos.set(0, 1.42, z); home.look.set(0, 1.28, 0);
+      // Keep his head in the upper part of the frame however far back we are.
+      const look = 1.5 + Math.min(.35, (z - 4.4) * .06);
+      home.pos.set(0, look + .08, z); home.look.set(0, look, 0);
     }
     camera.aspect = width / height;
     if (!take) { // during the dive, tick() owns the camera
@@ -275,7 +278,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     }
     director.takeEvents().forEach(name => emit(`otto:${name}`));
     if (offerAt > 0 && performance.now() >= offerAt) { offerAt = -1; emit('otto:palm', project(world(rig.armR.palm))); }
-    const anchor = project(world(rig.head).add(new Vector3(0, .95, 0)));
+    const anchor = project(world(rig.head).add(new Vector3(0, .72, 0)));
     const anchorKey = `${Math.round(anchor.x / 2)},${Math.round(anchor.y / 2)}`;
     if (anchorKey !== lastAnchor) { lastAnchor = anchorKey; emit('otto:anchor', anchor); }
 

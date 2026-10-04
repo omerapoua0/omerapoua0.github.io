@@ -265,6 +265,9 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
   .otto-stage { --bx: 50%; --by: 18%; position: relative; z-index: 1; pointer-events: none; min-width: 0; container-type: size; }
   .otto-stage__canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 400ms ease-out; }
   .otto-stage[data-mode='3d'] .otto-stage__canvas { opacity: 1; }
+  /* Product-shot crop: his waist dissolves into the page (not during the dive). */
+  .otto-stage[data-mode='3d'] .otto-stage__canvas { -webkit-mask-image: linear-gradient(#000 70%, transparent 97%); mask-image: linear-gradient(#000 70%, transparent 97%); }
+  .agent[data-handoff='take'] .otto-stage__canvas { -webkit-mask-image: none; mask-image: none; }
   .otto-stage__poster { --pw: min(46cqw, 52cqh, 380px, var(--gw, 9999px) * .8); position: absolute; left: var(--gx, 50%); bottom: 6%; width: var(--pw); transform: translateX(-50%); opacity: 0; transition: opacity 300ms ease-out; }
   .otto-stage__poster :global(.robot--xl) { width: 100%; }
   .otto-stage[data-mode='svg'] .otto-stage__poster { opacity: 1; }

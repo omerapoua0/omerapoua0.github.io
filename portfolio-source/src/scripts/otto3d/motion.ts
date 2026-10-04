@@ -121,7 +121,7 @@ export function createDirector(rig: Rig) {
     // Body position: home, gliding forward to offer the hand, or the entrance path.
     let bx = 0, by = 0, bz = 0, pitchExtra = 0, bank = 0, flare = .35, trail = 0;
     // Offering, he glides forward; pulling, he draws back (and up a touch), taking you with him.
-    if (handoff) { bz = handoff.phase === 'offer' || gripping ? .85 : .25; by = handoff.phase === 'take' && !gripping ? .12 : 0; }
+    if (handoff) { bz = handoff.phase === 'offer' || gripping ? .3 : .1; by = handoff.phase === 'take' && !gripping ? .12 : 0; }
     if (entrance && live) {
       const t = (time - entrance.start) / (entrance.kind === 'fly' ? 1.6 : .6);
       if (entrance.kind === 'fly' && t < 1) {

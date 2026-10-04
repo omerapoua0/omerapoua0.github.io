@@ -1,6 +1,6 @@
 ---
-/* Otto, the robot host (levitating companion: egg head over a glowing gap,
-   pebble body, floating gloved hands). A hand-built SVG rig; src/scripts/robot.ts drives
+/* Otto, the robot host (a humanoid: black helmet faceplate, white armour,
+   mechanical neck, shoulder caps and dark hands). A hand-built SVG rig; src/scripts/robot.ts drives
    data-state (idle, wave, talk, think, confused, cheeky, point, pew, and the
    hand-off: offer, grab, pull), blinks and eye tracking. Reduced or paused
    motion keeps a still pose. `still` renders a decorative Otto that no script
@@ -44,73 +44,76 @@ const uid = `${id}-${size}`;
       </filter>
     </defs>
 
-    <ellipse class="robot__shadow" cx="100" cy="228" rx="46" ry="7" fill={`url(#${uid}-shadow)`} />
+    <ellipse class="robot__shadow" cx="100" cy="230" rx="46" ry="6" fill={`url(#${uid}-shadow)`} />
 
     <g class="robot__body">
-      <!-- left hand (viewer's left): floats beside him, no arm -->
+      <!-- left arm (viewer's left): shoulder cap, white upper arm and forearm, dark hand -->
       <g class="robot__arm robot__arm--l">
-        <g transform="translate(55.5 190) scale(1.35) translate(-55.5 -190)">
-        <ellipse cx="55.5" cy="180" rx="10" ry="3.2" fill="none" stroke="#d9ff3f" stroke-width="2" filter={`url(#${uid}-glow)`} />
-        <rect x="46" y="182" width="19" height="22" rx="9" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
-        <rect x="42.5" y="186" width="6" height="11" rx="3" fill={`url(#${uid}-shell)`} stroke="#ffffff24" />
-        </g>
+        <rect x="45" y="150" width="20" height="36" rx="10" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
+        <rect x="47" y="184" width="16" height="6" rx="3" fill="#1a1d18" />
+        <rect x="46.5" y="188" width="17" height="22" rx="8.5" fill={`url(#${uid}-shell)`} stroke="#ffffff24" />
+        <rect x="47.5" y="208" width="15" height="13" rx="6" fill="#1a1d18" stroke="#ffffff2e" />
       </g>
-      <!-- underglow and the pebble body -->
-      <ellipse cx="100" cy="214" rx="20" ry="4" fill="#d9ff3f" opacity=".8" filter={`url(#${uid}-glow)`} />
-      <path d="M100 140 C129 140 145 163 145 186 C145 205 126 216 100 216 C74 216 55 205 55 186 C55 163 71 140 100 140 Z" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} stroke-width="1.4" />
-      <path d="M100 140 C129 140 145 163 145 186 C145 205 126 216 100 216 C74 216 55 205 55 186 C55 163 71 140 100 140 Z" fill={`url(#${uid}-sheen)`} />
-      <path d="M58 196 Q100 208 142 196" fill="none" stroke="#00000026" stroke-width="1.2" />
-      <rect x="78" y="158" width="44" height="36" rx="12" fill={`url(#${uid}-glass)`} stroke="#00000080" />
-      <circle cx="100" cy="176" r="10" fill="none" stroke="#d9ff3f" stroke-width="2.6" class="robot__badge" filter={`url(#${uid}-glow)`} />
+      <!-- mechanical spine and the white chest shell -->
+      <rect x="82" y="196" width="36" height="30" rx="8" fill="#1a1d18" />
+      <path d="M82 202 H118 M82 209 H118 M82 216 H118" stroke="#5d6063" stroke-width="2" />
+      <path d="M58 150 C58 140 70 134 100 134 C130 134 142 140 142 150 L138 182 C134 196 120 202 100 202 C80 202 66 196 62 182 Z" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} stroke-width="1.4" />
+      <path d="M58 150 C58 140 70 134 100 134 C130 134 142 140 142 150 L138 182 C134 196 120 202 100 202 C80 202 66 196 62 182 Z" fill={`url(#${uid}-sheen)`} />
+      <path d="M60 160 Q100 168 140 160" fill="none" stroke="#00000030" stroke-width="1.2" />
+      <rect x="82" y="164" width="36" height="24" rx="8" fill={`url(#${uid}-glass)`} stroke="#00000080" />
+      <circle cx="100" cy="176" r="7.5" fill="none" stroke="#d9ff3f" stroke-width="2.4" class="robot__badge" filter={`url(#${uid}-glow)`} />
       <text x="100" y="180" text-anchor="middle" class="robot__badge-text" opacity="0">O</text>
-      <!-- levitation: no neck, just a lime glow between head and body -->
-      <ellipse cx="100" cy="137" rx="28" ry="4.5" fill="#d9ff3f" opacity=".55" filter={`url(#${uid}-glow)`} />
+      <!-- neck: graphite column, cables, a lime ring -->
+      <rect x="91" y="118" width="18" height="20" rx="5" fill="#1a1d18" />
+      <path d="M94 119 V137 M106 119 V137" stroke="#5d6063" stroke-width="2" />
+      <ellipse cx="100" cy="130" rx="11" ry="2.6" fill="none" stroke="#d9ff3f" stroke-width="2" filter={`url(#${uid}-glow)`} />
 
-      <!-- head: a smooth egg with a wide black glass face band -->
+      <!-- head: a helmet, white shell with a glossy black faceplate and lime-ringed ear modules -->
       <g class="robot__head">
-        <line x1="100" y1="41" x2="100" y2="31" stroke="#3a3f37" stroke-width="3.4" stroke-linecap="round" />
-        <circle class="robot__bead" cx="100" cy="26" r="5.5" fill="#d9ff3f" filter={`url(#${uid}-glow)`} />
-        <path d="M100 40 C140 40 163 62 163 88 C163 114 138 130 100 130 C62 130 37 114 37 88 C37 62 60 40 100 40 Z" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} stroke-width="1.6" />
-        <path d="M100 40 C140 40 163 62 163 88 C163 114 138 130 100 130 C62 130 37 114 37 88 C37 62 60 40 100 40 Z" fill={`url(#${uid}-sheen)`} />
-        <path d="M38 96 Q100 110 162 96" fill="none" stroke="#00000026" stroke-width="1.2" />
-        <rect x="45" y="64" width="110" height="44" rx="22" fill={`url(#${uid}-glass)`} stroke="#00000080" />
-        <path d="M58 70 Q80 64 104 65 L80 102 Q60 96 56 84 Z" fill="#ffffff" opacity=".06" />
+        <line x1="100" y1="38" x2="100" y2="31" stroke="#3a3f37" stroke-width="3" stroke-linecap="round" />
+        <circle class="robot__bead" cx="100" cy="29" r="3" fill="#d9ff3f" filter={`url(#${uid}-glow)`} />
+        <ellipse cx="100" cy="80" rx="44" ry="46" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} stroke-width="1.6" />
+        <ellipse cx="100" cy="80" rx="44" ry="46" fill={`url(#${uid}-sheen)`} />
+        <path d="M60 74 C60 52 78 40 100 40 C122 40 140 52 140 74 C140 96 128 112 100 112 C72 112 60 96 60 74 Z" fill={`url(#${uid}-glass)`} stroke="#3a3f37" stroke-width="1.6" />
+        <path d="M70 58 Q84 46 102 46 L76 96 Q64 84 66 70 Z" fill="#ffffff" opacity=".08" />
+        <rect x="50" y="68" width="10" height="24" rx="5" fill="#1a1d18" stroke="#d9ff3f" stroke-width="1.6" />
+        <rect x="140" y="68" width="10" height="24" rx="5" fill="#1a1d18" stroke="#d9ff3f" stroke-width="1.6" />
         <g class="robot__face" filter={`url(#${uid}-glow)`}>
           <g class="robot__eyes">
-            <rect class="robot__eye robot__eye--l" x="74" y="74" width="15" height="19" rx="7.5" fill={`url(#${uid}-led)`} />
-            <rect class="robot__eye robot__eye--r" x="111" y="74" width="15" height="19" rx="7.5" fill={`url(#${uid}-led)`} />
-            <circle cx="85" cy="78" r="1.8" fill="#ffffff" opacity=".8" class="robot__glint" />
-            <circle cx="122" cy="78" r="1.8" fill="#ffffff" opacity=".8" class="robot__glint" />
+            <rect class="robot__eye robot__eye--l" x="78" y="68" width="13" height="16" rx="6.5" fill={`url(#${uid}-led)`} />
+            <rect class="robot__eye robot__eye--r" x="109" y="68" width="13" height="16" rx="6.5" fill={`url(#${uid}-led)`} />
+            <circle cx="88" cy="71" r="1.6" fill="#ffffff" opacity=".8" class="robot__glint" />
+            <circle cx="119" cy="71" r="1.6" fill="#ffffff" opacity=".8" class="robot__glint" />
           </g>
-          <path class="robot__brow robot__brow--l" d="M72 70 L90 67" stroke="#d9ff3f" stroke-width="2.6" stroke-linecap="round" />
-          <path class="robot__brow robot__brow--r" d="M110 67 L128 70" stroke="#d9ff3f" stroke-width="2.6" stroke-linecap="round" />
+          <path class="robot__brow robot__brow--l" d="M76 62 L92 59" stroke="#d9ff3f" stroke-width="2.4" stroke-linecap="round" />
+          <path class="robot__brow robot__brow--r" d="M108 59 L124 62" stroke="#d9ff3f" stroke-width="2.4" stroke-linecap="round" />
           <g class="robot__mouth">
-            <rect x="90" y="98" width="4.5" height="4.5" rx="2.25" fill="#d9ff3f" />
-            <rect x="97.75" y="98" width="4.5" height="4.5" rx="2.25" fill="#d9ff3f" />
-            <rect x="105.5" y="98" width="4.5" height="4.5" rx="2.25" fill="#d9ff3f" />
+            <rect x="91" y="92" width="4" height="4" rx="2" fill="#d9ff3f" />
+            <rect x="98" y="92" width="4" height="4" rx="2" fill="#d9ff3f" />
+            <rect x="105" y="92" width="4" height="4" rx="2" fill="#d9ff3f" />
           </g>
         </g>
-        <text class="robot__q" x="166" y="46">?</text>
+        <text class="robot__q" x="150" y="44">?</text>
       </g>
-      <!-- right hand (viewer's right): waves, points and offers itself to you -->
+      <!-- shoulder caps over the arms' tops -->
+      <ellipse cx="55.5" cy="152" rx="15" ry="13" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
+      <!-- right arm (viewer's right): waves, points and offers his hand -->
       <g class="robot__arm robot__arm--r">
-        <g transform="translate(144.5 190) scale(1.35) translate(-144.5 -190)">
-        <ellipse cx="144.5" cy="180" rx="10" ry="3.2" fill="none" stroke="#d9ff3f" stroke-width="2" filter={`url(#${uid}-glow)`} />
-        <rect class="robot__finger" x="141" y="198" width="7" height="16" rx="3.5" fill={`url(#${uid}-shell)`} stroke="#d9ff3f" />
-        <g class="robot__fist">
-          <rect x="135" y="182" width="19" height="22" rx="9" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
-          <rect x="151.5" y="186" width="6" height="11" rx="3" fill={`url(#${uid}-shell)`} stroke="#ffffff24" />
-        </g>
+        <rect x="135" y="150" width="20" height="36" rx="10" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
+        <rect x="137" y="184" width="16" height="6" rx="3" fill="#1a1d18" />
+        <rect x="136.5" y="188" width="17" height="10" rx="5" fill={`url(#${uid}-shell)`} stroke="#ffffff24" />
+        <rect class="robot__finger" x="141.5" y="206" width="6" height="16" rx="3" fill="#1a1d18" stroke="#d9ff3f" />
+        <rect class="robot__fist" x="137.5" y="196" width="15" height="14" rx="6" fill="#1a1d18" stroke="#ffffff2e" />
         <g class="robot__hand">
-          <rect class="robot__thumb" x="131" y="190" width="5.5" height="12" rx="2.75" fill={`url(#${uid}-shell)`} stroke="#ffffff30" />
-          <rect class="robot__digit" x="136.4" y="200" width="5" height="13" rx="2.5" fill={`url(#${uid}-shell)`} stroke="#ffffff30" />
-          <rect class="robot__digit" x="142" y="201" width="5" height="14" rx="2.5" fill={`url(#${uid}-shell)`} stroke="#ffffff30" />
-          <rect class="robot__digit" x="147.6" y="200" width="5" height="13" rx="2.5" fill={`url(#${uid}-shell)`} stroke="#ffffff30" />
-          <rect x="134.5" y="183" width="20" height="19" rx="8" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
-          <circle class="robot__palm" cx="144.5" cy="192.5" r="3.6" fill="#d9ff3f" filter={`url(#${uid}-glow)`} />
-        </g>
+          <rect class="robot__thumb" x="131" y="196" width="5" height="11" rx="2.5" fill="#1a1d18" stroke="#ffffff33" />
+          <rect class="robot__digit" x="136.6" y="205" width="4.2" height="12" rx="2.1" fill="#1a1d18" stroke="#ffffff33" />
+          <rect class="robot__digit" x="142.3" y="206" width="4.2" height="13" rx="2.1" fill="#1a1d18" stroke="#ffffff33" />
+          <rect class="robot__digit" x="148" y="205" width="4.2" height="12" rx="2.1" fill="#1a1d18" stroke="#ffffff33" />
+          <rect x="135" y="194" width="19" height="14" rx="6" fill="#1a1d18" stroke="#ffffff33" />
+          <circle class="robot__palm" cx="144.5" cy="201" r="3.2" fill="#d9ff3f" filter={`url(#${uid}-glow)`} />
         </g>
       </g>
+      <ellipse cx="144.5" cy="152" rx="15" ry="13" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
     </g>
   </svg>
   <span class="robot__beam" aria-hidden="true"></span>
@@ -128,18 +131,18 @@ const uid = `${id}-${size}`;
   .robot__finger { opacity: 0; }
   .robot__hand { opacity: 0; }
   .robot__body, .robot__head, .robot__arm, .robot__eyes, .robot__eye, .robot__mouth, .robot__mouth rect, .robot__brow, .robot__q, .robot__finger, .robot__digit, .robot__thumb, .robot__hand, .robot__fist { transform-box: view-box; }
-  .robot__digit { transform-origin: center 201px; }
-  .robot__thumb { transform-origin: 134px 193px; }
-  .robot__hand { transform-origin: 144.5px 194px; }
+  .robot__digit { transform-origin: center 205px; }
+  .robot__thumb { transform-origin: 134px 197px; }
+  .robot__hand { transform-origin: 144.5px 198px; }
   .robot__svg { transform-origin: 50% 90%; }
-  .robot__head { transform-origin: 100px 128px; }
+  .robot__head { transform-origin: 100px 124px; }
   .robot__arm--l { transform-origin: 55.5px 152px; }
   .robot__arm--r { transform-origin: 144.5px 152px; }
   .robot__eyes { transform: translate(var(--ex), var(--ey)); }
-  .robot__eye--l { transform-origin: 81.5px 84.5px; }
-  .robot__eye--r { transform-origin: 118.5px 84.5px; }
-  .robot__mouth { transform-origin: 100px 105.5px; }
-  .robot__mouth rect { transform-origin: center 105.5px; }
+  .robot__eye--l { transform-origin: 84.5px 76px; }
+  .robot__eye--r { transform-origin: 115.5px 76px; }
+  .robot__mouth { transform-origin: 100px 94px; }
+  .robot__mouth rect { transform-origin: center 94px; }
   .robot[data-blink] .robot__glint, .robot[data-state='cheeky'] .robot__glint, .robot[data-state='confused'] .robot__glint { opacity: 0; }
   .robot[data-blink] .robot__eye { transform: scaleY(.12); }
 
