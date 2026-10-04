@@ -1,21 +1,22 @@
 ---
 /* Site-wide command menu (⌘K / Ctrl+K, or the header button): pages, case
-   studies, questions for the homepage chat and a few actions. A native
-   <dialog> with a combobox + listbox; links still work without it. */
+   studies, Otto's written answers (Ask Otto: each opens the homepage chat at
+   that answer, never free text) and a few actions. A native <dialog> with a
+   combobox + listbox; links still work without it. */
 import { navigation, site } from '../data/site';
 import { intents } from '../data/agent';
 import { projects } from '../data/projects';
 
 type Item = { group: string; label: string; hint: string; href?: string; ask?: string; action?: string; keywords?: string; external?: boolean };
 const items: Item[] = [
-  { group: 'Pages', label: 'Home', hint: 'Ask me anything', href: '/index.html', keywords: 'start chat agent' },
+  { group: 'Pages', label: 'Home', hint: 'Talk to Otto', href: '/index.html', keywords: 'start chat otto robot' },
   ...navigation.map(item => ({ group: 'Pages', label: item.label, hint: item.href.replace('/', ''), href: item.href })),
   { group: 'Pages', label: 'Contact', hint: 'contact.html', href: '/contact.html', keywords: 'email message' },
   ...projects.map(project => ({ group: 'Work', label: project.name, hint: project.org, href: project.href, keywords: `${project.stack.join(' ')} ${project.role}` })),
   { group: 'Work', label: 'Lesson enquiry', hint: 'Tutoring', href: '/tutoring.html#lesson-enquiry', keywords: 'gcse a-level maths physics tutor book' },
   { group: 'Work', label: 'Skills & evidence', hint: 'Capability matrix', href: '/index.html#skills-title', keywords: 'python stack matrix' },
   ...['katana', 'nookbase', 'inos', 'bitget', 'bp'].map(id => projects.find(project => project.id === id)!).filter(Boolean).map(project => ({ group: 'Inside', label: `Inside ${project.name}`, hint: 'Otto’s tour', href: `/inside/${project.id}.html`, keywords: `tour otto ${project.org}` })),
-  ...intents.map(intent => ({ group: 'Ask Otto', label: intent.ask, hint: 'Answer in the chat', ask: intent.id, keywords: (intent.strong ?? []).slice(0, 6).join(' ') })),
+  ...intents.map(intent => ({ group: 'Ask Otto', label: intent.ask, hint: 'Answer in the chat', ask: intent.id, keywords: (intent.keywords ?? []).join(' ') })),
   { group: 'Actions', label: 'Copy email address', hint: site.email, action: 'copy-email', keywords: 'mail contact' },
   { group: 'Actions', label: 'Download CV (PDF)', hint: 'Opens in a new tab', href: '/Omar-Aboelella-CV.pdf', external: true, keywords: 'resume' },
   { group: 'Actions', label: 'Switch colour theme', hint: 'Light / dark', action: 'theme', keywords: 'dark light mode' },
@@ -26,7 +27,7 @@ const items: Item[] = [
 <dialog class="palette" data-palette aria-label="Command menu">
   <div class="palette__search">
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.75" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-    <input type="text" data-palette-input role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Search pages, questions and actions" placeholder="Search, or ask a question…" autocomplete="off" spellcheck="false" />
+    <input type="text" data-palette-input role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Search pages, questions and actions" placeholder="Search pages, projects and questions…" autocomplete="off" spellcheck="false" />
     <button type="button" class="palette__esc" data-palette-close aria-label="Close command menu">Esc</button>
   </div>
   <ul class="palette__list" id="palette-list" role="listbox" aria-label="Results" data-palette-list>
@@ -37,11 +38,6 @@ const items: Item[] = [
         <span class="palette__hint">{item.hint}</span>
       </li>
     ))}
-    <li id="palette-free" role="option" aria-selected="false" class="palette__item" data-free hidden>
-      <span class="palette__group" aria-hidden="true">Ask Otto</span>
-      <span class="palette__label" data-free-label></span>
-      <span class="palette__hint">Ask Otto in the chat</span>
-    </li>
   </ul>
   <p class="palette__foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></p>
   <p class="sr-only" role="status" data-palette-status></p>

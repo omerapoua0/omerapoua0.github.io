@@ -41,11 +41,16 @@ required. This is a static portfolio, not a hosted backend.
     slow-device bail-out, offscreen/hidden-tab pause, `window.__otto` debug).
   - SVG Otto: `Robot.astro` + `robot.ts` (poses via `otto:state`); the poster
     before 3D arrives and the fallback everywhere 3D is not used.
-  - Brain: `src/data/otto.ts` + `src/data/agent.ts` (third-person answers,
-    follow-up details, social replies, inside cards) and
-    `src/scripts/otto-brain.ts` (typo snapping, small talk/troll handling,
-    context, multi-intent) via `agent-match.ts`. `otto-chat.ts`: greeting after
-    Otto lands, mood dialogue, streaming, persistence, `?ask=`, slash commands.
+  - Conversation, choice-only (visitors never type, so Otto never meets
+    "idk" or anything he can't answer): `src/data/agent.ts` (third-person
+    answers, cards, sources) + `src/data/otto.ts` (greeting, moods, follow-up
+    details, fact-free social lines, inside cards and the choice tree:
+    `reply(node)` gives Otto's line, pose and the next choices). `otto-chat.ts`:
+    greeting after Otto lands, choices as real buttons where a composer would
+    be (2 per row, 44px+), streaming, focus to the first new choice, polite
+    status, persistence of the transcript and last choices, `?ask=<intent id>`
+    (anything else is ignored). Back from a tour: "Back from the inside! Where
+    next?" with the other projects.
   - Hand-off: `otto-handoff.ts`. For a project, Otto offers his hand next to
     a real "Take Otto's hand" button (+ "Stay here", Esc). A 4 s countdown
     runs only with motion on and pauses on hover/focus. Take: grab, pull, the
@@ -53,12 +58,14 @@ required. This is a static portfolio, not a hosted backend.
     opens and the browser navigates to `/inside/<id>.html`, morphing via the
     shared `view-transition-name: portal` where supported.
   - Events: `otto:state|say|anchor|palm|handoff|handoff-done|ready|landed|fail|mode`,
-    `omar:motion|ask|sound`.
+    `omar:motion|ask|sound` (`omar:ask` takes `{ id }` of an intent; free
+    text is ignored).
 - Inside tours: `src/pages/inside/[id].astro` + `inside.ts` (six chapters
   narrated by Otto, chapter rail, Back to Otto/Esc, Otto docked).
 - `hero-motion.ts` is the "Pause motion" switch (`html[data-motion]`,
   `omar:motion`, remembered per session). `CommandPalette.astro` +
-  `palette.ts`: site-wide ⌘K/Ctrl+K menu (pages, inside tours, Ask Otto).
+  `palette.ts`: site-wide ⌘K/Ctrl+K menu (pages, inside tours, Ask Otto
+  items that open a written answer; no free-text ask).
   `Ticker.astro`, `Stats.astro`, `Orbit.astro` (3D project ring), `Columns`,
   `slider.ts`, `fx.ts`, `cursor.ts`, `[data-reveal]` scroll reveals.
   `ProjectIndex` (filters, list/grid switch), `CaseStudy`, `ProjectMedia`
@@ -74,14 +81,18 @@ keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 The hero has no stock video (the user rejected it as generic). Otto must stay
 light for everyone: the 3D chunk never loads before `load`, never on refused
 or software WebGL, Save-Data or low-memory devices, and the SVG Otto is always
-a complete experience. The chat is scripted and must say so: keep the
-disclosure under the composer, never call a model or send what visitors type
-anywhere, keep every answer within the CV and `src/data/*.ts` facts with a
-source link, and keep the honest fallback for anything not written. After
-changing intents, rerun the routing check (`scripts/otto-questions.json`, 150+
-cases). Keep the visible "Pause motion" switch (WCAG 2.2.2), reduced-motion
-instant answers, offscreen/hidden-tab pausing, and readable content without
-JavaScript (intro answer and links).
+a complete experience. The chat is scripted, choice-only and must say so:
+no text box anywhere in the hero, keep the disclosure under the choices
+("Answers written by Omar. No AI model; nothing you choose leaves this
+page."), never call a model or send anything anywhere, and keep every answer
+within the CV and `src/data/*.ts` facts with a source link. After changing
+intents or the tree in `otto.ts`, rerun the QA crawler (`otto: breadth-first
+crawl`): every reply offers 2–6 choices (conversation 2–4, menus of places up
+to 6), labels of at most 30 characters, no duplicates in a set, a way back to
+the topics, and every intent reachable within 4 choices. Keep the visible
+"Pause motion" switch (WCAG 2.2.2), reduced-motion instant answers,
+offscreen/hidden-tab pausing, and readable content without JavaScript (intro
+answer and links).
 
 The project index must keep server-rendered links that work without JS,
 keyboard focus parity with hover, and no scroll hijacking. Concept visuals stay

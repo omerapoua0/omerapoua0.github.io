@@ -1,8 +1,9 @@
 /*
  * Command menu: ⌘K / Ctrl+K (or any [data-palette-open] button) opens a native
  * <dialog>. Typing filters with a forgiving subsequence match; ↑/↓ move,
- * Enter runs. "Ask Omar" items answer in the homepage chat (or open the
- * homepage with ?ask=). Free text that matches nothing can be asked directly.
+ * Enter runs. "Ask Otto" items open one of Otto's written answers in the
+ * homepage chat (or the homepage with ?ask=<intent id>). There is no free-text
+ * ask: Otto only answers what Omar wrote.
  */
 const dialog = document.querySelector<HTMLDialogElement>('[data-palette]');
 const input = dialog?.querySelector<HTMLInputElement>('[data-palette-input]');
@@ -10,9 +11,7 @@ const list = dialog?.querySelector<HTMLElement>('[data-palette-list]');
 
 if (dialog && input && list && typeof dialog.showModal === 'function') {
   const status = dialog.querySelector<HTMLElement>('[data-palette-status]')!;
-  const items = [...list.querySelectorAll<HTMLElement>('[role="option"]:not([data-free])')];
-  const free = list.querySelector<HTMLElement>('[data-free]')!;
-  const freeLabel = free.querySelector<HTMLElement>('[data-free-label]')!;
+  const items = [...list.querySelectorAll<HTMLElement>('[role="option"]')];
   const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   document.querySelectorAll('[data-palette-key]').forEach(key => { key.textContent = mac ? '⌘K' : 'Ctrl K'; });
   const openers = [...document.querySelectorAll<HTMLButtonElement>('[data-palette-open]')];
@@ -56,12 +55,9 @@ if (dialog && input && list && typeof dialog.showModal === 'function') {
     const shown = new Set(ranked.map(entry => entry.item));
     items.forEach(item => { item.hidden = !shown.has(item); });
     ranked.forEach(entry => list.append(entry.item));
-    free.hidden = !query;
-    freeLabel.textContent = `“${input.value.trim()}”`;
-    list.append(free);
-    visible = [...ranked.map(entry => entry.item), ...(query ? [free] : [])];
+    visible = ranked.map(entry => entry.item);
     setActive(0);
-    status.textContent = query ? `${ranked.length} result${ranked.length === 1 ? '' : 's'}.` : '';
+    status.textContent = query ? (ranked.length ? `${ranked.length} result${ranked.length === 1 ? '' : 's'}.` : 'No results.') : '';
   };
 
   const open = () => {
@@ -76,13 +72,6 @@ if (dialog && input && list && typeof dialog.showModal === 'function') {
   const run = async (item: HTMLElement | undefined) => {
     if (!item) return;
     const onHome = !!document.querySelector('[data-chat]');
-    if (item.hasAttribute('data-free')) {
-      const question = input.value.trim();
-      close();
-      if (onHome) window.dispatchEvent(new CustomEvent('omar:ask', { detail: { text: question } }));
-      else location.href = `/index.html?ask=${encodeURIComponent(question)}`;
-      return;
-    }
     const { href, ask, action } = item.dataset;
     if (ask) {
       close();

@@ -1,39 +1,37 @@
 /*
- * Otto's chat. Greets first-time visitors, keeps a little context (the last
- * topic, whether he just asked how you are), answers from src/data/otto.ts via
- * otto-brain.ts, drives the robot's poses ('otto:state') and, for projects,
- * says "let me take you inside", points, goes "pew" and navigates to
- * /inside/<id>.html (with a "Stay here" escape). Nothing leaves the page.
+ * Otto's chat, choice-only. Visitors never type: every reply Otto gives ends
+ * with real buttons for what they can say next, so he can never meet a message
+ * he doesn't understand. The conversation (src/data/otto.ts `reply()`) is built
+ * from answers Omar wrote (src/data/agent.ts). Otto greets first-time visitors
+ * once he has landed, streams each reply (instantly with reduced motion or
+ * Pause motion), drives the robot's poses ('otto:state') and speech bubble
+ * ('otto:say') and, for a project, offers his hand (otto-handoff.ts). The
+ * transcript and the last choices are remembered in this browser only.
+ * `?ask=<intent id>` and `omar:ask` ({ id }) start from an intent; anything
+ * else is ignored.
  */
-import { commands, type AgentCard } from '../data/agent';
-import { otto, ottoIntents, social, ottoFallback, leads, insideCard, insideInfo, type Mood, type OttoIntent } from '../data/otto';
+import type { AgentCard } from '../data/agent';
+import { otto, ottoIntents, reply, nodeFor, insideCard, insideInfo, insideIds, type Choice, type Mood, type OttoIntent, type Reply } from '../data/otto';
 import { handoff } from './otto-handoff';
-import { createBrain, type Context, type Reply } from './otto-brain';
 
-type Chip = { ask?: string; say?: string; label: string };
-type Said = { kind: 'intent' | 'detail' | 'social' | 'miss' | 'help' | 'say'; text: string; id?: string; also?: string; near?: string[]; chips?: string[]; greeting?: boolean };
-type Turn = { you: string } | Said;
+type Turn = { you: string } | { node: string; text: string };
 
 const chat = document.querySelector<HTMLElement>('[data-otto]');
 const log = chat?.querySelector<HTMLElement>('[data-chat-log]');
-const form = chat?.querySelector<HTMLFormElement>('[data-chat-form]');
-const input = chat?.querySelector<HTMLInputElement>('[data-chat-input]');
-const chipRow = chat?.querySelector<HTMLElement>('[data-chat-chips]');
+const choiceBox = chat?.querySelector<HTMLElement>('[data-chat-choices]');
 
-if (chat && log && form && input && chipRow) {
+if (chat && log && choiceBox) {
   const root = document.documentElement;
   const status = chat.querySelector<HTMLElement>('[data-chat-status]')!;
-  const hint = chat.querySelector<HTMLElement>('[data-chat-hint]');
-  const hintDefault = [...(hint?.childNodes ?? [])];
   const jump = chat.querySelector<HTMLButtonElement>('[data-chat-jump]')!;
   const clearButton = chat.querySelector<HTMLButtonElement>('[data-chat-clear]')!;
   const soundButton = chat.querySelector<HTMLButtonElement>('[data-chat-sound]')!;
   const greetingNode = chat.querySelector<HTMLElement>('[data-greeting]');
   const byId = new Map(ottoIntents.map(intent => [intent.id, intent]));
-  const brain = createBrain(ottoIntents);
+  const projects = new Set<string>(insideIds);
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const instant = () => reduce.matches || root.dataset.motion === 'off';
-  const storeKey = 'otto-chat-v1';
+  const storeKey = 'otto-chat-v2';
   const store = {
     get<T>(key: string, fallbackValue: T): T { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallbackValue; } catch { return fallbackValue; } },
     set(key: string, value: unknown) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable */ } },
@@ -41,19 +39,20 @@ if (chat && log && form && input && chipRow) {
   };
   const session = {
     take(key: string) { try { const value = sessionStorage.getItem(key); sessionStorage.removeItem(key); return value; } catch { return null; } },
-    set(key: string, value: string) { try { sessionStorage.setItem(key, value); } catch { /* storage unavailable */ } },
   };
+  // Earlier versions kept what visitors typed; there is no typing any more, so forget it.
+  store.drop('otto-chat-v1');
+  store.drop('otto-history');
 
-  const saved = store.get<{ turns: Turn[]; ctx: Context }>(storeKey, { turns: [], ctx: {} });
-  let turns: Turn[] = Array.isArray(saved.turns) ? saved.turns : [];
-  let ctx: Context = saved.ctx && typeof saved.ctx === 'object' ? saved.ctx : {};
+  const saved = store.get<{ turns?: unknown; n?: unknown }>(storeKey, {});
+  const valid = (turn: unknown): turn is Turn => !!turn && typeof turn === 'object' && (typeof (turn as { you?: unknown }).you === 'string' || (typeof (turn as { node?: unknown }).node === 'string' && typeof (turn as { text?: unknown }).text === 'string' && !!reply((turn as { node: string }).node)));
+  let turns: Turn[] = Array.isArray(saved.turns) ? saved.turns.filter(valid) : [];
+  let replies = Number.isFinite(saved.n) ? Number(saved.n) : 0; // Otto's replies so far (varies his phrasing)
   let busy = false;
   let skip = false;
-  let leadIndex = 0;
+  let queued: (() => void) | null = null; // one action waiting for Otto to finish (a menu ask, Clear)
   let greetingDone = true; // false while the first-visit greeting is still playing
   let greetingSecond: HTMLElement | null = null; // the greeting's second bubble, once it exists
-  const history: string[] = store.get<string[]>('otto-history', []);
-  let historyIndex = history.length;
 
   /* ---------- helpers ---------- */
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
@@ -63,17 +62,29 @@ if (chat && log && form && input && chipRow) {
     return node;
   };
   const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, instant() || skip ? 0 : ms));
-  const robot = (state: Mood | 'pew' | 'welcome', ms = 0) => window.dispatchEvent(new CustomEvent('otto:state', { detail: { state, ms } }));
-  const pick = <T>(list: T[]) => list[Math.floor(Math.random() * list.length)];
+  const robot = (state: Mood | 'welcome', ms = 0) => window.dispatchEvent(new CustomEvent('otto:state', { detail: { state, ms } }));
+  const speak = (text: string) => window.dispatchEvent(new CustomEvent('otto:say', { detail: { text } }));
   const nearBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 90;
+  // Following a reply never scrolls past the top of Otto's latest turn, so a
+  // long answer stays readable from its first line on a small phone.
+  let anchor: HTMLElement | null = null;
+  const ceiling = () => (anchor?.isConnected ? Math.max(0, anchor.offsetTop - 12) : Infinity);
   let stick = true;
-  log.addEventListener('scroll', () => { stick = nearBottom(); if (stick) jump.hidden = true; }, { passive: true });
-  const follow = () => { if (stick) { log.scrollTop = log.scrollHeight; jump.hidden = true; } else jump.hidden = false; };
+  log.addEventListener('scroll', () => { stick = nearBottom() || Math.abs(log.scrollTop - ceiling()) < 4; if (stick) jump.hidden = true; }, { passive: true });
+  const follow = () => { if (stick) { log.scrollTop = Math.min(log.scrollHeight, ceiling()); jump.hidden = true; } else jump.hidden = false; };
   jump.addEventListener('click', () => { stick = true; log.scrollTo({ top: log.scrollHeight, behavior: instant() ? 'auto' : 'smooth' }); jump.hidden = true; });
   const londonTime = () => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date());
   const fill = (text: string) => text.replace('{time}', londonTime());
   const absolute = (href: string) => new URL(href, location.origin).href;
-  const save = () => store.set(storeKey, { turns: turns.slice(-40), ctx });
+  const save = () => store.set(storeKey, { turns: turns.slice(-40), n: replies });
+  const lastNode = () => [...turns].reverse().find((turn): turn is { node: string; text: string } => 'node' in turn)?.node ?? 'hello';
+  /** Resolves once Otto has landed (or the SVG Otto is standing in), at most 4.2 s. */
+  const landed = () => new Promise<void>(resolve => {
+    const done = () => { window.removeEventListener('otto:landed', done); window.clearTimeout(cap); resolve(); };
+    const cap = window.setTimeout(done, 4200);
+    window.addEventListener('otto:landed', done);
+    if (!document.querySelector('[data-otto-stage][data-stage-mode="hero"]:not([data-landed])')) done();
+  });
 
   /* ---------- opt-in sound ---------- */
   let audio: AudioContext | undefined;
@@ -104,14 +115,6 @@ if (chat && log && form && input && chipRow) {
   labelSound();
 
   /* ---------- rendering ---------- */
-  const toolRow = (call: string, out: string, state: 'run' | 'done' | 'miss') => {
-    const row = el('div', 'tool');
-    row.dataset.state = state;
-    row.innerHTML = '<svg class="tool__icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5 8.2 7.1 10.3 11 6"/></svg>';
-    row.append(el('code', undefined, call), el('span', 'tool__out', state === 'run' ? '' : out));
-    return row;
-  };
-  const finishTool = (row: HTMLElement, out: string, state: 'done' | 'miss') => { row.dataset.state = state; row.querySelector('.tool__out')!.textContent = out; };
   const cardRow = (cards: AgentCard[]) => {
     const row = el('div', 'cards');
     cards.forEach(card => {
@@ -160,29 +163,28 @@ if (chat && log && form && input && chipRow) {
     return foot;
   };
 
-  const chipsFor = (said: Said | undefined): Chip[] => {
-    if (!said) return otto.greetingChips.map(chip => ({ say: chip.text, label: chip.label }));
-    if (said.greeting) return otto.greetingChips.map(chip => ({ say: chip.text, label: chip.label }));
-    const ids = said.chips ?? (said.kind === 'intent' || said.kind === 'detail' ? [...(said.also ? [said.also] : []), ...(byId.get(said.id ?? '')?.follow ?? [])] : said.near ?? otto.topics);
-    return [...new Set(ids)].slice(0, said.kind === 'say' ? 6 : 4).map(id => byId.get(id)).filter((intent): intent is OttoIntent => !!intent).map(intent => ({ ask: intent.id, label: intent.ask }));
-  };
-  const setChips = (chips: Chip[]) => {
-    const hadFocus = chipRow.contains(document.activeElement);
-    chipRow.replaceChildren(...chips.map(chip => {
-      const button = el('button', 'chat__chip', chip.label);
+  /** Show a set of choices where the composer used to be. */
+  const setChoices = (choices: Choice[], focus = false) => {
+    choiceBox.replaceChildren(...choices.map((item, index) => {
+      const button = el('button', 'otto-choice');
       button.type = 'button';
-      if (chip.ask) button.dataset.ask = chip.ask; else if (chip.say) button.dataset.say = chip.say;
+      button.dataset.to = item.to;
+      if (item.kind) button.dataset.kind = item.kind;
+      button.style.setProperty('--i', String(index));
+      button.append(el('span', 'otto-choice__label', item.label));
       return button;
     }));
-    chipRow.scrollLeft = 0;
-    if (hadFocus) chipRow.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
+    if (focus) choiceBox.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
+    follow();
   };
-  const lastSaid = () => [...turns].reverse().find((turn): turn is Said => !('you' in turn));
   const setBusy = (state: boolean) => {
     busy = state;
     chat.toggleAttribute('data-busy', state);
+    choiceBox.toggleAttribute('data-busy', state);
     log.setAttribute('aria-busy', String(state));
-    chipRow.querySelectorAll('button').forEach(button => { button.disabled = state; });
+    // aria-disabled, not disabled: the chosen button keeps keyboard focus while Otto answers.
+    choiceBox.querySelectorAll('button').forEach(button => { if (state) button.setAttribute('aria-disabled', 'true'); else button.removeAttribute('aria-disabled'); });
+    if (!state && queued) { const next = queued; queued = null; next(); }
   };
 
   const streamInto = async (target: HTMLElement, text: string, stop?: () => boolean) => {
@@ -200,124 +202,81 @@ if (chat && log && form && input && chipRow) {
     const turn = el('div', 'turn turn--you');
     turn.append(el('p', 'bubble', text));
     log.append(turn);
+    anchor = turn;
     stick = true;
     follow();
   };
   const bubble = (turn: HTMLElement) => { const box = el('div', 'bubble'); const p = el('p'); box.append(p); turn.append(box); return p; };
 
-  /** Render one Otto turn. live = trace + streaming; otherwise it appears complete. */
-  const ottoTurn = async (said: Said, live: boolean, query = '', shortLine?: string) => {
+  /** Render one Otto reply. live: a typing pause, the bubble and pose, then streaming. */
+  const ottoTurn = async (said: Reply, text: string, live: boolean) => {
     const turn = el('div', 'turn turn--agent');
+    turn.dataset.node = said.id;
+    if (said.intent) turn.dataset.intent = said.intent;
     log.append(turn);
-    const intent = said.id ? byId.get(said.id) : undefined;
-    const traced = said.kind === 'intent' || said.kind === 'detail' || said.kind === 'miss';
-    if (traced) {
-      const trace = el('div', 'chat__tools-run');
-      turn.append(trace);
-      if (live) {
-        const search = toolRow(`search_answers(${JSON.stringify((query || intent?.ask || '').slice(0, 40))})`, '', 'run');
-        trace.append(search); follow();
-        robot('think');
-        await sleep(360);
-        if (intent) {
-          finishTool(search, '1 match', 'done');
-          const open = toolRow(said.kind === 'detail' ? `read_detail("${intent.id}")` : intent.tool, '', 'run');
-          trace.append(open); follow();
-          await sleep(220);
-          finishTool(open, 'ok', 'done');
-        } else finishTool(search, '0 matches', 'miss');
-      } else if (intent) trace.append(toolRow(intent.tool, 'ok', 'done'));
-      else trace.append(toolRow('search_answers(…)', '0 matches', 'miss'));
-    } else if (live) {
-      const typing = el('p', 'thinking', 'Otto is typing…');
-      turn.append(typing); follow();
-      await sleep(420);
-      typing.remove();
+    // Keep the visitor's choice (or, failing that, the start of the reply) in view.
+    const before = turn.previousElementSibling as HTMLElement | null;
+    anchor = before?.classList.contains('turn--you') ? before : turn;
+    if (live && !instant()) {
+      const dots = el('p', 'typing');
+      dots.setAttribute('aria-hidden', 'true');
+      dots.append(el('i'), el('i'), el('i'));
+      turn.append(dots); follow();
+      robot(said.intent ? 'think' : 'talk');
+      await sleep(said.intent ? 420 : 300);
+      dots.remove();
     }
     const paragraph = bubble(turn);
-    const shown = shortLine ?? said.text;
     if (live) {
-      window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: shown } }));
-      const mood = said.kind === 'social' ? social[said.id as keyof typeof social]?.mood : said.kind === 'miss' ? 'confused' : 'talk';
-      robot(mood === 'cheeky' || mood === 'confused' ? mood : 'talk');
-      await streamInto(paragraph, shown);
-      robot(mood === 'wave' ? 'wave' : mood === 'cheeky' || mood === 'confused' ? mood : 'idle', 1400);
-    } else paragraph.textContent = shown;
-    if (shortLine) { follow(); return turn; }
-
-    if (said.kind === 'help') {
-      const list = el('div', 'cards');
-      commands.forEach(command => {
-        const button = el('button', 'chat__chip', `${command.name} · ${command.hint}`);
-        button.type = 'button';
-        button.dataset.command = command.name;
-        list.append(button);
-      });
-      turn.append(list);
+      speak(text);
+      robot(said.pose === 'cheeky' || said.pose === 'confused' ? said.pose : 'talk');
+      await streamInto(paragraph, text);
+      // A hand-off sets its own pose (the offered hand).
+      if (!said.handoff) robot(said.pose === 'wave' || said.pose === 'cheeky' ? said.pose : 'idle', 1400);
+    } else paragraph.textContent = text;
+    const intent = said.intent ? byId.get(said.intent) : undefined;
+    if (intent) {
+      if (said.cards) { const cards = cardsFor(intent); if (cards.length) turn.append(cardRow(cards)); }
+      turn.append(footFor(intent, text));
     }
-    if (intent && (said.kind === 'intent' || said.kind === 'detail')) {
-      const cards = cardsFor(intent);
-      if (cards.length) turn.append(cardRow(cards));
-      turn.append(footFor(intent, said.text));
-    }
-    if (said.kind === 'miss') turn.append(cardRow([{ title: 'Ask Omar directly', meta: 'Prepares an email you send', href: '/contact.html?topic=Hello' }]));
     follow();
     return turn;
   };
 
-  /* ---------- answering ---------- */
-  const say = async (said: Said, query: string) => {
+  /** Otto answers (after the visitor's choice, if any), offers his hand for a project, then shows what comes next. */
+  const respond = async (to: string, you?: string, focus = false) => {
+    const answer = reply(to, replies);
+    if (!answer) return;
+    finishGreeting();
     setBusy(true);
     skip = false;
+    if (you) { youTurn(you); turns.push({ you }); blip([880]); }
     status.textContent = 'Otto is answering…';
-    const intent = said.id ? byId.get(said.id) : undefined;
-    turns.push(said); save();
-    if (said.kind === 'intent' && intent?.inside) {
-      const name = intent.ask.replace(/^(Show me|What’s|What's|What did Omar do (on|at)|What did Omar build at)\s*/i, '').replace(/\?$/, '') || intent.id;
-      const line = `${said.text.startsWith('Language') ? 'Language! But fine. ' : ''}${name}? Good choice. Let me take you inside.`;
-      const turn = await ottoTurn(said, true, query, line);
-      const info = insideInfo(intent.id) ?? { name: intent.id };
+    let shown = answer;
+    let text = fill(answer.text);
+    // Saved before streaming, so a transcript always ends with Otto's reply.
+    turns.push({ node: answer.id, text }); replies += 1; save();
+    const turn = await ottoTurn(answer, text, true);
+    if (answer.handoff) {
       // otto-handoff stores 'otto-inside' only once the visitor actually takes his hand.
-      const choice = await handoff(intent.id, info);
-      if (choice === 'take') return;
+      const choice = await handoff(answer.handoff.id, insideInfo(answer.handoff.id) ?? { name: answer.handoff.id });
+      if (choice === 'take') return; // leaving for the tour; a back/forward restore resets us
       status.textContent = 'Staying here.';
       turn.remove();
-      await ottoTurn(said, false);
-    } else {
-      await ottoTurn(said, true, query);
+      turns.pop();
+      shown = reply(answer.handoff.stay, replies)!;
+      text = fill(shown.text);
+      turns.push({ node: shown.id, text }); replies += 1; save();
+      await ottoTurn(shown, text, true);
     }
-    ctx = { ...ctx, recent: [...(ctx.recent ?? []), query.toLowerCase()].slice(-3) };
-    if (said.kind === 'intent' || said.kind === 'detail') ctx.focus = said.id;
-    save();
-    status.textContent = `Otto: ${said.text}`;
-    setChips(chipsFor(said));
+    status.textContent = `Otto: ${text}`;
+    setChoices(shown.choices, focus || choiceBox.contains(document.activeElement));
     clearButton.hidden = false;
     setBusy(false);
     blip([660, 990]);
   };
 
-  const replyFor = (reply: Reply): Said => {
-    if (reply.kind === 'intent') {
-      const intent = byId.get(reply.id)!;
-      const lead = reply.prefix ?? leads[leadIndex++ % leads.length];
-      const also = reply.also && byId.get(reply.also) ? ` You also asked about ${byId.get(reply.also)!.ask.replace(/\?$/, '')}: tap it below.` : '';
-      return { kind: 'intent', id: intent.id, text: `${lead}${fill(intent.answer)}${also}`, also: reply.also };
-    }
-    if (reply.kind === 'detail') {
-      const intent = byId.get(reply.id)!;
-      const text = intent.detail?.[reply.part] ?? intent.detail?.more ?? `That’s everything I know about that. The sources below have the rest.`;
-      return { kind: 'detail', id: intent.id, text };
-    }
-    if (reply.kind === 'social') {
-      const entry = social[reply.id];
-      ctx.awaiting = entry.awaitMood ? 'mood' : undefined;
-      if (reply.then === 'topics') return { kind: 'say', text: `${pick(entry.replies)} ${otto.topicLead}`, chips: otto.topics };
-      return { kind: 'social', id: reply.id, text: pick(entry.replies), chips: entry.chips.length ? entry.chips : undefined, greeting: entry.awaitMood };
-    }
-    return { kind: 'miss', text: ottoFallback.text, near: reply.near };
-  };
-
-  /** If the visitor speaks before Otto finished saying hello, finish it at once. */
+  /** If the visitor chooses before Otto finished saying hello, finish it at once. */
   const finishGreeting = () => {
     if (greetingDone) return;
     greetingDone = true;
@@ -325,89 +284,38 @@ if (chat && log && form && input && chipRow) {
     if (greetingNode) greetingNode.textContent = greetingSecond ? otto.greeting[0] : otto.greeting.join(' ');
     if (greetingSecond) greetingSecond.textContent = otto.greeting[1];
   };
-  const ask = async (raw: string, preset?: string) => {
-    const question = raw.trim().slice(0, 200);
-    if (busy || (!question && !preset)) return;
-    finishGreeting();
-    const intent = preset ? byId.get(preset) : undefined;
-    const shown = question || intent?.ask || '';
-    if (shown.startsWith('/')) return runCommand(shown);
-    youTurn(shown);
-    turns.push({ you: shown });
-    blip([880]);
-    const reply: Reply = intent ? { kind: 'intent', id: intent.id } : brain.think(question, ctx);
-    if (!(reply.kind === 'social' && social[reply.id].awaitMood)) ctx.awaiting = undefined;
-    return say(replyFor(reply), shown);
+
+  /** Ask from outside the chat (the command menu, ?ask=): intent ids only. */
+  const askIntent = (id: string) => {
+    const intent = byId.get(id);
+    if (!intent) return;
+    const run = () => void respond(nodeFor(id), intent.ask);
+    if (busy) { queued = run; skip = true; } else run();
   };
 
-  const clear = (announce = true) => {
-    turns = []; ctx = {};
+  const clear = () => {
+    if (busy) { queued = clear; skip = true; return; }
+    turns = []; replies = 0; anchor = null; stick = true;
     store.drop(storeKey);
     log.querySelectorAll('.turn:not([data-static])').forEach(node => node.remove());
+    greetingDone = true;
+    greetingSecond = null;
     if (greetingNode) greetingNode.textContent = otto.greeting.join(' ');
-    ctx.awaiting = 'mood';
-    setChips(chipsFor(undefined));
+    setChoices(reply('hello')!.choices, true);
     clearButton.hidden = true;
-    if (announce) status.textContent = 'Conversation cleared.';
-    input.focus({ preventScroll: true });
+    status.textContent = 'Conversation cleared.';
   };
 
-  const runCommand = async (text: string) => {
-    const name = text.toLowerCase().split(/\s+/)[0];
-    const command = commands.find(item => item.name === name);
-    if (command?.action === 'clear') return clear();
-    youTurn(text); turns.push({ you: text });
-    if (!command) return say({ kind: 'miss', text: ottoFallback.text, near: ['about', 'work', 'contact'] }, text);
-    if (command.action === 'help') return say({ kind: 'help', text: 'Shortcuts I understand:' }, text);
-    if (command.intent) return say(replyFor({ kind: 'intent', id: command.intent }), text);
-  };
-
-  /* ---------- composer ---------- */
-  const matchingCommands = () => input.value.startsWith('/') ? commands.filter(command => command.name.startsWith(input.value.toLowerCase().split(/\s+/)[0])) : [];
-  const commonPrefix = (names: string[]) => names.reduce((prefix, name) => { let i = 0; while (i < prefix.length && prefix[i] === name[i]) i++; return prefix.slice(0, i); });
-  const showHint = () => {
-    if (!hint) return;
-    if (!input.value.startsWith('/')) { if (hint.dataset.mode) { hint.replaceChildren(...hintDefault); delete hint.dataset.mode; } return; }
-    const found = matchingCommands();
-    hint.dataset.mode = 'commands';
-    hint.replaceChildren(...(found.length ? found.map(command => {
-      const button = el('button', undefined, command.name);
-      button.type = 'button'; button.dataset.command = command.name; button.title = command.hint;
-      return button;
-    }) : [document.createTextNode('No command like that. Try /help.')]));
-    if (found.length) hint.append(document.createTextNode(found.length === 1 ? ` ${found[0].hint} · Tab to complete` : ' Tab to complete'));
-  };
-  input.addEventListener('input', showHint);
-  input.addEventListener('keydown', event => {
-    if (event.key === 'Tab' && !event.shiftKey && input.value.startsWith('/')) {
-      const found = matchingCommands();
-      if (found.length && found[0].name !== input.value) { event.preventDefault(); input.value = found.length === 1 ? found[0].name : commonPrefix(found.map(command => command.name)); showHint(); }
-    } else if (event.key === 'ArrowUp' && history.length && (input.value === '' || input.value === history[historyIndex])) {
-      event.preventDefault(); historyIndex = Math.max(0, historyIndex - 1); input.value = history[historyIndex] ?? ''; showHint();
-    } else if (event.key === 'ArrowDown' && historyIndex < history.length) {
-      event.preventDefault(); historyIndex += 1; input.value = history[historyIndex] ?? ''; showHint();
-    } else if (event.key === 'Escape' && busy) skip = true;
+  /* ---------- choosing ---------- */
+  choiceBox.addEventListener('click', event => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('button[data-to]');
+    if (!button || busy) return;
+    const focused = button === document.activeElement;
+    button.setAttribute('data-picked', '');
+    void respond(button.dataset.to!, button.textContent?.trim() || undefined, focused);
   });
-  input.addEventListener('focus', () => { if (!busy) robot('idle'); });
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    const value = input.value.trim();
-    if (!value || busy) return;
-    if (history[history.length - 1] !== value) history.push(value);
-    history.splice(0, Math.max(0, history.length - 20));
-    store.set('otto-history', history);
-    historyIndex = history.length;
-    input.value = '';
-    showHint();
-    void ask(value);
-  });
-  chat.addEventListener('click', event => {
-    const target = (event.target as Element).closest<HTMLElement>('[data-ask], [data-say], [data-command]');
-    if (target?.dataset.ask) void ask('', target.dataset.ask);
-    else if (target?.dataset.say) void ask(target.dataset.say);
-    else if (target?.dataset.command) { input.value = ''; showHint(); void runCommand(target.dataset.command); }
-    else if (busy && (event.target as Element).closest('.bubble')) skip = true;
-  });
+  log.addEventListener('click', event => { if (busy && (event.target as Element).closest('.bubble')) skip = true; });
+  chat.addEventListener('keydown', event => { if (event.key === 'Escape' && busy && !event.defaultPrevented) skip = true; });
   clearButton.addEventListener('click', () => clear());
   chat.addEventListener('pointermove', event => {
     if (event.pointerType !== 'mouse') return;
@@ -416,99 +324,69 @@ if (chat && log && form && input && chipRow) {
     chat.style.setProperty('--y', `${event.clientY - box.top}px`);
   });
   window.addEventListener('omar:ask', event => {
-    const detail = (event as CustomEvent<{ id?: string; text?: string }>).detail ?? {};
+    const id = (event as CustomEvent<{ id?: unknown }>).detail?.id;
+    if (typeof id !== 'string' || !byId.has(id)) return;
     chat.scrollIntoView({ behavior: instant() ? 'auto' : 'smooth', block: 'center' });
-    if (detail.id && byId.has(detail.id)) void ask('', detail.id); else if (detail.text) void ask(detail.text);
+    askIntent(id);
   });
-  // Back/forward cache: welcome the visitor back from a tour.
-  const welcomeBack = (id: string | null) => {
-    if (!id || !byId.has(id)) return;
-    const back: Said = { kind: 'say', text: otto.returned, chips: byId.get(id)!.follow };
-    turns.push(back); save();
-    void ottoTurn(back, false);
-    setChips(chipsFor(back));
-    robot('wave', 1200);
-    follow();
+  // Back from a tour: "Back from the inside! Where next?" with the other projects.
+  const welcomeBack = async (id: string | null) => {
+    if (!id || !projects.has(id)) return;
+    await landed();
+    if (busy) return;
+    await respond(`back:${id}`);
   };
+  // Back/forward cache: the page left mid hand-off, so settle and welcome the visitor back.
   addEventListener('pageshow', event => {
-    if (event.persisted) { setBusy(false); welcomeBack(session.take('otto-inside')); }
+    if (!event.persisted) return;
+    setChoices(reply(lastNode())?.choices ?? reply('hello')!.choices);
+    setBusy(false);
+    void welcomeBack(session.take('otto-inside'));
   });
-
-  /* ---------- typewriter placeholder ---------- */
-  const examples: string[] = JSON.parse(input.dataset.placeholders || '[]');
-  const resting = input.placeholder;
-  if (examples.length) {
-    let example = 0, chars = 0, deleting = false, visible = true;
-    const idle = () => !input.value && document.activeElement !== input && !instant() && visible && !document.hidden;
-    const tick = () => {
-      if (!idle()) { input.placeholder = resting; window.setTimeout(tick, 1200); return; }
-      const word = examples[example];
-      chars += deleting ? -1 : 1;
-      input.placeholder = word.slice(0, Math.max(0, chars)) || ' ';
-      let delay = deleting ? 28 : 55;
-      if (!deleting && chars >= word.length) { deleting = true; delay = 1800; }
-      else if (deleting && chars <= 0) { deleting = false; example = (example + 1) % examples.length; delay = 350; }
-      window.setTimeout(tick, delay);
-    };
-    if ('IntersectionObserver' in window) new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(chat);
-    input.addEventListener('focus', () => { input.placeholder = resting; });
-    window.setTimeout(tick, 4200);
-  }
 
   /* ---------- start: restore, greet, permalink ---------- */
   for (const turn of turns) {
     if ('you' in turn) { const node = el('div', 'turn turn--you'); node.append(el('p', 'bubble', turn.you)); log.append(node); }
-    else if (!turn.id || byId.has(turn.id)) void ottoTurn(turn, false);
+    else void ottoTurn(reply(turn.node)!, turn.text, false);
   }
   const returnedFrom = session.take('otto-inside');
-  const permalink = (new URLSearchParams(location.search).get('ask') || '').trim();
+  const permalink = new URLSearchParams(location.search).get('ask') ?? '';
+  const asked = byId.has(permalink) ? permalink : '';
   if (turns.length) {
     clearButton.hidden = false;
-    log.scrollTop = log.scrollHeight;
-    setChips(chipsFor(lastSaid()));
-    welcomeBack(returnedFrom);
-  } else if (!permalink) {
-    // First visit: once Otto has landed (or the SVG Otto is standing in),
-    // he waves, says hello and asks how you are, in two short bubbles.
-    ctx.awaiting = 'mood';
-    const landed = new Promise<void>(resolve => {
-      const done = () => { window.removeEventListener('otto:landed', done); window.clearTimeout(cap); resolve(); };
-      const cap = window.setTimeout(done, 4200);
-      window.addEventListener('otto:landed', done);
-      if (!document.querySelector('[data-otto-stage][data-stage-mode="hero"]:not([data-landed])')) done();
-    });
+    follow();
+    setChoices(reply(lastNode())?.choices ?? reply('hello')!.choices);
+    if (!asked) void welcomeBack(returnedFrom);
+  } else if (!asked) {
+    // First visit: once Otto has landed (or the SVG Otto is standing in), he
+    // waves, says hello and asks how you are, in two short bubbles.
+    setChoices(reply('hello')!.choices);
     if (greetingNode && !instant()) {
       greetingNode.textContent = '';
       greetingDone = false;
       void (async () => {
-        await landed;
+        await landed();
         await sleep(350);
-        if (greetingDone) return; // the visitor already started talking
-        window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: otto.greeting[0] } }));
+        if (greetingDone) return; // the visitor already chose
+        speak(otto.greeting[0]);
         robot('wave', 1300);
         await streamInto(greetingNode, otto.greeting[0], () => greetingDone);
         if (greetingDone) { greetingNode.textContent = otto.greeting.join(' '); return; }
         await sleep(650);
         if (greetingDone) { greetingNode.textContent = otto.greeting.join(' '); return; }
         const second = el('div', 'turn turn--agent');
+        second.dataset.node = 'hello';
         greetingSecond = bubble(second);
         log.append(second);
-        window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: otto.greeting[1] } }));
+        speak(otto.greeting[1]);
         robot('welcome', 1800);
         await streamInto(greetingSecond, otto.greeting[1], () => greetingDone);
         greetingDone = true;
         follow();
       })();
-    } else void landed.then(() => window.dispatchEvent(new CustomEvent('otto:say', { detail: { text: otto.greeting.join(' ') } })));
-    setChips(chipsFor(undefined));
+    } else void landed().then(() => speak(otto.greeting.join(' ')));
   }
-  if (permalink) void ask(byId.has(permalink) ? '' : permalink, byId.has(permalink) ? permalink : undefined);
-
-  // Test hook: what the brain decides for a message (no side effects).
-  Object.defineProperty(chat, 'ottoThink', { value: (question: string, context: Context = {}) => {
-    const reply = brain.think(question, context);
-    return reply.kind === 'intent' ? reply.id : reply.kind === 'social' ? `soc:${reply.id}` : reply.kind === 'detail' ? `detail:${reply.id}:${reply.part}` : null;
-  } });
+  if (asked) askIntent(asked);
 }
 
 export {};
