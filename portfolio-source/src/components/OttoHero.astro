@@ -37,8 +37,11 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
       <p class="otto-stage__pad" aria-hidden="true"><span></span>Otto is on his way…</p>
       <p class="otto-bubble" data-otto-bubble aria-hidden="true"></p>
       <div class="otto-offer" data-otto-offer hidden>
-        <button type="button" class="otto-offer__take" data-offer-take aria-describedby="otto-offer-desc"><span class="otto-offer__ring" data-offer-ring aria-hidden="true"></span><span class="otto-offer__hand" aria-hidden="true">✋</span><span data-offer-label>Take Otto’s hand</span></button>
-        <button type="button" class="otto-offer__stay" data-offer-stay>Stay here</button>
+        <p class="otto-offer__lead" aria-hidden="true"><span>Otto’s tour</span> <b data-offer-lead></b></p>
+        <div class="otto-offer__row">
+          <button type="button" class="otto-offer__take" data-offer-take aria-describedby="otto-offer-desc"><span class="otto-offer__ring" data-offer-ring aria-hidden="true"></span><span class="otto-offer__reach" aria-hidden="true"></span><span class="otto-offer__hand" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" focusable="false"><path d="M9 11.5V5.2a1.6 1.6 0 0 1 3.2 0v5.6m0-.8V3.6a1.6 1.6 0 0 1 3.2 0V11m0-4.4a1.6 1.6 0 0 1 3.2 0v4.8m0-1.6a1.6 1.6 0 0 1 3.2 0v4.1a7.4 7.4 0 0 1-7.4 7.5h-1.5a7 7 0 0 1-5.1-2.2l-3.4-3.7a1.7 1.7 0 0 1 2.4-2.4L9 14.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span><span data-offer-label>Take Otto’s hand</span></button>
+          <button type="button" class="otto-offer__stay" data-offer-stay>Stay here</button>
+        </div>
         <p class="sr-only" id="otto-offer-desc" data-offer-status></p>
       </div>
       <p class="sr-only">Otto is Omar’s robot host: a white, rounded robot with a black glass visor, glowing lime eyes and a screen on his chest. He waves, talks and can take you on a tour of Omar’s projects.</p>
@@ -267,24 +270,62 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
   .otto-stage[data-mode='svg'] .otto-bubble { left: var(--gx, 50%); top: auto; bottom: calc(6% + min(46cqw, 52cqh, 380px, var(--gw, 9999px) * .8) * 1.2 + 4px); transform: translate(calc(-12% + var(--nudge, 0px)), 0) scale(.92); transform-origin: 12% 100%; }
   .otto-stage[data-mode='svg'] .otto-bubble[data-show] { transform: translate(calc(-12% + var(--nudge, 0px)), 0) scale(1); }
   @media (max-width: 1099px) { :global(html:not(.js)) .agent--otto { padding-top: calc(var(--header) + 72px); } }
-  /* The hand-off: Otto's offered hand and the two choices. */
-  .otto-offer { position: absolute; left: var(--ox, 50%); top: var(--oy, 50%); z-index: 3; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; pointer-events: auto; }
-  .otto-offer[data-anchor='dock'] { left: 50%; top: auto; bottom: 14px; transform: translateX(-50%); justify-content: center; width: max-content; max-width: calc(100% - 24px); }
+  /* The hand-off: Otto's offered hand and the two choices. Wide screens: the
+     big Take button is tethered to his palm (--ox/--oy from otto-handoff.ts).
+     Phones: a tray docked right under him, its notch (--hx) at his hand. */
+  .otto-offer { position: absolute; left: var(--ox, 50%); top: var(--oy, 50%); z-index: 3; display: grid; gap: 10px; justify-items: start; pointer-events: auto; }
   .otto-offer[hidden] { display: none; }
-  .otto-offer__take { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 22px 0 16px; border: 0; border-radius: 999px; background: var(--lime); color: #0b0d0a; font-size: 16px; font-weight: 640; box-shadow: 0 0 0 6px #d9ff3f2e, 0 18px 40px -12px #d9ff3f80; }
-  .otto-offer__take:focus-visible { outline: 3px solid #f2f3ee; outline-offset: 3px; }
-  .otto-offer__hand { font-size: 20px; }
+  .otto-offer__lead { display: flex; align-items: baseline; gap: 8px; padding-left: 22px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+  .otto-offer__lead b { font-family: var(--font-sans); font-size: 15px; font-weight: 600; letter-spacing: -.01em; text-transform: none; color: var(--ink-1); }
+  .otto-offer__row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .otto-offer__take { position: relative; display: inline-flex; align-items: center; gap: 12px; min-height: 64px; padding: 0 26px 0 9px; border: 0; border-radius: 999px; background: var(--lime); color: #0b0d0a; font-size: 18px; font-weight: 650; letter-spacing: -.01em; white-space: nowrap; box-shadow: 0 0 0 7px #d9ff3f2e, 0 22px 50px -14px #d9ff3f99; }
+  .otto-offer__take:focus-visible { outline: 3px solid #f2f3ee; outline-offset: 4px; }
+  .otto-offer__hand { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 50%; background: #0b0d0a; color: var(--lime); }
+  .otto-offer__hand svg { display: block; }
+  /* The tether from his palm to the button (wide screens). */
+  .otto-offer__reach { display: none; position: absolute; right: 100%; top: 50%; width: 18px; height: 2px; margin-top: -1px; background: linear-gradient(90deg, #d9ff3f33, var(--lime)); pointer-events: none; }
+  .otto-offer__reach::before { content: ''; position: absolute; left: -6px; top: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 5px #d9ff3f33, 0 0 18px #d9ff3f; }
+  .otto-offer[data-anchor='palm'] .otto-offer__reach { display: block; }
   .otto-offer__ring { position: absolute; inset: -6px; border-radius: inherit; pointer-events: none; background: conic-gradient(#f2f3ee calc(var(--p, 0) * 360deg), transparent 0); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; padding: 3px; opacity: 0; }
   .otto-offer[data-counting] .otto-offer__ring { opacity: 1; }
-  .otto-offer__stay { min-height: 48px; padding: 0 18px; border: 1px solid #ffffff4d; border-radius: 999px; background: #070807cc; color: var(--ink-1); font-size: 14.5px; backdrop-filter: blur(6px); }
+  .otto-offer__stay { min-height: 48px; padding: 0 18px; border: 1px solid #ffffff4d; border-radius: 999px; background: #070807cc; color: var(--ink-1); font-size: 14.5px; white-space: nowrap; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
   .otto-offer__stay:hover { border-color: var(--lime); color: var(--lime); }
   .otto-offer__stay:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  .otto-offer[data-anchor='palm'] .otto-offer__take { transform-origin: -18px 50%; } /* squeezes into his palm */
+  .otto-offer[data-anchor='below'] { left: var(--gx, 50%); top: auto; bottom: 7%; translate: -50% 0; justify-items: center; }
+  .otto-offer[data-anchor='below'] .otto-offer__lead { padding-left: 0; }
+  .otto-offer[data-anchor='below'] .otto-offer__take { transform-origin: 50% -80px; }
+  .otto-offer[data-anchor='dock'] { left: 12px; right: 12px; top: auto; bottom: -64px; justify-items: stretch; gap: 10px; padding: 12px 12px 12px; border: 1px solid #d9ff3f4d; border-radius: 26px; background: #0e100df5; box-shadow: 0 -18px 50px -24px #d9ff3f59, 0 30px 60px -24px #000; }
+  .otto-offer[data-anchor='dock']::before { content: ''; position: absolute; left: var(--hx, 50%); top: -8px; width: 14px; height: 14px; margin-left: -7px; border: 1px solid #d9ff3f4d; border-width: 1px 0 0 1px; border-radius: 4px 0 0 0; background: #0e100d; transform: rotate(45deg); }
+  .otto-offer[data-anchor='dock'] .otto-offer__lead { padding-left: 6px; }
+  .otto-offer[data-anchor='dock'] .otto-offer__row { flex-wrap: nowrap; gap: 8px; }
+  .otto-offer[data-anchor='dock'] .otto-offer__take { flex: 1 1 auto; min-width: 0; padding-right: 18px; font-size: 17px; transform-origin: var(--hx, 50%) -60px; }
+  .otto-offer[data-anchor='dock'] .otto-offer__stay { flex: none; padding: 0 14px; font-size: 14px; }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html:not([data-motion='off'])) .otto-offer:not([hidden]) { animation: offer-in 360ms cubic-bezier(.2, .9, .3, 1.2) both; }
+    :global(html:not([data-motion='off'])) .otto-offer[data-anchor='palm'] .otto-offer__reach::before { animation: offer-pulse 1.4s ease-in-out infinite; }
+    /* Take: a ripple, then the button squeezes into his hand. */
+    :global(html:not([data-motion='off'])) .otto-offer[data-take] .otto-offer__take { animation: offer-squeeze 260ms linear both; }
+    :global(html:not([data-motion='off'])) .otto-offer[data-take] :is(.otto-offer__stay, .otto-offer__lead, .otto-offer__reach) { opacity: 0; transition: opacity 120ms ease-out; }
+    :global(html:not([data-motion='off'])) .otto-offer[data-anchor='dock'][data-take] { animation: offer-tray-out 200ms ease-in 120ms both; }
+  }
+  @keyframes offer-in { from { opacity: 0; transform: translateY(8px) scale(.96); } }
+  @keyframes offer-pulse { 50% { box-shadow: 0 0 0 9px #d9ff3f14, 0 0 22px #d9ff3f; } }
+  /* A press (with the ripple), then the button is drawn into his hand. */
+  @keyframes offer-squeeze {
+    0% { transform: none; animation-timing-function: cubic-bezier(.2, .7, .3, 1); }
+    28% { transform: scale(.92); box-shadow: 0 0 0 20px #d9ff3f00, 0 22px 50px -14px #d9ff3f99; animation-timing-function: cubic-bezier(.5, 0, .3, 1); }
+    100% { transform: scale(.04); opacity: .2; box-shadow: 0 0 0 20px #d9ff3f00; }
+  }
+  @keyframes offer-tray-out { to { opacity: 0; transform: translateY(12px); } }
   /* While Otto offers his hand, he steps in front of everything else. */
   .agent[data-handoff] .otto-stage { z-index: 4; }
-  /* Taking his hand: the stage fills the screen for the dive into his chest. */
-  .agent[data-handoff='take'] .otto-stage { position: fixed; inset: 0; height: auto; margin: 0; z-index: 150; background: #070807; transition: background-color 300ms; }
-  /* During the dive the hero (an isolated stacking context) rises above the fixed header. */
+  /* Taking his hand: the page goes dark around him (the stage stays where it
+     is, so he never jumps) and the hero rises above the sticky header. */
+  .agent::after { content: ''; position: fixed; inset: 0; z-index: 3; background: #070807; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 320ms ease-out, visibility 0s linear 320ms; }
+  .agent[data-handoff='take']::after { opacity: .95; visibility: visible; transition: opacity 320ms ease-out; }
   .agent[data-handoff='take'] { z-index: 60; }
+  .agent[data-handoff='take'] .otto-bubble { opacity: 0; }
   .agent[data-handoff] .agent__intro, .agent[data-handoff] .chat { opacity: .16; filter: blur(2px); pointer-events: none; transition: opacity 400ms ease-out, filter 400ms ease-out; }
   .chat__avatar { flex: none; display: grid; place-items: end center; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 50% 30%, #2a2e28, #0b0d0a); overflow: hidden; }
   .chat__avatar :global(.robot--sm) { width: 46px; margin-bottom: -10px; }

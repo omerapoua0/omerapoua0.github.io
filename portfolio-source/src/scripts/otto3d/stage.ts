@@ -5,12 +5,17 @@
  *            omar:motion, pointer moves, visibility
  *   emits:   otto:ready, otto:landed, otto:palm {x, y}, otto:anchor {x, y},
  *            otto:handoff-done {rect}, otto:fail {reason}
+ * The take: Otto grips and pulls (motion.ts) while the camera dives into his
+ * chest screen, which boots "Inside <NAME>" with a progress bar (laid out like
+ * OttoCover). When the screen fills ~40% of the stage, `otto:handoff-done`
+ * reports its rectangle and the DOM cover takes over from exactly there;
+ * `otto:navigate` then parks the loop.
  * The loop only runs while the stage is on screen, the tab is visible and
  * motion is on; otherwise it renders once per change (deferred while
  * offscreen). A hidden warm-up proves the frame rate before Otto is shown;
  * afterwards resolution adapts to the frame budget.
  */
-import { ACESFilmicToneMapping, Box3, Timer, Color, HemisphereLight, DirectionalLight, type MeshBasicMaterial, NeutralToneMapping, PerspectiveCamera, PMREMGenerator, Scene, Vector3, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, Box3, CanvasTexture, Timer, Color, HemisphereLight, DirectionalLight, Mesh, MeshBasicMaterial, NeutralToneMapping, PerspectiveCamera, PMREMGenerator, Scene, SRGBColorSpace, Vector3, WebGLRenderer } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { buildRig, type Tier } from './rig';
 import { createChest, createFace } from './face';
@@ -20,6 +25,72 @@ export type Mode = 'hero' | 'dock';
 export type OttoHandle = { dispose: () => void; setStill: (still: boolean) => void; snapshot: () => { opaque: number; lime: number }; stats: () => { fps: number; dpr: number; tier: Tier } };
 
 const emit = (name: string, detail: Record<string, unknown> = {}) => window.dispatchEvent(new CustomEvent(name, { detail }));
+
+/* The dive: it starts as the grip closes and reaches the chest in ~0.8 s;
+   the cover takes over once the chest screen fills this much of the stage. */
+const DIVE_DELAY = 170;
+const DIVE_MS = 700;
+const DIVE_FOV = 18;
+const HANDOVER = .4;
+
+/** The chest screen's boot overlay for the take ("Inside KATANA", a bar,
+ *  "ENTERING KATANA"), on its own canvas over the chest. It shares the
+ *  chest's geometry, so it fits whatever shape the screen has. */
+function createBoot(chest: Mesh) {
+  const geometry = chest.geometry;
+  if (!geometry.boundingBox) geometry.computeBoundingBox();
+  const size = geometry.boundingBox!.getSize(new Vector3());
+  const W = 512, H = Math.max(160, Math.min(512, Math.round(W * (size.y || 1) / (size.x || 1))));
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d')!;
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  const material = new MeshBasicMaterial({ map: texture, transparent: true, opacity: 0, toneMapped: false, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 });
+  const mesh = new Mesh(geometry, material);
+  mesh.visible = false;
+  mesh.renderOrder = (chest.renderOrder || 0) + 1;
+  chest.add(mesh);
+  let id = '', name = '', drawn = -1;
+  const fit = (text: string, weight: string, px: number, family: string, max: number) => {
+    let size = px;
+    ctx.font = `${weight} ${size}px ${family}`;
+    while (size > 12 && ctx.measureText(text).width > max) { size -= 2; ctx.font = `${weight} ${size}px ${family}`; }
+  };
+  const draw = (p: number) => {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(7,8,7,.7)'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(217,255,63,.09)'; ctx.lineWidth = 1;
+    for (let x = W / 2 % 28; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = H / 2 % 28; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#a7aca0'; ctx.font = `500 ${Math.round(H * .045)}px "JetBrains Mono Variable", ui-monospace, monospace`;
+    ctx.fillText(`otto://inside/${id}`, W / 2, H * .3);
+    ctx.fillStyle = '#d9ff3f'; ctx.font = `italic 400 ${Math.round(H * .08)}px "Old Standard TT", Georgia, serif`;
+    ctx.fillText('Inside', W / 2, H * .41);
+    fit(name, '620', Math.round(H * .17), '"Onest Variable", system-ui, sans-serif', W * .86);
+    ctx.fillStyle = '#f2f3ee'; ctx.shadowColor = 'rgba(217,255,63,.35)'; ctx.shadowBlur = 18;
+    ctx.fillText(name, W / 2, H * .54);
+    ctx.shadowBlur = 0;
+    const bw = W * .42, bx = (W - bw) / 2, by = H * .655;
+    ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fillRect(bx, by, bw, 3);
+    ctx.fillStyle = '#d9ff3f'; ctx.shadowColor = '#d9ff3f'; ctx.shadowBlur = 10; ctx.fillRect(bx, by, bw * p, 3); ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(217,255,63,.85)'; ctx.font = `500 ${Math.round(H * .04)}px "JetBrains Mono Variable", ui-monospace, monospace`;
+    ctx.fillText(`ENTERING ${name.toUpperCase()}`, W / 2, H * .74);
+    texture.needsUpdate = true;
+  };
+  return {
+    set(nextId: string, nextName: string) { id = nextId; name = nextName; drawn = -1; },
+    show(progress: number, alpha: number) {
+      const step = Math.round(progress * 60);
+      if (step !== drawn) { drawn = step; draw(step / 60); }
+      mesh.visible = true;
+      material.opacity = alpha;
+    },
+    hide() { mesh.visible = false; material.opacity = 0; drawn = -1; },
+    dispose() { chest.remove(mesh); texture.dispose(); material.dispose(); },
+  };
+}
 
 export type Entrance = 'fly' | 'rise' | 'none';
 export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContext, opts: { mode: Mode; entrance: Entrance | (() => Entrance); still: boolean; tier?: Tier; force?: boolean }): Promise<OttoHandle> {
@@ -49,6 +120,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
   const rig = buildRig(tier, face.texture, chest.texture);
   scene.add(rig.root);
   const director = createDirector(rig);
+  const boot = createBoot(rig.chest);
 
   const dock = opts.mode === 'dock';
   const camera = new PerspectiveCamera(dock ? 24 : 26, 1, .1, 60);
@@ -115,7 +187,8 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
   let dirty = false; // a still frame was requested while offscreen or hidden
   const clock = new Timer();
   const delta = () => { clock.update(); return clock.getDelta(); };
-  let take: { start: number; from: Vector3; to: Vector3 } | null = null;
+  let take: { start: number; from: Vector3; handed: boolean; held?: number } | null = null;
+  let parked = false; // navigating away behind the cover: nothing left to draw
   let offerAt = -1;
   let lastAnchor = '';
   let failed = false;
@@ -126,6 +199,14 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     return { x: box.left + (p.x + 1) / 2 * box.width, y: box.top + (1 - p.y) / 2 * box.height };
   };
   const world = (object: { getWorldPosition: (v: Vector3) => Vector3 }) => object.getWorldPosition(new Vector3());
+  /** The chest screen's on-screen rectangle (viewport px). */
+  const chestRect = () => {
+    const bb = rig.chest.geometry.boundingBox ?? (rig.chest.geometry.computeBoundingBox(), rig.chest.geometry.boundingBox!);
+    const z = (bb.min.z + bb.max.z) / 2;
+    const points = [[bb.min.x, bb.min.y], [bb.max.x, bb.min.y], [bb.min.x, bb.max.y], [bb.max.x, bb.max.y]].map(([x, y]) => project(rig.chest.localToWorld(new Vector3(x, y, z))));
+    const xs = points.map(point => point.x), ys = points.map(point => point.y);
+    return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
+  };
 
   const draw = () => {
     renderer.render(scene, camera);
@@ -162,18 +243,33 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     face.set(faceState);
     if (!chest.isProject()) chest.badge(.5 + .5 * Math.sin(director.time * Math.PI * 2 / 4));
 
-    // Hand-off camera dive toward the chest screen.
+    // Hand-off: the camera dives into the chest screen as it boots the project.
+    let dive = 0;
     if (take) {
-      const t = Math.min(1, Math.max(0, (performance.now() - take.start - 300) / 900));
-      const e = t * t * t;
-      camera.position.lerpVectors(take.from, take.to, e);
-      camera.fov = home.fov + (20 - home.fov) * e;
-      camera.lookAt(world(rig.chest));
+      const elapsed = now - take.start;
+      // Once the cover has taken over the dive holds, so the screen it grows
+      // out of stays where it was (no second, giant chest behind it).
+      dive = take.held ?? Math.min(1, Math.max(0, (elapsed - DIVE_DELAY) / DIVE_MS));
+      const e = dive ** 2.2;
+      const chestAt = world(rig.chest);
+      camera.position.lerpVectors(take.from, chestAt.clone().add(new Vector3(0, 0, .35)), e);
+      camera.fov = home.fov + (DIVE_FOV - home.fov) * e;
+      camera.lookAt(chestAt);
       applyShift(shift * (1 - e)); // ease the lens shift out so the chest ends dead centre
       camera.updateProjectionMatrix();
-      (rig.chest.material as MeshBasicMaterial).color.setScalar(1 + .8 * e);
+      (rig.chest.material as MeshBasicMaterial).color.setScalar(1 + .3 * e);
+      boot.show(Math.min(.8, .06 + elapsed / 1300), Math.min(1, elapsed / 200));
     }
     draw();
+    if (take && !take.handed) {
+      // Hand over to the DOM cover from the screen's exact rectangle on this frame.
+      const rect = chestRect(), box = canvas.getBoundingClientRect();
+      if (rect.right - rect.left >= HANDOVER * box.width || rect.bottom - rect.top >= HANDOVER * 1.15 * box.height || dive >= 1) {
+        take.handed = true;
+        take.held = dive;
+        emit('otto:handoff-done', { rect });
+      }
+    }
     director.takeEvents().forEach(name => emit(`otto:${name}`));
     if (offerAt > 0 && performance.now() >= offerAt) { offerAt = -1; emit('otto:palm', project(world(rig.armR.palm))); }
     const anchor = project(world(rig.head).add(new Vector3(0, .95, 0)));
@@ -182,7 +278,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
 
     schedule();
   };
-  const running = () => visible && !document.hidden && (!still || !!take || director.entering);
+  const running = () => visible && !document.hidden && !parked && (!still || !!take || director.entering);
   function schedule() { if (ready && !failed && !raf && running()) raf = requestAnimationFrame(tick); }
   function requestRender() {
     if (!ready || failed) return;
@@ -215,32 +311,32 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     requestRender();
   };
   const onHandoff = (event: Event) => {
-    const { phase, name, media } = (event as CustomEvent<{ phase: 'offer' | 'take' | 'cancel'; name?: string; media?: string }>).detail ?? {};
+    const { phase, id, name, media, reach } = (event as CustomEvent<{ phase: 'offer' | 'take' | 'cancel'; id?: string; name?: string; media?: string; reach?: 'out' | 'down' }>).detail ?? {};
     if (phase === 'offer') {
-      director.handoff('offer');
+      director.handoff('offer', { low: reach === 'down' });
       void chest.project(name ?? '', media).then(requestRender);
+      boot.set(id ?? '', name ?? '');
       offerAt = performance.now() + (still ? 0 : 700);
       if (still) { director.settle(); draw(); offerAt = -1; emit('otto:palm', project(world(rig.armR.palm))); }
     } else if (phase === 'take') {
       director.handoff('take');
-      const chestWorld = world(rig.chest);
-      // The camera dive is motion: skipped when motion is reduced or paused.
-      if (!still) take = { start: performance.now(), from: camera.position.clone(), to: chestWorld.clone().add(new Vector3(0, 0, .3)) };
-      // Report the chest-screen rectangle so the portal can grow out of it.
-      window.setTimeout(() => {
-        const c = world(rig.chest);
-        const a = project(c.clone().add(new Vector3(-.24, .16, 0))), b = project(c.clone().add(new Vector3(.24, -.16, 0)));
-        emit('otto:handoff-done', { rect: { left: Math.min(a.x, b.x), top: Math.min(a.y, b.y), right: Math.max(a.x, b.x), bottom: Math.max(a.y, b.y) } });
-      }, still ? 0 : 1000);
+      if (name) boot.set(id ?? '', name);
+      // The camera dive is motion: with motion reduced or paused the cover just
+      // fades in, so report the screen's rectangle at once.
+      if (!still) take = { start: performance.now(), from: camera.position.clone(), handed: false };
+      else { director.settle(); draw(); emit('otto:handoff-done', { rect: chestRect() }); }
     } else if (phase === 'cancel') {
       director.handoff('cancel');
       chest.reset();
+      boot.hide();
       take = null;
+      parked = false;
       frame();
       (rig.chest.material as MeshBasicMaterial).color.setScalar(1);
     }
     requestRender();
   };
+  const onNavigate = () => { if (raf) cancelAnimationFrame(raf); raf = 0; parked = true; };
   const onMotion = () => { setStill(document.documentElement.dataset.motion === 'off' || window.matchMedia('(prefers-reduced-motion: reduce)').matches); };
   const onVisibility = () => { if (document.hidden) { if (raf) { cancelAnimationFrame(raf); dirty = true; } raf = 0; } else wake(); };
   const onContextLost = (event: Event) => { event.preventDefault(); fail('context-lost'); };
@@ -249,6 +345,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
   document.addEventListener('pointerleave', onLeave);
   window.addEventListener('otto:state', onState);
   window.addEventListener('otto:handoff', onHandoff);
+  window.addEventListener('otto:navigate', onNavigate);
   window.addEventListener('omar:motion', onMotion);
   window.addEventListener('otto:layout', resize);
   document.addEventListener('visibilitychange', onVisibility);
@@ -272,11 +369,12 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
     document.removeEventListener('pointerleave', onLeave);
     window.removeEventListener('otto:state', onState);
     window.removeEventListener('otto:handoff', onHandoff);
+    window.removeEventListener('otto:navigate', onNavigate);
     window.removeEventListener('omar:motion', onMotion);
     window.removeEventListener('otto:layout', resize);
     document.removeEventListener('visibilitychange', onVisibility);
     canvas.removeEventListener('webglcontextlost', onContextLost);
-    rig.dispose(); face.dispose(); chest.dispose(); envTarget.dispose(); pmrem.dispose();
+    boot.dispose(); rig.dispose(); face.dispose(); chest.dispose(); envTarget.dispose(); pmrem.dispose();
     renderer.dispose();
     renderer.forceContextLoss();
   }

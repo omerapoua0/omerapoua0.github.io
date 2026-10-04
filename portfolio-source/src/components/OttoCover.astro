@@ -1,0 +1,139 @@
+---
+/* The "inside the computer" cover that carries Otto's hand-off across the
+   page change, the same markup on both sides so the two frames match:
+   - homepage (Base renders it for `home`): otto-handoff.ts fills in the
+     project and grows it out of Otto's chest (3D: from the chest screen's
+     rectangle; SVG: a lime iris from his chest badge) until it is opaque,
+     and only then navigates. Paint holding keeps it on screen meanwhile.
+   - inside tour (Base renders it with the project): the inline head script
+     in Base.astro marks html[data-arrive="portal"], so this CSS paints the
+     identical cover at first paint, completes the bar, collapses it into the
+     tour's monitor (rects measured by an inline script in inside/[id].astro)
+     while a big Otto flies to his dock. No module JavaScript is needed.
+   - "Back to Otto" uses it as a quick shutter in the other direction
+     (inside.ts down, html[data-arrive="return"] or bfcache restore up).
+   Reduced motion or Pause: no zoom, collapse or flight, a <= 200 ms fade.
+   Decorative only: aria-hidden, never takes pointer events. */
+import Robot from './Robot.astro';
+interface Props { id?: string; name?: string; media?: string }
+const { id, name, media } = Astro.props;
+const project = !!(id && name);
+---
+<div class="otto-cover" data-otto-cover data-kind={project ? 'project' : 'back'} data-cover-id={id} aria-hidden="true" style={project && media ? `--img: url("${media}")` : undefined}>
+  <div class="otto-cover__win">
+    <div class="otto-cover__inner">
+      <span class="otto-cover__poster"></span>
+      <span class="otto-cover__grid"></span>
+      <span class="otto-cover__corners"><i></i><i></i><i></i><i></i></span>
+      <div class="otto-cover__hud">
+        <span class="otto-cover__path" data-cover-path>{project ? `otto://inside/${id}` : 'otto://home'}</span>
+        <span class="otto-cover__title"><em data-cover-kicker>{project ? 'Inside' : 'Back to'}</em> <b data-cover-name>{project ? name : 'Otto'}</b></span>
+        <span class="otto-cover__bar"><i></i></span>
+        <span class="otto-cover__status"><span data-cover-status>{project ? `Entering ${name}` : 'Returning to Otto'}</span><i class="otto-cover__cursor"></i></span>
+      </div>
+    </div>
+  </div>
+  <span class="otto-cover__iris"></span>
+  {project && <div class="otto-cover__otto" data-cover-otto><span class="otto-cover__pad"></span><Robot size="xl" id="otto-cover" still pose="wave" /></div>}
+</div>
+
+<style is:global>
+  .otto-cover { --lime: #d9ff3f; --fw: min(34vh, 52vw, 300px); display: none; position: fixed; inset: 0; z-index: 300; pointer-events: none; contain: strict; color: #f2f3ee; -webkit-user-select: none; user-select: none; }
+  .otto-cover[data-state], html[data-arrive='portal'] .otto-cover[data-kind='project'], html[data-arrive='return'] .otto-cover[data-kind='back'] { display: block; }
+  .otto-cover__win, .otto-cover__inner { position: absolute; inset: 0; }
+  .otto-cover__inner { overflow: hidden; background: #070807; transform-origin: 50% 50%; will-change: transform; }
+  .otto-cover__poster { position: absolute; inset: 0; background: var(--img, none) center / cover no-repeat; filter: grayscale(1) contrast(1.18); opacity: .14; }
+  .otto-cover__poster::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, #d9ff3f, #2a3a00); mix-blend-mode: color; opacity: .42; }
+  .otto-cover[data-kind='back'] .otto-cover__poster { display: none; }
+  .otto-cover__grid { position: absolute; inset: 0; background:
+    repeating-linear-gradient(180deg, #d9ff3f0d 0 1px, transparent 1px 4px),
+    linear-gradient(#d9ff3f12 1px, transparent 1px) 50% 50% / 56px 56px,
+    linear-gradient(90deg, #d9ff3f12 1px, transparent 1px) 50% 50% / 56px 56px,
+    radial-gradient(70% 60% at 50% 46%, #d9ff3f1c, transparent 70%),
+    radial-gradient(120% 90% at 50% 50%, transparent 52%, #000000b3); }
+  .otto-cover__corners i { position: absolute; width: 22px; height: 22px; border: 0 solid #d9ff3f99; }
+  .otto-cover__corners i:nth-child(1) { left: 20px; top: 20px; border-width: 1.5px 0 0 1.5px; }
+  .otto-cover__corners i:nth-child(2) { right: 20px; top: 20px; border-width: 1.5px 1.5px 0 0; }
+  .otto-cover__corners i:nth-child(3) { left: 20px; bottom: 20px; border-width: 0 0 1.5px 1.5px; }
+  .otto-cover__corners i:nth-child(4) { right: 20px; bottom: 20px; border-width: 0 1.5px 1.5px 0; }
+  .otto-cover__hud { position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 14px; width: min(92vw, 1100px); transform: translate(-50%, -54%); text-align: center; isolation: isolate; }
+  /* A soft dark halo, so the poster never reads through the title. */
+  .otto-cover__hud::before { content: ''; position: absolute; inset: -40% -6%; z-index: -1; background: radial-gradient(closest-side, #070807f2 40%, #07080700); }
+  .otto-cover__path { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; color: #a7aca0; }
+  .otto-cover__title { display: grid; justify-items: center; gap: .1em; line-height: .95; }
+  .otto-cover__title em { font-family: var(--font-serif); font-style: italic; font-weight: 400; font-size: clamp(22px, 1rem + 1.6vw, 40px); letter-spacing: -.02em; color: var(--lime); }
+  .otto-cover__title b { max-width: 100%; font-size: clamp(44px, 1.2rem + 7vw, 128px); font-weight: 620; letter-spacing: -.05em; color: #f2f3ee; overflow-wrap: anywhere; text-shadow: 0 0 60px #d9ff3f33; }
+  .otto-cover__bar { position: relative; width: min(420px, 72vw); height: 3px; margin-top: 14px; border-radius: 3px; background: #ffffff1f; overflow: hidden; }
+  .otto-cover__bar i { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, #a8cc1f, var(--lime)); box-shadow: 0 0 14px #d9ff3f; transform-origin: 0 50%; transform: scaleX(var(--bar, .88)); }
+  .otto-cover__status { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: #d9ff3fcc; }
+  .otto-cover__cursor { width: 7px; height: 12px; background: var(--lime); }
+  /* The flyer: a big Otto who arrives with you and flies to his dock. */
+  .otto-cover__otto { display: none; position: absolute; left: 50%; top: 50%; width: var(--fw); margin: calc(var(--fw) * -.5) 0 0 calc(var(--fw) / -2); transform-origin: 0 0; }
+  .otto-cover__otto .robot { width: 100%; }
+  .otto-cover__pad { position: absolute; left: 6%; right: 6%; bottom: -2%; height: 12%; border-radius: 50%; background: radial-gradient(closest-side, #d9ff3f80, #d9ff3f14 70%, transparent); }
+
+  /* The SVG take's lime iris ring rides the edge of the opening circle. */
+  .otto-cover__iris { display: none; position: absolute; border-radius: 50%; box-shadow: 0 0 0 2px #d9ff3f, 0 0 28px 6px #d9ff3f8c, inset 0 0 22px 2px #d9ff3f66; pointer-events: none; }
+  .otto-cover[data-state='grow'][data-iris] .otto-cover__iris { display: block; animation: cover-iris var(--grow-ms, 460ms) var(--grow-ease, cubic-bezier(.55, 0, .3, 1)) both; }
+  @keyframes cover-iris { from { left: var(--i0-x); top: var(--i0-y); width: var(--i0-d); height: var(--i0-d); opacity: 1; } 80% { opacity: 1; } to { left: var(--i1-x); top: var(--i1-y); width: var(--i1-d); height: var(--i1-d); opacity: 0; } }
+
+  /* Homepage take: otto-handoff.ts sets --clip-from/--clip-to/--inner-from and data-state. */
+  .otto-cover[data-state='grow'] .otto-cover__win { animation: cover-clip var(--grow-ms, 340ms) var(--grow-ease, cubic-bezier(.45, 0, .2, 1)) both; }
+  .otto-cover[data-state='grow'] .otto-cover__inner { animation: cover-zoom var(--grow-ms, 340ms) var(--grow-ease, cubic-bezier(.45, 0, .2, 1)) both; }
+  .otto-cover[data-state='fade'] { animation: cover-fade-in 180ms ease-out both; }
+  .otto-cover:is([data-state='grow'], [data-state='fade'], [data-state='on']) .otto-cover__bar i { animation: cover-bar-load 3.6s linear both; }
+  @keyframes cover-clip { from { clip-path: var(--clip-from, inset(50% round 14px)); } to { clip-path: var(--clip-to, inset(0 round 0)); } }
+  @keyframes cover-zoom { from { transform: var(--inner-from, none); } to { transform: none; } }
+  @keyframes cover-fade-in { from { opacity: 0; } }
+  /* Loads to ~80% while the cover opens, then creeps (the tour starts it at 88%). */
+  @keyframes cover-bar-load { 0% { transform: scaleX(.04); animation-timing-function: cubic-bezier(.2, .6, .3, 1); } 12% { transform: scaleX(.8); animation-timing-function: cubic-bezier(.1, .5, .3, 1); } 100% { transform: scaleX(.88); } }
+
+  /* Arrival on the inside tour, at first paint (motion on). Timeline:
+     0–220 ms the bar completes · 160–320 the title dissolves · 40–300 Otto
+     beams in, big, mid-screen · 280–760 the window collapses into the tour's
+     monitor and dissolves into it from 500 · 360–820 Otto flies to his dock,
+     where the docked Otto takes over · all gone at 900 ms. */
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] { animation: cover-gone 900ms linear both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__bar i { animation: cover-bar-done 220ms cubic-bezier(.2, .6, .2, 1) both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__hud { animation: cover-hud-out 160ms ease-in 160ms both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__corners { animation: cover-fade-out 120ms ease-in 200ms both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__win { animation: cover-collapse 480ms cubic-bezier(.65, 0, .25, 1) 280ms both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__inner { animation: cover-shrink 480ms cubic-bezier(.65, 0, .25, 1) 280ms both, cover-fade-out 260ms ease-in 500ms both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__otto { display: block; animation: cover-fly 460ms cubic-bezier(.5, 0, .2, 1) 360ms both, cover-fade-out 70ms linear 820ms both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__otto .robot { animation: cover-beam-in 260ms cubic-bezier(.2, .8, .2, 1) 40ms both; }
+  html[data-arrive='portal'] .otto-cover[data-kind='project'] .otto-cover__pad { animation: cover-beam-in 260ms cubic-bezier(.2, .8, .2, 1) 40ms both, cover-fade-out 160ms ease-in 360ms both; }
+  @keyframes cover-gone { 0%, 99.9% { visibility: visible; } 100% { visibility: hidden; } }
+  @keyframes cover-bar-done { from { transform: scaleX(.88); } to { transform: scaleX(1); } }
+  @keyframes cover-hud-out { to { opacity: 0; transform: translate(-50%, -54%) scale(1.06); } }
+  @keyframes cover-fade-out { to { opacity: 0; visibility: hidden; } }
+  @keyframes cover-collapse { from { clip-path: inset(0 round 0); } to { clip-path: var(--to-clip, inset(0 0 100% 0 round 0)); } }
+  @keyframes cover-shrink { to { transform: var(--to-inner, none); } }
+  @keyframes cover-fly { to { transform: var(--fly, translate(32vw, 30vh) scale(.3)); } }
+  @keyframes cover-beam-in { from { opacity: 0; transform: translateY(22px) scale(.9); } }
+
+  /* Back to Otto: a shutter down on the tour (inside.ts), up on the homepage. */
+  .otto-cover[data-state='back'] .otto-cover__win { animation: cover-shutter-down 280ms cubic-bezier(.5, 0, .75, 0) both; }
+  html[data-arrive='return'] .otto-cover[data-kind='back'], .otto-cover[data-state='leave'] { animation: cover-gone 640ms linear both; }
+  html[data-arrive='return'] .otto-cover[data-kind='back'] .otto-cover__win, .otto-cover[data-state='leave'] .otto-cover__win { animation: cover-shutter-up 460ms cubic-bezier(.65, 0, .35, 1) 160ms both; }
+  @keyframes cover-shutter-down { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
+  @keyframes cover-shutter-up { from { clip-path: inset(0); } to { clip-path: inset(0 0 100% 0); } }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion='off']) .otto-cover__cursor { animation: cover-blink 1s steps(1) infinite; }
+  }
+  @keyframes cover-blink { 50% { opacity: 0; } }
+
+  /* Reduced motion or Pause: the same cover, but only a short crossfade on
+     each side (no zoom, collapse, shutter or flight). The !important
+     durations beat the global reduced-motion reset, which zeroes them. */
+  html[data-motion='off'] .otto-cover :is(.otto-cover__win, .otto-cover__inner, .otto-cover__hud, .otto-cover__poster, .otto-cover__bar i, .otto-cover__corners) { animation: none !important; }
+  html[data-motion='off'] :is(.otto-cover__otto, .otto-cover__iris) { display: none !important; }
+  html[data-motion='off'] .otto-cover[data-state='fade'], html[data-motion='off'] .otto-cover[data-state='back'] { animation: cover-fade-in 160ms ease-out both !important; }
+  html[data-motion='off'][data-arrive] .otto-cover, html[data-motion='off'] .otto-cover[data-state='leave'] { animation: cover-fade-out 200ms ease-out 60ms both !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .otto-cover :is(.otto-cover__win, .otto-cover__inner, .otto-cover__hud, .otto-cover__poster, .otto-cover__bar i, .otto-cover__corners) { animation: none !important; }
+    .otto-cover__otto, .otto-cover__iris { display: none !important; }
+    .otto-cover[data-state='fade'], .otto-cover[data-state='back'] { animation: cover-fade-in 160ms ease-out both !important; }
+    html[data-arrive] .otto-cover, .otto-cover[data-state='leave'] { animation: cover-fade-out 200ms ease-out 60ms both !important; }
+  }
+</style>

@@ -3,11 +3,14 @@
  *   window.dispatchEvent(new CustomEvent('otto:state', { detail: { state: 'talk', ms: 1200 } }))
  * (ms returns him to idle afterwards). Also: random blinks and eyes that follow
  * the pointer or the last touch. With reduced or paused motion Otto still
- * changes pose, but nothing loops and his eyes stay put.
+ * changes pose, but nothing loops and his eyes stay put. While a hand-off is
+ * open (otto:handoff offer/take, until cancel) only the hand-off poses
+ * (offer, grab, pull) apply, so chat chatter never drops his offered hand.
  */
 export type RobotState = 'idle' | 'wave' | 'talk' | 'think' | 'confused' | 'cheeky' | 'point' | 'pew' | 'welcome' | 'offer' | 'grab' | 'pull';
 // States the 3D Otto has that the SVG Otto shows with its nearest pose.
-const svgPose: Partial<Record<RobotState, RobotState>> = { welcome: 'wave', offer: 'point', grab: 'pew', pull: 'pew' };
+const svgPose: Partial<Record<RobotState, RobotState>> = { welcome: 'wave' };
+const handPoses: RobotState[] = ['offer', 'grab', 'pull'];
 
 const robots = [...document.querySelectorAll<HTMLElement>('[data-robot]')];
 const root = document.documentElement;
@@ -16,8 +19,17 @@ const still = () => reduce.matches || root.dataset.motion === 'off';
 
 if (robots.length) {
   let back = 0;
+  let holding = false; // a hand-off is open
+  window.addEventListener('otto:handoff', event => {
+    const phase = (event as CustomEvent<{ phase?: string }>).detail?.phase;
+    const was = holding;
+    holding = phase === 'offer' || phase === 'take';
+    if (holding) window.clearTimeout(back); // a pending "back to idle" must not drop his hand
+    else if (was) set('confused', 900); // declined: a little shrug, as the 3D Otto does
+  });
   const set = (requested: RobotState, ms = 0) => {
     const state = svgPose[requested] ?? requested;
+    if (holding && !handPoses.includes(state)) return;
     window.clearTimeout(back);
     robots.forEach(robot => {
       robot.dataset.state = state;
@@ -59,7 +71,7 @@ if (robots.length) {
   window.addEventListener('omar:motion', look);
 
   /* A tap or click on Otto makes him wave. */
-  robots.forEach(robot => robot.addEventListener('click', () => set('wave', 1200)));
+  robots.forEach(robot => robot.addEventListener('click', () => { if (!holding) set('wave', 1200); }));
 }
 
 export {};

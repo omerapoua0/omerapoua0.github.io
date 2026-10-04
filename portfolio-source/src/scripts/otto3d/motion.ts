@@ -28,9 +28,15 @@ const POSES: Record<OttoState, Pose> = {
   point: pose({ R: arm(-1.42, .42, -.08, .9, .8, 0, true), turn: .12, expression: 'happy' }),
   pew: pose({ R: arm(-1.42, .42, -.08, .9, .8, 0, true), turn: .12, expression: 'squint' }),
   offer: pose({ R: arm(-1.32, .18, -.3, 0, .1), L: arm(-.2, -.3, -.5, -.6, .25), lean: .14, expression: 'happy' }),
-  grab: pose({ R: arm(-1.32, .18, -.3, 0, .88), L: arm(-.2, -.3, -.5, -.6, .25), lean: .14, expression: 'happy' }),
-  pull: pose({ R: arm(-.9, .1, -1.6, 0, .9), L: arm(.15, -.35, -.4, -.6, .3), lean: -.17, expression: 'happy' }),
+  grab: pose({ R: arm(-1.3, .16, -.36, .12, .92), L: arm(-.2, -.3, -.5, -.6, .25), lean: .17, expression: 'happy' }),
+  // The pull: elbow drawn back and up, body leaning back, as if drawing you in.
+  pull: pose({ R: arm(-.78, .12, -1.72, .1, .95), L: arm(.22, -.42, -.36, -.6, .3), lean: -.2, headPitch: .06, expression: 'happy' }),
 };
+/* Phones: the button sits in a tray right under him, so he reaches down to it. */
+const OFFER_LOW = pose({ R: arm(-.86, .34, -.48, .3, .08), L: arm(-.2, -.3, -.5, -.6, .25), lean: .24, headPitch: .14, expression: 'happy' });
+const GRAB_LOW = pose({ ...OFFER_LOW, R: { ...OFFER_LOW.R, ex: -.56, curl: .92 } });
+/** The take clip: grip for this long, then pull. */
+const GRIP = .2;
 
 class Spring {
   x: number; v = 0;
@@ -66,7 +72,7 @@ export function createDirector(rig: Rig) {
   let glance = { x: 0, y: 0, until: 0, next: 3 };
   let blink = { t: 1, next: 2.4, double: false };
   let entrance: { start: number; kind: 'fly' | 'rise' } | null = null;
-  let handoff: { phase: 'offer' | 'take'; start: number } | null = null;
+  let handoff: { phase: 'offer' | 'take'; start: number; low: boolean } | null = null;
   let landedAt = -1;
   const events: string[] = [];
 
@@ -103,12 +109,16 @@ export function createDirector(rig: Rig) {
       else for (let i = 0; i < sub; i++) s.step(dt / sub);
     }
     if (stateUntil && time >= stateUntil) { state = 'idle'; stateUntil = 0; }
-    const current = handoff ? POSES[handoff.phase === 'offer' ? 'offer' : time - handoff.start < .22 ? 'grab' : 'pull'] : POSES[state];
+    const gripping = !!handoff && handoff.phase === 'take' && time - handoff.start < GRIP;
+    const current = !handoff ? POSES[state]
+      : handoff.phase === 'offer' ? (handoff.low ? OFFER_LOW : POSES.offer)
+      : gripping ? (handoff.low ? GRAB_LOW : POSES.grab) : POSES.pull;
     const live = !still;
 
     // Body position: home, gliding forward to offer the hand, or the entrance path.
     let bx = 0, by = 0, bz = 0, pitchExtra = 0, bank = 0, flare = .35, trail = 0;
-    if (handoff) bz = handoff.phase === 'offer' ? .85 : (time - handoff.start < .22 ? .85 : .3);
+    // Offering, he glides forward; pulling, he draws back (and up a touch), taking you with him.
+    if (handoff) { bz = handoff.phase === 'offer' || gripping ? .85 : .25; by = handoff.phase === 'take' && !gripping ? .12 : 0; }
     if (entrance && live) {
       const t = (time - entrance.start) / (entrance.kind === 'fly' ? 1.6 : .6);
       if (entrance.kind === 'fly' && t < 1) {
@@ -198,9 +208,9 @@ export function createDirector(rig: Rig) {
     look(x: number, y: number, active = true) { pointer = { x, y, active }; },
     entrance(kind: 'fly' | 'rise') { entrance = { start: time, kind }; landedAt = -1; },
     get entering() { return !!entrance; },
-    handoff(phase: 'offer' | 'take' | 'cancel') {
+    handoff(phase: 'offer' | 'take' | 'cancel', opts: { low?: boolean } = {}) {
       if (phase === 'cancel') { handoff = null; setState('confused', 900); return; }
-      handoff = { phase, start: time };
+      handoff = { phase, start: time, low: phase === 'take' ? !!handoff?.low : !!opts.low };
     },
     setStill(value: boolean) {
       still = value;

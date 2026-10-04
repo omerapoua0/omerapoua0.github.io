@@ -8,12 +8,14 @@ import '../styles/layout.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import CommandPalette from '../components/CommandPalette.astro';
+import OttoCover from '../components/OttoCover.astro';
 import { site } from '../data/site';
 import onestLatin from '@fontsource-variable/onest/files/onest-latin-wght-normal.woff2?url';
 import serifItalic from '@fontsource/old-standard-tt/files/old-standard-tt-latin-400-italic.woff2?url';
 
-interface Props { title: string; description?: string; home?: boolean; image?: string; noindex?: boolean; }
-const { title, description = site.description, home = false, image = '/portrait-hero.jpg', noindex = false } = Astro.props;
+/* cover: Otto's hand-off cover for an inside tour (the homepage gets the blank one). */
+interface Props { title: string; description?: string; home?: boolean; image?: string; noindex?: boolean; cover?: { id: string; name: string; media?: string } }
+const { title, description = site.description, home = false, image = '/portrait-hero.jpg', noindex = false, cover } = Astro.props;
 const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 const fullTitle = home ? `${site.name} | ${title}` : `${title} | ${site.name}`;
 const person = {
@@ -53,13 +55,21 @@ const person = {
     <meta property="og:image:alt" content="Portrait of Omar Aboelella" />
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
+    <!-- Before first paint: theme, Pause motion, and Otto's hand-off arrival.
+         html[data-arrive="portal"]: a hand-off to this tour (sessionStorage otto-handoff {id, t}, < 10 s, matching path)
+         paints OttoCover at first paint; "return": "Back to Otto" (otto-return) on the homepage. The cover carries
+         these page changes in every browser, so a native cross-document view transition is skipped for them. -->
     <script is:inline>
       (function(){var d=document.documentElement;d.classList.add('js');try{var t=localStorage.getItem('omar-theme');if(t==='light'||t==='dark')d.dataset.theme=t}catch(e){}
       try{var m=sessionStorage.getItem('omar-motion');if(m==='on'||m==='off')d.dataset.motion=m}catch(e){}
-      try{var h=JSON.parse(sessionStorage.getItem('otto-handoff')||'null');if(h&&Date.now()-h.t<10000){d.dataset.arrive='portal';if(!('onpagereveal' in window))d.classList.add('arrive-css')}}catch(e){}})();
+      try{var p=location.pathname,n=Date.now(),h=JSON.parse(sessionStorage.getItem('otto-handoff')||'null'),r=JSON.parse(sessionStorage.getItem('otto-return')||'null');sessionStorage.removeItem('otto-return');
+      if(h&&n-h.t>=0&&n-h.t<10000&&p.indexOf('/inside/'+h.id)===0)d.dataset.arrive='portal';else if(r&&n-r.t>=0&&n-r.t<10000&&/^\/(index\.html)?$/.test(p))d.dataset.arrive='return'}catch(e){}
+      var c=function(){return document.querySelector('[data-otto-cover][data-state]')},s=function(e){if(e.viewTransition){e.viewTransition.skipTransition();window.__ottoVT=(window.__ottoVT||'')+e.type+' '}};
+      addEventListener('pagereveal',function(e){if(d.dataset.arrive||c())s(e)});addEventListener('pageswap',function(e){if(c())s(e)})})();
     </script>
   </head>
   <body class:list={[home ? 'is-home' : 'is-page']}>
+    {(home || cover) && <OttoCover {...cover} />}
     <a href="#main" class="skip-link">Skip to content</a>
     <SiteHeader overHero={home} />
     <main id="main" tabindex="-1"><slot /></main>
