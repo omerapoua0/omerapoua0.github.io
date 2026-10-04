@@ -110,7 +110,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
 
   const key = new DirectionalLight(new Color('#fff4e6'), 2.4);
   key.position.set(2.5, 4, 3.5);
-  const rim = new DirectionalLight(new Color('#e6f2c4'), 1.1); // a cool, faintly lime rim: real white armour, brand light only in the accents
+  const rim = new DirectionalLight(new Color('#e8eefc'), 1.2); // a neutral cool rim: real white armour, no colour cast
   rim.position.set(-3, 2.5, -2.5);
   const fill = new HemisphereLight(new Color('#cfd8ff'), new Color('#0a0b09'), .35);
   scene.add(key, rim, fill);
@@ -439,7 +439,7 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
       let opaque = 0, lime = 0;
       for (let i = 0; i < pixels.length; i += 16) {
         if (pixels[i + 3] > 200) opaque++;
-        if (pixels[i] > 170 && pixels[i + 1] > 200 && pixels[i + 2] < 130 && pixels[i + 3] > 200) lime++;
+        if (pixels[i] > 190 && pixels[i + 1] > 190 && pixels[i + 2] > 180 && Math.abs(pixels[i] - pixels[i + 2]) < 30 && pixels[i + 3] > 200) lime++; // bright neutral white armour
       }
       const total = pixels.length / 16;
       return { opaque: opaque / total, lime: lime / total };

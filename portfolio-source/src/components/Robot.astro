@@ -27,16 +27,16 @@ const uid = `${id}-${size}`;
         <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
       </radialGradient>
       <radialGradient id={`${uid}-shadow`} cx=".5" cy=".5" r=".5">
-        <stop offset="0" stop-color="#d9ff3f" stop-opacity=".35" />
-        <stop offset="1" stop-color="#d9ff3f" stop-opacity="0" />
+        <stop offset="0" stop-color="#000000" stop-opacity=".6" />
+        <stop offset="1" stop-color="#000000" stop-opacity="0" />
       </radialGradient>
       <linearGradient id={`${uid}-rim`} x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stop-color="#ffffff" stop-opacity=".35" />
         <stop offset=".5" stop-color="#ffffff" stop-opacity=".06" />
-        <stop offset="1" stop-color="#d9ff3f" stop-opacity=".55" />
+        <stop offset="1" stop-color="#e8eef8" stop-opacity=".4" />
       </linearGradient>
       <pattern id={`${uid}-led`} width="3.2" height="3.2" patternUnits="userSpaceOnUse">
-        <circle cx="1.6" cy="1.6" r="1.25" fill="#d9ff3f" />
+        <circle cx="1.6" cy="1.6" r="1.25" fill="#e8eef8" />
       </pattern>
       <filter id={`${uid}-glow`} x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur stdDeviation="2.4" result="blur" />
@@ -61,36 +61,36 @@ const uid = `${id}-${size}`;
       <path d="M58 150 C58 140 70 134 100 134 C130 134 142 140 142 150 L138 182 C134 196 120 202 100 202 C80 202 66 196 62 182 Z" fill={`url(#${uid}-sheen)`} />
       <path d="M60 160 Q100 168 140 160" fill="none" stroke="#00000030" stroke-width="1.2" />
       <rect x="82" y="164" width="36" height="24" rx="8" fill={`url(#${uid}-glass)`} stroke="#00000080" />
-      <circle cx="100" cy="176" r="7.5" fill="none" stroke="#d9ff3f" stroke-width="2.4" class="robot__badge" filter={`url(#${uid}-glow)`} />
+      <circle cx="100" cy="176" r="2.6" fill="#e8eef8" class="robot__badge" filter={`url(#${uid}-glow)`} />
       <text x="100" y="180" text-anchor="middle" class="robot__badge-text" opacity="0">O</text>
       <!-- neck: graphite column, cables, a lime ring -->
       <rect x="91" y="118" width="18" height="20" rx="5" fill="#1a1d18" />
       <path d="M94 119 V137 M106 119 V137" stroke="#5d6063" stroke-width="2" />
-      <ellipse cx="100" cy="130" rx="11" ry="2.6" fill="none" stroke="#d9ff3f" stroke-width="2" filter={`url(#${uid}-glow)`} />
+      <ellipse cx="100" cy="130" rx="11" ry="2.6" fill="none" stroke="#8d939a" stroke-width="2" />
 
       <!-- head: a helmet, white shell with a glossy black faceplate and lime-ringed ear modules -->
       <g class="robot__head">
         <line x1="100" y1="38" x2="100" y2="31" stroke="#3a3f37" stroke-width="3" stroke-linecap="round" />
-        <circle class="robot__bead" cx="100" cy="29" r="3" fill="#d9ff3f" filter={`url(#${uid}-glow)`} />
+        <circle class="robot__bead" cx="100" cy="29" r="3" fill="#e8eef8" filter={`url(#${uid}-glow)`} />
         <ellipse cx="100" cy="80" rx="44" ry="46" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} stroke-width="1.6" />
         <ellipse cx="100" cy="80" rx="44" ry="46" fill={`url(#${uid}-sheen)`} />
         <path d="M60 74 C60 52 78 40 100 40 C122 40 140 52 140 74 C140 96 128 112 100 112 C72 112 60 96 60 74 Z" fill={`url(#${uid}-glass)`} stroke="#3a3f37" stroke-width="1.6" />
         <path d="M70 58 Q84 46 102 46 L76 96 Q64 84 66 70 Z" fill="#ffffff" opacity=".08" />
-        <rect x="50" y="68" width="10" height="24" rx="5" fill="#1a1d18" stroke="#d9ff3f" stroke-width="1.6" />
-        <rect x="140" y="68" width="10" height="24" rx="5" fill="#1a1d18" stroke="#d9ff3f" stroke-width="1.6" />
+        <rect x="50" y="68" width="10" height="24" rx="5" fill="#1a1d18" stroke="#8d939a" stroke-width="1.6" />
+        <rect x="140" y="68" width="10" height="24" rx="5" fill="#1a1d18" stroke="#8d939a" stroke-width="1.6" />
         <g class="robot__face" filter={`url(#${uid}-glow)`}>
           <g class="robot__eyes">
-            <rect class="robot__eye robot__eye--l" x="78" y="68" width="13" height="16" rx="6.5" fill={`url(#${uid}-led)`} />
-            <rect class="robot__eye robot__eye--r" x="109" y="68" width="13" height="16" rx="6.5" fill={`url(#${uid}-led)`} />
-            <circle cx="88" cy="71" r="1.6" fill="#ffffff" opacity=".8" class="robot__glint" />
-            <circle cx="119" cy="71" r="1.6" fill="#ffffff" opacity=".8" class="robot__glint" />
+            <rect class="robot__eye robot__eye--l" x="76" y="73" width="17" height="4.5" rx="2.25" fill="#e8eef8" />
+            <rect class="robot__eye robot__eye--r" x="107" y="73" width="17" height="4.5" rx="2.25" fill="#e8eef8" />
+            
+            
           </g>
-          <path class="robot__brow robot__brow--l" d="M76 62 L92 59" stroke="#d9ff3f" stroke-width="2.4" stroke-linecap="round" />
-          <path class="robot__brow robot__brow--r" d="M108 59 L124 62" stroke="#d9ff3f" stroke-width="2.4" stroke-linecap="round" />
-          <g class="robot__mouth">
-            <rect x="91" y="92" width="4" height="4" rx="2" fill="#d9ff3f" />
-            <rect x="98" y="92" width="4" height="4" rx="2" fill="#d9ff3f" />
-            <rect x="105" y="92" width="4" height="4" rx="2" fill="#d9ff3f" />
+          <path class="robot__brow robot__brow--l" d="M76 62 L92 59" stroke="#8d939a" stroke-width="2.4" stroke-linecap="round" />
+          <path class="robot__brow robot__brow--r" d="M108 59 L124 62" stroke="#8d939a" stroke-width="2.4" stroke-linecap="round" />
+          <g class="robot__mouth" opacity="0">
+            <rect x="91" y="92" width="4" height="4" rx="2" fill="#e8eef8" />
+            <rect x="98" y="92" width="4" height="4" rx="2" fill="#e8eef8" />
+            <rect x="105" y="92" width="4" height="4" rx="2" fill="#e8eef8" />
           </g>
         </g>
         <text class="robot__q" x="150" y="44">?</text>
@@ -102,7 +102,7 @@ const uid = `${id}-${size}`;
         <rect x="135" y="150" width="20" height="36" rx="10" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
         <rect x="137" y="184" width="16" height="6" rx="3" fill="#1a1d18" />
         <rect x="136.5" y="188" width="17" height="10" rx="5" fill={`url(#${uid}-shell)`} stroke="#ffffff24" />
-        <rect class="robot__finger" x="141.5" y="206" width="6" height="16" rx="3" fill="#1a1d18" stroke="#d9ff3f" />
+        <rect class="robot__finger" x="141.5" y="206" width="6" height="16" rx="3" fill="#1a1d18" stroke="#8d939a" />
         <rect class="robot__fist" x="137.5" y="196" width="15" height="14" rx="6" fill="#1a1d18" stroke="#ffffff2e" />
         <g class="robot__hand">
           <rect class="robot__thumb" x="131" y="196" width="5" height="11" rx="2.5" fill="#1a1d18" stroke="#ffffff33" />
@@ -110,7 +110,7 @@ const uid = `${id}-${size}`;
           <rect class="robot__digit" x="142.3" y="206" width="4.2" height="13" rx="2.1" fill="#1a1d18" stroke="#ffffff33" />
           <rect class="robot__digit" x="148" y="205" width="4.2" height="12" rx="2.1" fill="#1a1d18" stroke="#ffffff33" />
           <rect x="135" y="194" width="19" height="14" rx="6" fill="#1a1d18" stroke="#ffffff33" />
-          <circle class="robot__palm" cx="144.5" cy="201" r="3.2" fill="#d9ff3f" filter={`url(#${uid}-glow)`} />
+          <circle class="robot__palm" cx="144.5" cy="201" r="3.2" fill="#e8eef8" filter={`url(#${uid}-glow)`} />
         </g>
       </g>
       <ellipse cx="144.5" cy="152" rx="15" ry="13" fill={`url(#${uid}-shell)`} stroke={`url(#${uid}-rim)`} />
@@ -126,7 +126,7 @@ const uid = `${id}-${size}`;
   .robot--sm { width: 92px; }
   .robot__svg { width: 100%; height: auto; overflow: visible; }
   .robot__badge-text { font: 600 13px var(--font-mono, monospace); fill: #d9ff3f; }
-  .robot__q { font: 700 26px var(--font-sans, sans-serif); fill: #d9ff3f; opacity: 0; }
+  .robot__q { font: 700 26px var(--font-sans, sans-serif); fill: #e8eef8; opacity: 0; }
   .robot__brow { opacity: 0; }
   .robot__finger { opacity: 0; }
   .robot__hand { opacity: 0; }
@@ -139,8 +139,8 @@ const uid = `${id}-${size}`;
   .robot__arm--l { transform-origin: 55.5px 152px; }
   .robot__arm--r { transform-origin: 144.5px 152px; }
   .robot__eyes { transform: translate(var(--ex), var(--ey)); }
-  .robot__eye--l { transform-origin: 84.5px 76px; }
-  .robot__eye--r { transform-origin: 115.5px 76px; }
+  .robot__eye--l { transform-origin: 84.5px 75.25px; }
+  .robot__eye--r { transform-origin: 115.5px 75.25px; }
   .robot__mouth { transform-origin: 100px 94px; }
   .robot__mouth rect { transform-origin: center 94px; }
   .robot[data-blink] .robot__glint, .robot[data-state='cheeky'] .robot__glint, .robot[data-state='confused'] .robot__glint { opacity: 0; }

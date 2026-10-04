@@ -318,7 +318,7 @@ function watch(page) {
       await page.waitForFunction(() => document.querySelector('[data-otto-stage][data-stage-mode="hero"]').hasAttribute('data-landed'), null, { timeout: 30000 });
       const snap = await page.evaluate(() => window.__otto.handle.snapshot());
       assert.ok(snap.opaque > .012, `Otto drawn (${(snap.opaque * 100).toFixed(1)}% of the canvas opaque)`);
-      assert.ok(snap.lime > .0005, `lime eyes and ring lit (${(snap.lime * 100).toFixed(2)}%)`);
+      assert.ok(snap.lime > .002, `white armour lit, no colour cast (${(snap.lime * 100).toFixed(2)}%)`);
       assert.ok(await page.locator(`${heroStage} canvas`).isVisible(), 'canvas visible');
       await page.waitForFunction(sel => getComputedStyle(document.querySelector(`${sel} .otto-stage__poster`)).opacity === '0', heroStage, { timeout: 5000 }); // SVG poster faded out in 3D
       assert.match(await page.evaluate(() => sessionStorage.getItem('otto3d')), /^(hi|lo)$/, 'tier remembered');

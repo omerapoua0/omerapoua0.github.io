@@ -75,64 +75,43 @@ function ledPanel(ctx: CanvasRenderingContext2D, cols: number, rows: number, pit
 
 /** Face band canvas (matches the glass band in rig.ts: 80 x 24 LEDs). */
 export function createFace() {
-  const COLS = 80, ROWS = 24, PITCH = 9.6;
+  // A real helmet has no cartoon face: two faint cool-white sensor slits
+  // glow behind the black glass. They blink, follow your pointer, narrow
+  // when he squints or thinks, and brighten softly while he talks.
   const canvas = canvasOf(768, 231);
   const ctx = canvas.getContext('2d')!;
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   texture.anisotropy = 4;
-  const panel = ledPanel(ctx, COLS, ROWS, PITCH, 0, 0);
   let last = '';
-
+  const slit = (cx: number, cy: number, w: number, h: number, alpha: number) => {
+    if (h < 1) return;
+    ctx.save();
+    // Soft outer bloom, then the bright core.
+    const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * .9);
+    halo.addColorStop(0, `rgba(205,220,240,${.22 * alpha})`);
+    halo.addColorStop(1, 'rgba(205,220,240,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(cx - w, cy - w, w * 2, w * 2);
+    ctx.shadowColor = `rgba(220,232,250,${.9 * alpha})`; ctx.shadowBlur = 14;
+    ctx.fillStyle = `rgba(236,242,252,${.85 * alpha})`;
+    ctx.beginPath(); ctx.roundRect(cx - w / 2, cy - h / 2, w, h, h / 2); ctx.fill();
+    ctx.restore();
+  };
   const set = (state: FaceState) => {
-    // Whole-cell steps keep the matrix crisp, like a real LED panel.
-    const ex = Math.round(state.lookX * 3), ey = Math.round(state.lookY * 2);
-    const open = Math.round((1 - state.blink) * 8) / 8;
-    const bars = state.talk > 0 ? [0, 1, 2, 3, 4].map(i => Math.round(1 + 3.4 * state.talk * (.5 + .5 * Math.sin(state.time * 22 + i * 1.7)))) : [];
-    const dots = state.expression === 'think' ? Math.floor(state.time * 3) % 4 : 0;
-    const key = `${ex},${ey},${open},${state.expression},${bars.join('-')},${dots}`;
+    const ex = Math.round(state.lookX * 14), ey = Math.round(state.lookY * 8);
+    const open = Math.round((1 - state.blink) * 10) / 10;
+    const narrow = state.expression === 'squint' || state.expression === 'think' ? .55 : 1;
+    const talk = state.talk > 0 ? Math.round((.5 + .5 * Math.sin(state.time * 14)) * state.talk * 4) / 4 : 0;
+    const key = `${ex},${ey},${open},${narrow},${talk},${state.expression}`;
     if (key === last) return false;
     last = key;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const m = panel.begin();
-    const lx = 26.5 + ex, rx = 53.5 + ex, y = 10.5 + ey;
-    const eye = (cx: number, cy: number, o: number, kind: 'open' | 'happy' | 'squint') => {
-      if (kind === 'happy') {
-        m.lineWidth = 2.3;
-        m.beginPath(); m.arc(cx, cy + 2.6, 4.1, Math.PI * 1.12, Math.PI * 1.88); m.stroke();
-        return;
-      }
-      const hgt = Math.max(1.2, 9 * o * (kind === 'squint' ? .42 : 1));
-      m.beginPath(); m.roundRect(cx - 3.5, cy - hgt / 2, 7, hgt, Math.min(3.2, hgt / 2)); m.fill();
-    };
-    const smile = (wide: boolean) => {
-      m.lineWidth = 1.7;
-      m.beginPath();
-      if (wide) m.arc(40 + ex * .5, 14.6, 4.6, Math.PI * .18, Math.PI * .82);
-      else m.arc(40 + ex * .5, 15.4, 3, Math.PI * .22, Math.PI * .78);
-      m.stroke();
-    };
-    switch (state.expression) {
-      case 'happy': eye(lx, y, 1, 'happy'); eye(rx, y, 1, 'happy'); break;
-      case 'wink': eye(lx, y, 1, 'happy'); eye(rx, y, open, 'open'); break;
-      case 'squint': eye(lx, y, open, 'squint'); eye(rx, y, open, 'squint'); break;
-      case 'confused':
-        eye(lx, y, open, 'open'); eye(rx, y + 1, open * .5, 'open');
-        m.font = '700 11px system-ui, sans-serif'; m.textAlign = 'center'; m.textBaseline = 'middle';
-        m.fillText('?', 66, 7.5);
-        break;
-      case 'think':
-        eye(lx + 1, y - 1.5, open * .8, 'open'); eye(rx + 1, y - 1.5, open * .8, 'open');
-        for (let i = 0; i < 3; i++) { m.globalAlpha = i < dots ? 1 : .3; m.beginPath(); m.arc(37 + i * 3, 20, .75, 0, Math.PI * 2); m.fill(); }
-        m.globalAlpha = 1;
-        break;
-      default: eye(lx, y, open, 'open'); eye(rx, y, open, 'open');
-    }
-    if (bars.length) {
-      bars.forEach((hgt, i) => { m.fillRect(36 + i * 2, 19.5 - hgt / 2, 1, hgt); });
-    } else if (state.expression === 'happy' || state.expression === 'wink') smile(true);
-    else if (state.expression === 'neutral') smile(false);
-    panel.flush();
+    const alpha = .62 + .3 * talk;
+    const y = 104 + ey + (state.expression === 'think' ? -10 : 0);
+    const h = 15 * open * narrow;
+    slit(270 + ex, y, 84, h, alpha);
+    slit(498 + ex, state.expression === 'confused' ? y + 6 : y, 84, h * (state.expression === 'confused' ? .6 : 1), alpha);
     texture.needsUpdate = true;
     return true;
   };
@@ -145,7 +124,6 @@ export function createChest() {
   const ctx = canvas.getContext('2d')!;
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
-  const panel = ledPanel(ctx, 30, 21, 16.8, 4, 0);
   let mode = '';
   let pulse = -1;
 
@@ -153,11 +131,16 @@ export function createChest() {
     const level = Math.round(glow * 10);
     if (mode === 'badge' && level === pulse) return;
     mode = 'badge'; pulse = level;
+    // A quiet status display: a dim wordmark and one breathing cool-white dot.
     ctx.clearRect(0, 0, 512, 352);
-    const m = panel.begin();
-    m.lineWidth = 1.7;
-    m.beginPath(); m.arc(15, 10.5, 5.6, 0, Math.PI * 2); m.stroke();
-    panel.flush(.5 + .45 * glow);
+    ctx.fillStyle = 'rgba(200,210,225,.32)';
+    ctx.font = '500 34px "JetBrains Mono Variable", ui-monospace, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('OTTO · 01', 256, 160);
+    ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+    ctx.save(); ctx.shadowColor = 'rgba(225,235,250,.9)'; ctx.shadowBlur = 16;
+    ctx.fillStyle = `rgba(236,242,252,${.35 + .5 * glow})`;
+    ctx.beginPath(); ctx.arc(256, 214, 7, 0, Math.PI * 2); ctx.fill(); ctx.restore();
     texture.needsUpdate = true;
   };
 
@@ -184,7 +167,7 @@ export function createChest() {
       const w = img.width * scale, h = img.height * scale;
       ctx.clearRect(0, 0, 512, 352);
       ctx.drawImage(img, (512 - w) / 2, (352 - h) / 2, w, h);
-      ctx.fillStyle = 'rgba(217,255,63,.06)';
+      ctx.fillStyle = 'rgba(255,255,255,.04)';
       for (let y = 0; y < 352; y += 4) ctx.fillRect(0, y, 512, 1);
       texture.needsUpdate = true;
       resolve();

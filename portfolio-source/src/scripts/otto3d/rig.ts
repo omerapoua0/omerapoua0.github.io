@@ -3,7 +3,7 @@
  * about 10 cm; Otto faces +z (the camera).
  *
  * A realistic humanoid service robot, shown from the waist up like a product
- * shot: a glossy black helmet faceplate (his lime LED eyes glow behind the
+ * shot: a glossy black helmet faceplate (faint cool-white sensors behind the
  * glass), satin-white armour panels over a dark mechanical neck, spine and
  * joints, and full arms with shoulder caps, hinged elbows and articulated
  * hands. The joint chain (shoulder → elbow → wrist → fingers) is what
@@ -144,7 +144,8 @@ export function buildRig(tier: Tier, faceMap: Texture, chestMap: Texture): Rig {
     ? new MeshPhysicalMaterial({ color: new Color('#030303'), roughness: .06, metalness: .15, clearcoat: 1, clearcoatRoughness: .03, envMap: studio, envMapIntensity: 2.2 })
     : new MeshStandardMaterial({ color: new Color('#040404'), roughness: .1, metalness: .2, envMap: studio, envMapIntensity: 2 }));
   const glass = mat(new MeshStandardMaterial({ color: new Color('#020302'), roughness: .12, metalness: .1, envMap: studio, envMapIntensity: 1.6 }));
-  const lime = mat(new MeshBasicMaterial({ color: new Color('#d9ff3f'), toneMapped: false }));
+  // Monochrome like a real product: the only light on him is a faint cool-white status LED.
+  const statusLed = mat(new MeshBasicMaterial({ color: new Color('#cfd8e6'), toneMapped: false }));
   const faceMat = mat(new MeshBasicMaterial({ map: faceMap, transparent: true, toneMapped: false, depthWrite: false, blending: AdditiveBlending }));
   const chestMat = mat(new MeshBasicMaterial({ map: chestMap, transparent: true, toneMapped: false }));
   const glow = (texture: Texture, opacity = 1) => mat(new MeshBasicMaterial({ map: tex(texture), transparent: true, opacity, blending: AdditiveBlending, depthWrite: false, toneMapped: false, side: DoubleSide, forceSinglePass: true }));
@@ -160,11 +161,11 @@ export function buildRig(tier: Tier, faceMap: Texture, chestMap: Texture): Rig {
     root.add(rimLight);
   }
 
-  // A faint lime glow low behind him (the "flame": it flares as he flies in).
+  // A faint cool glow low behind him (the "flame": it flares as he flies in).
   const BOTTOM = .34;
   const beamGeometry = new PlaneGeometry(1.4, 1.4);
   beamGeometry.translate(0, -.5, 0);
-  const flame = mesh(beamGeometry, glow(radialTexture('rgba(217,255,63,0.35)', 'rgba(217,255,63,0)'), .6), body, 0, BOTTOM, -.3);
+  const flame = mesh(beamGeometry, glow(radialTexture('rgba(220,228,240,0.18)', 'rgba(220,228,240,0)'), .4), body, 0, BOTTOM, -.3);
   flame.renderOrder = 3;
   // Kept for the rig contract (motion.ts drives its intensity), but placed
   // out of reach: on white armour any lime fill reads as a green cast.
@@ -209,7 +210,7 @@ export function buildRig(tier: Tier, faceMap: Texture, chestMap: Texture): Rig {
   const chest = mesh(chestGeometry, chestMat, torso, 0, CHEST_Y, chestZ);
   chest.renderOrder = 1;
 
-  // Neck: a graphite column with a collar, three cable runs and a thin lime ring.
+  // Neck: a graphite column with a collar, three cable runs and a thin steel ring.
   const TOP = 1.12;
   mesh(new CylinderGeometry(.2, .26, .06, seg(40)), graphite, waist, 0, TOP - .01, 0).scale.z = .7;
   mesh(new CylinderGeometry(.075, .09, .17, seg(24)), graphite, waist, 0, TOP + .08, 0);
@@ -217,11 +218,11 @@ export function buildRig(tier: Tier, faceMap: Texture, chestMap: Texture): Rig {
     const cable = mesh(new CylinderGeometry(.016, .016, .17, seg(10)), steel, waist, x, TOP + .08, z);
     cable.rotation.z = tilt;
   }
-  const ring = mesh(new TorusGeometry(.095, .007, seg(8), seg(40)), lime, waist, 0, TOP + .06, 0);
+  const ring = mesh(new TorusGeometry(.095, .009, seg(8), seg(40)), steel, waist, 0, TOP + .06, 0);
   ring.rotation.x = Math.PI / 2;
 
   // Head: a helmet. White shell at the back and crown, a glossy black
-  // faceplate wrapping the front, ear modules ringed in lime.
+  // faceplate wrapping the front, ear modules ringed in steel.
   const head = new Group();
   head.position.y = TOP + .15;
   waist.add(head);
@@ -245,7 +246,7 @@ export function buildRig(tier: Tier, faceMap: Texture, chestMap: Texture): Rig {
   for (const side of [-1, 1]) {
     const ear = mesh(new CylinderGeometry(.08, .09, .06, seg(32)), graphite, skull, side * .283, -.02, -.03);
     ear.rotation.z = Math.PI / 2;
-    const earRing = mesh(new TorusGeometry(.066, .006, seg(8), seg(32)), lime, skull, side * .316, -.02, -.03);
+    const earRing = mesh(new TorusGeometry(.066, .008, seg(8), seg(32)), steel, skull, side * .316, -.02, -.03);
     earRing.rotation.y = Math.PI / 2;
   }
 
@@ -254,7 +255,7 @@ export function buildRig(tier: Tier, faceMap: Texture, chestMap: Texture): Rig {
   antenna.position.y = .27 + .32;
   head.add(antenna);
   mesh(new CylinderGeometry(.03, .045, .03, seg(16)), graphite, antenna, 0, 0, -.06);
-  mesh(new SphereGeometry(.012, seg(10), seg(8)), lime, antenna, 0, .018, -.06);
+  mesh(new SphereGeometry(.01, seg(10), seg(8)), statusLed, antenna, 0, .018, -.06);
 
   // Arms: a white shoulder cap over a graphite ball joint, a white upper arm,
   // a graphite hinge at the elbow, a tapered white forearm and an articulated

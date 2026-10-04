@@ -99,7 +99,7 @@ const inside = [['katana', 'KATANA'], ['nookbase', 'NOOKBASE'], ['inos', 'INOS &
     display: grid; align-items: center; padding: calc(var(--header) + 28px) var(--margin) 72px;
   }
   .agent__mesh { position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    background: radial-gradient(48% 52% at 78% 42%, #d9ff3f17 0%, transparent 70%), radial-gradient(40% 50% at 8% 100%, #3f5bff14 0%, transparent 70%), linear-gradient(180deg, #07080700 60%, #070807 100%); }
+    background: radial-gradient(42% 52% at 52% 40%, #e8eefc12 0%, transparent 70%), radial-gradient(40% 50% at 8% 100%, #3f5bff14 0%, transparent 70%), linear-gradient(180deg, #07080700 60%, #070807 100%); }
   .agent__mesh::after { content: ''; position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   .agent__inner { width: 100%; max-width: var(--max); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: center; }
