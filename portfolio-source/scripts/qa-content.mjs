@@ -25,7 +25,7 @@ expect(/Nothing has been sent/.test(text.tutoring) && /Nothing has been sent/.te
 // Attribution and status wording that must stay visible.
 const required = [
   ['index', /Hi, I’m Otto/, 'No-JS greeting from Otto'],
-  ['index', /No AI model; nothing you type leaves this page/, 'Chat disclosure under the composer'],
+  ['index', /Answers written by Omar\. No AI model; nothing you choose leaves this page\./, 'Chat disclosure under the choices'],
   ['work', /programme direction/i, 'KATANA Level 4 described as programme direction'],
   ['work', /wider R&D/i, 'INOS described as part of wider R&D'],
   ['work', /no claim of trading performance|not investment advice|nothing here is investment advice/i, 'Bitget: no performance claims'],
@@ -68,7 +68,7 @@ const walk = async (entries, pattern, skip = new Set()) => {
 const inlineJs = source => [...source.matchAll(/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g)].reduce((sum, match) => sum + gzipSync(match[1]).length, 0);
 const inside = ['katana', 'nookbase', 'inos', 'bitget', 'bp'];
 const insideHtml = Object.fromEntries(await Promise.all(inside.map(async id => [id, await readFile(path.join(dist, 'inside', `${id}.html`), 'utf8')])));
-// Index: Otto's brain, voice, stage loader and hand-off plus the motion pass
+// Index: Otto's conversation, voice, stage loader and hand-off plus the motion pass
 // (~2.5KB) and command menu. Inside tours: narration plus the stage loader.
 const budgets = { index: 34, inside: 22, other: 20 };
 let lazy = null;
@@ -97,6 +97,11 @@ expect(lazy > 40 * 1024 && lazy <= 170 * 1024, `3D Otto chunk ${lazy}B gz outsid
 const sitemap = (await readdir(dist)).filter(file => /^sitemap.*\.xml$/.test(file));
 const sitemapText = (await Promise.all(sitemap.map(file => readFile(path.join(dist, file), 'utf8')))).join(' ');
 expect(/I’m Otto, Omar’s robot/.test(text.index), 'index: Otto’s greeting missing');
+// Choice-only chat: visitors pick replies; there is nothing to type into and no typing copy.
+const hero = html.index.slice(html.index.indexOf('data-hero'), html.index.indexOf('</section>', html.index.indexOf('data-hero')));
+expect(hero.includes('data-chat-choices') && /<button[^>]*class="otto-choice"/.test(hero), 'index: Otto’s choices missing from the hero');
+expect(!/<(input|textarea|select)\b|contenteditable/i.test(hero), 'index: the hero chat must not have a text box');
+expect(!/nothing you type|for commands|Type \//i.test(text.index), 'index: typing copy remains');
 expect(!/preview-(otto|3d)/.test(Object.values(html).join(' ')), 'A link to a retired preview page remains');
 for (const id of inside) {
   const source = insideHtml[id];
@@ -130,4 +135,4 @@ expect(!media.some(file => /^hero-(editorial|still)/.test(file)), 'Stock hero fi
 
 info.forEach(line => console.log(line));
 if (failures.length) { failures.forEach(line => console.error('FAIL', line)); process.exitCode = 1; }
-else console.log(`Content checks passed (${required.length + 13} rules).`);
+else console.log(`Content checks passed (${required.length + 16} rules).`);
