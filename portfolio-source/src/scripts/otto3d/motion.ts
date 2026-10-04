@@ -19,16 +19,19 @@ const pose = (p: Partial<Pose>): Pose => ({ L: REST_L, R: REST_R, lean: 0, turn:
 
 const POSES: Record<OttoState, Pose> = {
   idle: pose({}),
-  wave: pose({ R: arm(-.15, 2.55, -.2, 0, .05), expression: 'happy', headRoll: -.06 }),
-  welcome: pose({ L: arm(-.42, -.5, -.42, -.2, .05), R: arm(-.42, .5, -.42, .2, .05), lean: .1, expression: 'happy' }),
+  // The waving hand rides a little higher (sz 2.8, was 2.55) so his floating hand stays clear of the chat.
+  wave: pose({ R: arm(-.15, 2.8, -.2, 0, .05), expression: 'happy', headRoll: -.06 }),
+  // Arms open a little less (sz ±.24, was ±.5): his floating hands ride wide of the body, so this keeps them clear of the text and chat.
+  welcome: pose({ L: arm(-.42, -.24, -.42, -.2, .05), R: arm(-.42, .24, -.42, .2, .05), lean: .1, expression: 'happy' }),
   talk: pose({ L: arm(-.32, -.18, -.9, -.6, .2), talk: 1 }),
   think: pose({ R: arm(-1.15, -.5, -1.95, .4, .55), headRoll: .17, headPitch: -.08, expression: 'think', roll: .03 }),
   confused: pose({ L: arm(-.25, -.5, -1.2, -.2, .15), R: arm(-.25, .5, -1.2, .2, .15), headRoll: -.24, expression: 'confused' }),
   cheeky: pose({ R: arm(-.95, .25, -1.45, 1.4, .92), expression: 'wink', headRoll: .1 }),
   point: pose({ R: arm(-1.42, .42, -.08, .9, .8, 0, true), turn: .12, expression: 'happy' }),
   pew: pose({ R: arm(-1.42, .42, -.08, .9, .8, 0, true), turn: .12, expression: 'squint' }),
-  offer: pose({ R: arm(-1.32, .18, -.3, 0, .1), L: arm(-.2, -.3, -.5, -.6, .25), lean: .14, expression: 'happy' }),
-  grab: pose({ R: arm(-1.32, .18, -.3, 0, .88), L: arm(-.2, -.3, -.5, -.6, .25), lean: .14, expression: 'happy' }),
+  // The offered hand reaches straight toward you (sz 0, was .18): with no arm to follow, a hand drifting off to the side read as reaching for the chat.
+  offer: pose({ R: arm(-1.32, 0, -.3, 0, .1), L: arm(-.2, -.3, -.5, -.6, .25), lean: .14, expression: 'happy' }),
+  grab: pose({ R: arm(-1.32, 0, -.3, 0, .88), L: arm(-.2, -.3, -.5, -.6, .25), lean: .14, expression: 'happy' }),
   pull: pose({ R: arm(-.9, .1, -1.6, 0, .9), L: arm(.15, -.35, -.4, -.6, .3), lean: -.17, expression: 'happy' }),
 };
 

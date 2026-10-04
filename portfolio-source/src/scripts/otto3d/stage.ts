@@ -73,14 +73,17 @@ export async function mount(canvas: HTMLCanvasElement, gl: WebGL2RenderingContex
       home.pos.set(0, center.y + .12, distance); home.look.set(0, center.y, 0);
     }
     else {
-      let z = narrow ? 6.8 : 8.9;
+      // Floating-hands Otto carries less visual mass than an armed robot, so
+      // the desktop camera sits a little closer (8.2, was 8.9) to keep him big.
+      let z = narrow ? 6.8 : 8.2;
       const style = getComputedStyle(canvas.parentElement ?? canvas);
       const gx = parseFloat(style.getPropertyValue('--gx')), gw = parseFloat(style.getPropertyValue('--gw'));
       if (gx > 0 && gw > 0) {
         shift = gx - width / 2;
-        // Open-armed Otto is ~2.3 units wide: back the camera off just enough
-        // that he fits the gap (10% grace), so he never sits behind the text.
-        z = Math.min(40, Math.max(z, 2.3 * height / (2 * Math.tan(home.fov * Math.PI / 360) * gw * 1.1)));
+        // Open-armed Otto is ~2.2 units wide (floating hands; was 2.3 with
+        // arms): back the camera off just enough that he fits the gap (10%
+        // grace), so he never sits behind the text.
+        z = Math.min(40, Math.max(z, 2.2 * height / (2 * Math.tan(home.fov * Math.PI / 360) * gw * 1.1)));
       }
       home.pos.set(0, 1.42, z); home.look.set(0, 1.28, 0);
     }
