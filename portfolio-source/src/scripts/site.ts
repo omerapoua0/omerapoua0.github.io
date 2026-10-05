@@ -1,22 +1,4 @@
 const root = document.documentElement;
-const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
-
-/* Theme: follows the system until the visitor chooses, then remembers it. */
-const themeButton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
-const currentTheme = () => root.dataset.theme === 'light' || root.dataset.theme === 'dark' ? root.dataset.theme : systemDark.matches ? 'dark' : 'light';
-function labelTheme() {
-  const next = currentTheme() === 'dark' ? 'light' : 'dark';
-  themeButton?.setAttribute('aria-label', `Switch to ${next} theme`);
-  themeButton?.setAttribute('title', `Switch to ${next} theme`);
-}
-themeButton?.addEventListener('click', () => {
-  const next = currentTheme() === 'dark' ? 'light' : 'dark';
-  root.dataset.theme = next;
-  try { localStorage.setItem('omar-theme', next); } catch { /* storage unavailable */ }
-  labelTheme();
-});
-systemDark.addEventListener('change', labelTheme);
-labelTheme();
 
 /* Mobile navigation sheet: inert background, scroll lock, focus return. */
 const header = document.querySelector<HTMLElement>('[data-header]');
@@ -32,6 +14,7 @@ function setMenu(open: boolean, returnFocus = false) {
   if (menuLabel) menuLabel.textContent = open ? 'Close' : 'Menu';
   nav.classList.toggle('is-open', open);
   if (header) header.toggleAttribute('data-open', open);
+  if (open) document.querySelector('[data-float-contact]')?.removeAttribute('data-show');
   background.forEach(el => { el.inert = open; });
   root.style.overflow = open ? 'hidden' : '';
   if (open) nav.querySelector<HTMLAnchorElement>('a')?.focus();
@@ -44,17 +27,16 @@ document.addEventListener('keydown', event => {
 nav?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { if (!desktop.matches) setMenu(false); }));
 desktop.addEventListener('change', () => setMenu(false));
 
-/* Header over the hero: transparent until the hero scrolls away. */
-const heroSection = document.querySelector<HTMLElement>('[data-hero]');
-if (header?.hasAttribute('data-over') && heroSection) {
+/* Header: a soft shadow once the page has scrolled. */
+if (header) {
   let headerFrame = 0;
+  const floating = document.querySelector<HTMLElement>('[data-float-contact]');
   const update = () => {
     headerFrame = 0;
-    header.toggleAttribute('data-solid', heroSection.getBoundingClientRect().bottom <= header.offsetHeight + 1);
-    header.toggleAttribute('data-scrolled', window.scrollY > 12);
+    header.toggleAttribute('data-scrolled', window.scrollY > 8);
+    floating?.toggleAttribute('data-show', window.scrollY > window.innerHeight * .6 && !header.hasAttribute('data-open'));
   };
   addEventListener('scroll', () => { if (!headerFrame) headerFrame = requestAnimationFrame(update); }, { passive: true });
-  addEventListener('resize', update, { passive: true });
   update();
 }
 

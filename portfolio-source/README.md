@@ -1,25 +1,21 @@
 # Omar Aboelella portfolio
 
-Static Astro portfolio (seven pages plus five inside tours), redesigned in October 2026 as **Proof**:
-cool paper and deep ink with a cobalt accent (the dark homepage hero uses one signal lime), Onest with Old Standard TT italic
-accents and JetBrains Mono metadata. Read [CLAUDE.md](CLAUDE.md) first. The
-previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for
-history only; its wheel and charcoal/ivory/oxblood styling are retired.
+Static Astro portfolio (seven pages plus five project tours), redesigned in October 2026 as **v4 Studio**:
+soft studio greys, white surfaces, black type and one electric-blue accent (#1f4bff), with a deep-navy contact band;
+Onest display type and JetBrains Mono spec labels. Read [CLAUDE.md](CLAUDE.md) first. The
+previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for history only.
 
-- **Hero: Otto, my robot host.** "Ask Otto anything. *Well, almost. About
-  Omar.*" A big 3D Otto (three.js, built in code, lazy-loaded after the page
-  is ready) flies in, waves and asks how you are; the SVG Otto stands in on
-  devices where 3D isn't worth it. You talk to him by choosing from the
-  replies he offers (there is no text box, so he can't be thrown by "idk"):
-  a greeting and mood, then topics (work, research and study, lessons,
-  internships, getting in touch, a joke), all from answers I wrote
-  (`src/data/agent.ts`, with the conversation in `src/data/otto.ts`). Pick a
-  project and he offers his hand: take it and he pulls you through his chest
-  screen into a guided tour, `/inside/<project>.html`. `?ask=<intent>`
-  permalinks, a remembered transcript, opt-in sound and a Pause motion switch.
-  No model, nothing leaves the page, and the note under the choices says so.
-- **Everywhere:** a ⌘K / Ctrl+K command menu (pages, case studies, inside
-  tours, Otto's written answers, copy email, theme, sound).
+- **Hero:** who I am in one line, See my work / Book a lesson / Contact me, the
+  robot stage (the photoreal robot drops into `public/robot/`; until then an
+  abstract light sculpture stands in), spec chips that count up, and four big
+  doors underneath: Work, Skills, Lessons, Contact. No chat.
+- **The light gate:** choosing a door, card or main call to action plays "the
+  robot opens it": two light seams meet like hands, white light bursts open,
+  and the next page rises out of the white. Ordinary links get a quick white
+  rise. Reduced motion and Pause motion get a short fade.
+- **Everywhere:** a Contact pill in the header (and floating on phones), a
+  ⌘K / Ctrl+K command menu (quick links, pages, case studies, tours, copy email,
+  CV, LinkedIn, GitHub) and a visible Pause motion switch.
 - **Projects:** a server-rendered project index with a sticky duotone preview
   pane, area filters and a remembered list/grid switch, case studies with explicit stage notes, and a
   capability matrix linking each skill to where the CV shows it in use.
@@ -48,18 +44,13 @@ NODE_PATH=/path/to/node_modules/with/playwright node scripts/qa.cjs
 
 Playwright and axe-core are intentionally not project dependencies, so the
 lockfile stays unchanged; point `NODE_PATH`/`AXE_PATH` at an isolated install.
-`qa.cjs` covers 7 routes × 5 widths × 2 themes, axe WCAG 2.2 AA, links and legacy
-anchors, no-JS fallbacks, Otto (3D mode via `?otto3d=force`, since headless
-Chromium only has software WebGL, which the site refuses by design; the SVG
-fallback; the hand-off with Take, countdown, Stay and Esc; reduced motion), the
-choice-only chat (greeting, moods, topics, the hand-off chosen via His work →
-KATANA, keyboard focus, persistence, Clear, `?ask=` for intent ids only, and a
-breadth-first crawl of every choice: 2+ choices per reply, no duplicates,
-labels of 30 characters or fewer, no dead ends, every answer within 4
-choices), the inside tours,
-the command menu, the list/grid switch, the motion switch and reduced motion,
-count-ups, scroll reveals, project index and matrix interaction, the mobile
-menu, both enquiry journeys and throttled LCP/CLS. Reports go to `.qa/` (ignored).
+`qa.cjs` covers 7 routes and 5 tours × 5 widths, axe WCAG 2.2 AA at 390 and
+1280, links and legacy anchors, no-JS readability (the doors are real links),
+the light gate (leaving page opaque white, arriving page white at first paint
+and revealed within 1.5 s, reduced motion and Pause motion fades, same-page
+doors, bfcache), Pause motion stopping every loop, Contact in one tap from
+every page, the command menu, the project index and matrix, the mobile menu,
+both enquiry journeys and LCP/CLS.
 
 Build success does not mean publication. Do not deploy without explicit user
 authorisation. Preserve copyright notices, retained credits and personal-data

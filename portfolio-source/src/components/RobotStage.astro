@@ -1,0 +1,99 @@
+---
+/* The robot media slot. Omar's photoreal robot is being generated in
+   Higgsfield; drop the files into public/robot/ and rebuild:
+     hero.webp  poster (transparent or studio-grey background)
+     greet.mp4  greeting loop (+ optional greet.webm)
+     open.mp4   "hands together, white light" clip, used by LightGate
+   At build time this checks which files exist. With the poster or greeting,
+   it renders them (the video plays via previews.ts only while visible, with
+   motion on and no Save-Data; otherwise the poster stays). With none, it
+   renders the PLACEHOLDER below: an abstract sculpted light object (white
+   sphere, blue rim light, two orbiting rings), CSS only. It is deliberately
+   not a cartoon robot. */
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+interface Props { class?: string }
+const { class: className } = Astro.props;
+const has = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
+const poster = has('hero.webp') ? '/robot/hero.webp' : undefined;
+const greet = has('greet.mp4');
+const greetWebm = has('greet.webm');
+const media = !!(poster || greet);
+---
+<div class:list={['robot-stage', className, media ? 'robot-stage--media' : 'robot-stage--placeholder']} data-robot-stage aria-hidden={media ? undefined : 'true'}>
+  <span class="robot-stage__halo" aria-hidden="true"></span>
+  <span class="robot-stage__floor" aria-hidden="true"></span>
+  {media ? (
+    <div class="robot-stage__media">
+      {greet ? (
+        <video data-preview data-src={greetWebm ? '/robot/greet.webm' : '/robot/greet.mp4'} poster={poster} muted loop playsinline preload="none" aria-label="Omar’s robot, waving hello" disablepictureinpicture>
+        </video>
+      ) : (
+        <img src={poster} alt="Omar’s robot" width="1200" height="1400" loading="eager" decoding="async" fetchpriority="high" />
+      )}
+    </div>
+  ) : (
+    /* PLACEHOLDER until public/robot/ has the Higgsfield robot. */
+    <div class="orb" data-orb>
+      <div class="orb__tilt">
+        <span class="orb__ring orb__ring--a"><i></i></span>
+        <span class="orb__ring orb__ring--b"><i></i></span>
+        <span class="orb__sphere">
+          <span class="orb__shade"></span>
+          <span class="orb__slit"></span>
+          <span class="orb__spec"></span>
+        </span>
+      </div>
+    </div>
+  )}
+  <span class="robot-stage__tag" aria-hidden="true"><b>OA-01</b><span>Build · Explain · Teach</span></span>
+</div>
+
+<style>
+  .robot-stage { --size: min(100%, 560px); position: relative; width: var(--size); aspect-ratio: 1 / 1.04; margin-inline: auto; display: grid; place-items: center; isolation: isolate; }
+  .robot-stage__halo { position: absolute; inset: 6% 4% 10%; z-index: -2; border-radius: 50%; background: radial-gradient(closest-side, #ffffff 0 35%, #ffffffb3 55%, transparent 72%), radial-gradient(closest-side at 62% 58%, #1f4bff38, transparent 70%); filter: blur(6px); }
+  .robot-stage__floor { position: absolute; left: 18%; right: 18%; bottom: 5%; height: 9%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, #0a0c1040, #0a0c1014 55%, transparent); filter: blur(4px); }
+  .robot-stage__media { position: relative; width: 100%; height: 100%; }
+  .robot-stage__media :is(img, video) { width: 100%; height: 100%; object-fit: contain; }
+  .robot-stage__tag { position: absolute; right: 2%; bottom: 14%; display: grid; gap: 2px; padding: 10px 14px; border-radius: 14px; background: #ffffffcc; border: 1px solid #ffffff; box-shadow: var(--shadow-2); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .robot-stage__tag b { color: var(--accent); font-weight: 600; font-size: 12px; }
+
+  /* PLACEHOLDER: the sculpted light object. Preserve-3D lets the rings pass
+     in front of and behind the sphere. */
+  .orb { position: relative; width: 78%; aspect-ratio: 1; perspective: 1400px; transform: translate3d(calc(var(--mx, 0) * -10px), calc(var(--my, 0) * -8px), 0); transition: transform 600ms var(--ease-out); }
+  .orb__tilt { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(calc(var(--my, 0) * -8deg)) rotateY(calc(var(--mx, 0) * 12deg)); transition: transform 700ms var(--ease-out); }
+  .orb__sphere { position: absolute; inset: 17%; border-radius: 50%; overflow: hidden; transform: translateZ(0);
+    background:
+      radial-gradient(circle at 34% 26%, #ffffff 0 9%, #fbfcfe 18%, #eef1f6 34%, #d8dde6 56%, #b9c0cc 76%, #9ba4b4 100%);
+    box-shadow:
+      inset -26px -34px 60px -10px #0a0c1047,
+      inset 22px 18px 40px -8px #ffffff,
+      inset -10px 6px 22px -8px #1f4bffcc; }
+  .orb__shade { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 78% 70%, #1f4bff59, transparent 42%), radial-gradient(circle at 70% 88%, #0b164033, transparent 40%); mix-blend-mode: multiply; }
+  .orb__spec { position: absolute; left: 22%; top: 15%; width: 26%; height: 16%; border-radius: 50%; background: radial-gradient(closest-side, #ffffff, #ffffff00); transform: rotate(-28deg); filter: blur(1px); }
+  /* A thin sensor slit, the one hint of a machine. */
+  .orb__slit { position: absolute; left: 27%; right: 27%; top: 48%; height: 5%; border-radius: 999px; background: linear-gradient(180deg, #05070c, #1d2436 70%, #2b3550); box-shadow: inset 0 1px 3px #000, 0 1px 0 #ffffffe6, 0 -1px 0 #0a0c1026; overflow: hidden; }
+  .orb__slit::after { content: ''; position: absolute; top: 25%; bottom: 25%; left: 0; width: 34%; border-radius: inherit; background: linear-gradient(90deg, transparent, #6f8cff, #e8edff, #6f8cff, transparent); box-shadow: 0 0 12px #1f4bff; transform: translateX(var(--scan, 96%)); }
+  .orb__ring { position: absolute; inset: 0; border-radius: 50%; transform-style: preserve-3d; }
+  .orb__ring--a { transform: rotateX(74deg) rotateY(-8deg); }
+  .orb__ring--b { inset: 7%; transform: rotateX(68deg) rotateY(26deg); }
+  .orb__ring i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid #ffffffd9; box-shadow: 0 0 0 1px #0a0c100d, 0 0 24px #ffffffb3, inset 0 0 20px #1f4bff26;
+    background: conic-gradient(from 0deg, transparent 0 62%, #1f4bff 72%, #ffffff 74%, transparent 80%);
+    -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+            mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); }
+  .orb__ring--b i { border-color: #1f4bff73; background: conic-gradient(from 180deg, transparent 0 70%, #ffffff 82%, #1f4bff 86%, transparent 92%); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .orb__sphere { animation: orb-float 7s ease-in-out infinite; }
+    .orb__ring--a i { animation: orb-spin 9s linear infinite; }
+    .orb__ring--b i { animation: orb-spin 13s linear infinite reverse; }
+    .orb__slit::after { animation: orb-scan 4.6s cubic-bezier(.65, 0, .35, 1) infinite alternate; }
+    .robot-stage__halo { animation: orb-breathe 6s ease-in-out infinite; }
+    :global(html[data-motion='off']) :is(.orb__sphere, .orb__ring i, .robot-stage__halo) { animation-play-state: paused; }
+    :global(html[data-motion='off']) .orb__slit::after { animation-play-state: paused; }
+  }
+  @keyframes orb-float { 0%, 100% { translate: 0 -6px; } 50% { translate: 0 8px; } }
+  @keyframes orb-spin { to { transform: rotate(360deg); } }
+  @keyframes orb-scan { from { transform: translateX(-10%); } to { transform: translateX(206%); } }
+  @keyframes orb-breathe { 0%, 100% { opacity: .85; scale: .98; } 50% { opacity: 1; scale: 1.03; } }
+</style>

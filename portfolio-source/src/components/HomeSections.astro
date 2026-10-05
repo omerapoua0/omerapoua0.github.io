@@ -1,169 +1,313 @@
 ---
-/* Everything below the homepage hero, shared by the hero prototypes. */
-import Stats from './Stats.astro';
-import Ticker from './Ticker.astro';
-import ProjectIndex from './ProjectIndex.astro';
-import CapabilityMatrix from './CapabilityMatrix.astro';
+/* Everything below the homepage hero and doors: selected work, skills with
+   evidence, lessons, about, and the contact band. Facts only from src/data
+   and the CV. */
 import SectionHead from './SectionHead.astro';
-import Orbit from './Orbit.astro';
-import Columns from './Columns.astro';
-import { projects } from '../data/projects';
+import CapabilityMatrix from './CapabilityMatrix.astro';
+import ProjectMedia from './ProjectMedia.astro';
+import { caseStudies, projects } from '../data/projects';
+import { statusLabel, site } from '../data/site';
 
+const pad = (value: number) => String(value).padStart(2, '0');
+const skillsRow = ['LangGraph', 'Bayesian inference', 'MAPE-K', 'Python', 'Time-series forecasting', 'Feature engineering', 'Data pipelines', 'FastAPI', 'PostgreSQL', 'Docker'];
+const learnRow = ['GCSE & A-level maths', 'Physics', 'Linear algebra', 'Calculus', 'Optimisation', 'Probability', 'Qiskit', 'Discrete maths'];
+/* Image strip tiles: concept visuals plus typographic tiles for projects without one. */
+const tiles = projects.map(project => ({ id: project.id, name: project.name, org: project.org, image: project.media?.image }));
+const rowA = [...tiles, ...tiles];
+const rowB = [...tiles.slice().reverse(), ...tiles.slice().reverse()];
 const now = [
   { label: 'Now', title: 'AI Product Engineer', meta: 'Digis Squared · since Jan 2026' },
   { label: 'Building', title: 'NOOKBASE', meta: 'Pre-launch · around 150 beta users' },
   { label: 'Teaching', title: 'Maths & Physics TA', meta: 'Southfields Academy · since Mar 2026' },
-  { label: 'Studying', title: 'BSc Computer Science & Maths', meta: 'Birkbeck · expected 2028 · targeting a First' },
-  { label: 'Next', title: 'Santander research placement', meta: 'Optimisation & ML · Summer 2027' },
+  { label: 'Studying', title: 'BSc Computer Science & Maths', meta: 'Birkbeck · expected 2028' },
+  { label: 'Next', title: 'Santander research placement', meta: 'Optimisation & ML · Summer 2027 · upcoming' },
 ];
-
-const paths = [
-  { num: '01', verb: 'Build', title: 'AI & product engineering', copy: 'Agentic workflows, closed-loop reasoning and the product decisions around them, with people kept in control.', href: '/contact.html?topic=Project', cta: 'Discuss a project' },
-  { num: '02', verb: 'Automate', title: 'Research & reporting pipelines', copy: 'Turn the report you rebuild every week into a process that gathers, checks and delivers on its own.', href: '/automations.html', cta: 'See how I approach it' },
-  { num: '03', verb: 'Learn', title: 'Maths & science lessons', copy: 'Online GCSE Foundation, GCSE Higher and A-level. Free 15-minute intro call, enhanced DBS checked.', href: '/tutoring.html', cta: 'Start a lesson enquiry' },
+const promises = [
+  { title: 'Enhanced DBS checked', copy: 'For parents’ peace of mind.' },
+  { title: 'Free 15-minute intro call', copy: 'Meet before you commit to anything.' },
+  { title: 'Parents welcome to sit in', copy: 'Join any lesson, any time.' },
+  { title: 'Reply within one working day', copy: 'To every lesson enquiry.' },
 ];
-
-const questions = [
-  { q: 'How efficiently do AI models complete university assignments, and what happens to learning?', status: 'progress', statusText: 'In progress · unpublished', href: '/research.html#ai-he' },
-  { q: 'Better decisions under real constraints: optimisation and machine learning for credit scoring.', status: 'incoming', statusText: 'Incoming · Summer 2027', href: '/research.html#optimisation' },
-  { q: 'What is a forecasting model actually learning, and how do you know?', status: 'exploratory', statusText: 'Exploratory', href: '/research.html#quant' },
-  { q: 'Linear algebra you can run: quantum computing with Qiskit.', status: 'exploratory', statusText: 'Independent study', href: '/research.html#quantum' },
+const levels = [
+  { name: 'GCSE Foundation', copy: 'Build the foundations, one clear step at a time.' },
+  { name: 'GCSE Higher', copy: 'Connect concepts and tackle unfamiliar problems.' },
+  { name: 'A-level', copy: 'Go deeper into reasoning, proof and exam technique.' },
 ];
 ---
-<Ticker />
-<Stats />
+<div class="marquee" aria-hidden="true">
+  {[skillsRow, learnRow].map((row, r) => (
+    <div class:list={['marquee__row', { 'marquee__row--rev': r === 1 }]}>
+      <div class="marquee__track">
+        {[0, 1].map(() => (
+          <span class="marquee__set">{row.map((word, i) => <span class:list={['marquee__word', { 'marquee__word--ghost': (i + r) % 2 === 1 }]}>{word}<i></i></span>)}</span>
+        ))}
+      </div>
+    </div>
+  ))}
+</div>
 
-<section class="now" aria-label="What I’m doing now">
+<section class="section work" id="work" aria-labelledby="work-title">
   <div class="wrap">
-    <ol class="now__list" data-reveal-stagger>
-      {now.map(item => (
-        <li>
-          <p class="label">{item.label}</p>
-          <p class="now__title">{item.title}</p>
-          <p class="now__meta">{item.meta}</p>
-        </li>
-      ))}
-    </ol>
-  </div>
-</section>
-
-<Orbit />
-
-<section class="section wrap" id="work" aria-labelledby="work-title">
-  <SectionHead mark="1" label="Selected work" id="work-title">What I’ve been <em class="voice">building.</em>
-    <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. For each one I say what I did, what the wider team did and what stage it’s at.</p>
-  </SectionHead>
-  <ProjectIndex items={projects} morph label="Selected work" />
-  <p class="more" data-reveal><a class="link-arrow" href="/work.html">Full case studies <span aria-hidden="true">↗</span></a></p>
-</section>
-
-<section class="section section--surface" aria-labelledby="skills-title">
-  <div class="wrap">
-    <SectionHead mark="2" label="Capabilities" id="skills-title">Skills, with <em class="voice">evidence.</em>
-      <p slot="aside">I’d rather show than list. Each skill points to where I’ve actually used it. Hover a column to trace one project across the matrix.</p>
+    <SectionHead mark="01" label="Selected work" id="work-title">Real systems, <em class="voice">honestly labelled.</em>
+      <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. Each card says what I did, what the wider team did and what stage it’s at. Open any one for the tour.</p>
     </SectionHead>
-    <CapabilityMatrix />
   </div>
-</section>
 
-<Columns />
-
-<section class="section wrap" aria-labelledby="paths-title">
-  <SectionHead mark="3" label="Work with me" id="paths-title">Three ways to <em class="voice">work with me.</em></SectionHead>
-  <ol class="paths" data-reveal-stagger>
-    {paths.map(path => (
-      <li>
-        <a class="path" href={path.href} data-tilt>
-          <span class="path__top"><span class="num">{path.num}</span><span class="label">{path.verb}</span></span>
-          <span class="path__title">{path.title}</span>
-          <span class="path__copy">{path.copy}</span>
-          <span class="path__cta">{path.cta} <span aria-hidden="true">↗</span></span>
-        </a>
-      </li>
+  <div class="strip" aria-hidden="true">
+    {[rowA, rowB].map((row, r) => (
+      <div class:list={['strip__row', { 'strip__row--rev': r === 1 }]}>
+        <div class="strip__track">
+          {row.map(tile => (
+            <span class:list={['tile', { 'tile--type': !tile.image }]}>
+              {tile.image ? <img src={tile.image} alt="" width="320" height="200" loading="lazy" decoding="async" /> : <b>{tile.name}</b>}
+              <span class="tile__cap">{tile.org}</span>
+            </span>
+          ))}
+        </div>
+      </div>
     ))}
-  </ol>
-</section>
+  </div>
 
-<section class="section section--rule wrap" aria-labelledby="questions-title">
-  <SectionHead mark="4" label="Open questions" id="questions-title">Questions I’m <em class="voice">chasing.</em>
-    <p slot="aside">Maths is the thread through everything I do. These are the questions I’m exploring alongside engineering, labelled honestly. Nothing here is published work.</p>
-  </SectionHead>
-  <div class="qslider" data-slider>
-    <ol class="questions" data-slider-track aria-label="Open questions">
-      {questions.map((item, index) => (
-        <li data-slide>
-          <a href={item.href} data-tilt>
-            <span class="num">Q{index + 1} / {questions.length}</span>
-            <span class="questions__q">{item.q}</span>
-            <span class:list={['chip', `chip--${item.status}`]}>{item.statusText}</span>
+  <div class="wrap">
+    <ol class="cards" data-reveal-stagger>
+      {caseStudies.map((project, index) => (
+        <li class:list={['card', { 'card--wide': index < 2 }]}>
+          <a class="card__link" href={`/inside/${project.id}.html`} data-open={project.name} data-glow>
+            <span class="card__media"><ProjectMedia project={project} video={index < 2} /></span>
+            <span class="card__body">
+              <span class="card__meta"><span class="card__num">{pad(index + 1)}/{pad(caseStudies.length)}</span><span class:list={['chip', `chip--${project.status}`]}>{statusLabel[project.status]}</span></span>
+              <span class="card__name">{project.name}</span>
+              <span class="card__org">{project.role} · {project.org === 'Founder' ? 'NOOKBASE' : project.org} · {project.period}</span>
+              <span class="card__summary">{project.summary}</span>
+              <span class="card__note">{project.statusNote}</span>
+              <span class="card__cta">Open the tour <span aria-hidden="true">↗</span></span>
+            </span>
           </a>
         </li>
       ))}
     </ol>
-    <div class="qslider__bar">
-      <button type="button" class="qslider__btn" data-slider-prev aria-label="Previous question">←</button>
-      <span class="qslider__progress" aria-hidden="true"><i data-slider-progress></i></span>
-      <button type="button" class="qslider__btn" data-slider-next aria-label="Next question">→</button>
+    <p class="more" data-reveal><a class="btn btn--ghost" href="/work.html" data-open="Work">All case studies <span class="arrow" aria-hidden="true">↗</span></a></p>
+  </div>
+</section>
+
+<section class="section skills" id="skills" aria-labelledby="skills-title" tabindex="-1">
+  <div class="wrap">
+    <SectionHead mark="02" label="Skills" id="skills-title">Skills, with <em class="voice">evidence.</em>
+      <p slot="aside">No star ratings. Each skill points to where my CV shows it in use. Hover a column to trace one project across the matrix.</p>
+    </SectionHead>
+    <div class="skills__panel" data-reveal>
+      <CapabilityMatrix />
     </div>
   </div>
-  <p class="more" data-reveal><a class="link-arrow" href="/research.html">Research notebook <span aria-hidden="true">↗</span></a></p>
+</section>
+
+<section class="section lessons" id="lessons" aria-labelledby="lessons-title">
+  <div class="wrap lessons__grid">
+    <div class="lessons__copy" data-reveal>
+      <p class="label"><span class="section-mark">03</span> Lessons</p>
+      <h2 id="lessons-title">Maths &amp; science, <em class="voice">made clear.</em></h2>
+      <p class="lede">Personal online lessons for GCSE Foundation, GCSE Higher and A-level. Build a method you understand, not just an answer you remember.</p>
+      <ul class="promises">
+        {promises.map(item => <li><span class="promises__tick" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="m3 8.5 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span><span><strong>{item.title}</strong> <span class="muted">{item.copy}</span></span></li>)}
+      </ul>
+      <div class="actions">
+        <a class="btn btn--accent" href="/tutoring.html#lesson-enquiry" data-open="Lessons" data-magnetic>Book a lesson <span class="arrow" aria-hidden="true">↗</span></a>
+        <a class="btn btn--ghost" href="/tutoring.html" data-open="Lessons">How lessons work</a>
+      </div>
+    </div>
+    <ol class="levels" data-reveal-stagger>
+      {levels.map((level, index) => (
+        <li class="level" data-glow>
+          <span class="level__num">{['i', 'ii', 'iii'][index]}</span>
+          <span class="level__name">{level.name}</span>
+          <span class="level__copy">{level.copy}</span>
+        </li>
+      ))}
+      <li class="level level--note">
+        <span class="level__copy">Taught by Omar, a Maths &amp; Physics Teaching Assistant at Southfields Academy. No payment is taken online; the enquiry form prepares an email you send yourself.</span>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="section about" id="about" aria-labelledby="about-title">
+  <div class="wrap about__grid">
+    <figure class="about__photo" data-reveal>
+      <picture>
+        <source srcset="/portrait-hero.webp" type="image/webp" />
+        <img src="/portrait-hero.jpg" alt="Portrait of Omar Aboelella" width="720" height="900" loading="lazy" decoding="async" />
+      </picture>
+      <figcaption><span>Omar Aboelella</span><span>London · Arabic &amp; English</span></figcaption>
+    </figure>
+    <div class="about__copy">
+      <div data-reveal>
+        <p class="label"><span class="section-mark">04</span> About</p>
+        <h2 id="about-title">Understand it. Build it. <em class="voice">Explain it.</em></h2>
+        <p class="lede">I build machine-learning and optimisation systems from the mathematics through to production code, and I teach the maths that makes them work.</p>
+      </div>
+      <ol class="now" data-reveal-stagger>
+        {now.map(item => (
+          <li><span class="now__label">{item.label}</span><span class="now__title">{item.title}</span><span class="now__meta">{item.meta}</span></li>
+        ))}
+      </ol>
+      <div class="actions" data-reveal>
+        <a class="btn" href="/Omar-Aboelella-CV.pdf" download>Download CV <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+        <a class="btn btn--ghost" href="/cv.html" data-open="About & CV">About &amp; CV <span class="arrow" aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact-band" id="contact" aria-labelledby="contact-title">
+  <div class="contact-band__bg" aria-hidden="true"><span></span><span></span></div>
+  <div class="wrap contact-band__inner">
+    <p class="label contact-band__label"><span class="section-mark">05</span> Contact</p>
+    <h2 id="contact-title" class="contact-band__title" data-reveal>Have something in mind? <span>Let’s talk.</span></h2>
+    <p class="contact-band__lede" data-reveal>Projects, roles, research or lessons. Write a line or two; the contact form prepares an email you check and send yourself.</p>
+    <div class="contact-band__row" data-reveal>
+      <div class="contact-band__email">
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+        <button type="button" class="copy-btn" data-copy-email={site.email} hidden><span data-copy-label>Copy</span></button>
+        <span class="sr-only" role="status" data-copy-status></span>
+      </div>
+      <div class="contact-band__actions">
+        <a class="btn contact-band__primary" href="/contact.html" data-open="Contact" data-magnetic>Write to Omar <span class="arrow" aria-hidden="true">↗</span></a>
+        <a class="contact-band__social" href={site.linkedin} target="_blank" rel="noopener">LinkedIn <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+        <a class="contact-band__social" href={site.github} target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+      </div>
+    </div>
+  </div>
 </section>
 
 <style>
-  .now { border-bottom: 1px solid var(--line); background: var(--bg); }
-  .now__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--gutter); }
-  .now__list li { padding: 18px 0 20px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; align-content: start; }
-  .now__list li:last-child { grid-column: 1 / -1; }
-  @media (min-width: 700px) and (max-width: 1099px) { .now__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .now__list li:last-child { grid-column: auto; } }
-  .now__title { font-weight: 560; letter-spacing: -.02em; font-size: clamp(.98rem, .9rem + .3vw, 1.06rem); line-height: 1.25; }
-  .now__meta { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
-  @media (min-width: 1100px) {
-    .now__list { grid-template-columns: repeat(5, 1fr); }
-    .now__list li { border-bottom: 0; padding: 28px 24px 30px; }
-    .now__list li + li { border-left: 1px solid var(--line); }
-    .now__list li:first-child { padding-left: 0; }
-  }
+  /* Marquee of skills: two rows sliding in opposite directions. */
+  .marquee { overflow: hidden; padding: clamp(18px, 2.4vw, 32px) 0; border-block: 1px solid var(--line); background: var(--surface); display: grid; gap: 6px; }
+  .marquee__track { display: flex; width: max-content; }
+  .marquee__set { display: flex; flex: none; transform: skewX(calc(var(--scroll-vel, 0) * -12deg)); }
+  .marquee__word { display: inline-flex; align-items: center; gap: .5em; padding-right: .5em; font-size: clamp(1.7rem, 1rem + 3vw, 3.8rem); font-weight: 660; letter-spacing: -.05em; line-height: 1.12; white-space: nowrap; }
+  .marquee__word--ghost { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
+  .marquee__word i { width: .32em; height: .32em; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 .12em var(--accent-soft); }
+
+  .section:is(.work, .skills, .lessons, .about) { padding-block: var(--section); }
+  .work { background: var(--bg); }
+  .strip { display: grid; gap: 14px; margin-bottom: clamp(40px, 5vw, 72px); overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .strip__track { display: flex; gap: 14px; width: max-content; }
+  .tile { position: relative; flex: none; width: clamp(180px, 22vw, 300px); aspect-ratio: 16 / 10; border-radius: 18px; overflow: hidden; background: var(--navy); box-shadow: var(--shadow-1); }
+  .tile img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.1); }
+  .tile::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, #4f74ff, #0b1640); mix-blend-mode: color; opacity: .6; }
+  .tile--type { display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); }
+  .tile--type::after { display: none; }
+  .tile--type b { font-size: clamp(1rem, .8rem + .8vw, 1.5rem); letter-spacing: -.04em; padding: 0 16px; text-align: center; line-height: 1.1; }
+  .tile__cap { position: absolute; left: 10px; bottom: 10px; z-index: 2; padding: 3px 9px; border-radius: 999px; background: #ffffffe6; color: var(--ink); font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+
+  .cards { display: grid; gap: 16px; }
+  .card__link { --gx: 50%; --gy: 50%; position: relative; display: grid; height: 100%; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); text-decoration: none; color: var(--ink); overflow: hidden; isolation: isolate; transition: box-shadow 500ms var(--ease-out), translate 500ms var(--ease-out); }
+  .card__link::before { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(420px circle at var(--gx) var(--gy), #1f4bff14, transparent 60%); opacity: 0; transition: opacity 300ms; }
+  .card__link:hover, .card__link:focus-visible { box-shadow: 0 2px 6px #0a0c100d, 0 36px 80px -28px #1f4bff59; translate: 0 -4px; }
+  .card__link:hover::before { opacity: 1; }
+  .card__media { display: block; padding: 10px 10px 0; }
+  .card__media :global(.plate) { border-radius: 20px; aspect-ratio: 16 / 9; }
+  .card__media :global(.plate--type svg) { width: auto; height: 86%; max-width: 92%; }
+  .card__media :global(.plate img:not(.plate__logo)) { transition: transform 900ms var(--ease-out); }
+  .card__link:hover .card__media :global(.plate img:not(.plate__logo)) { transform: scale(1.05); }
+  .card__body { display: grid; gap: 8px; align-content: start; padding: 18px 22px 24px; }
+  .card__meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .card__num { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: .06em; }
+  .card__name { font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.6rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; margin-top: 4px; }
+  .card__org { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .card__summary { color: var(--ink-2); max-width: 52ch; }
+  .card__note { font-size: 13.5px; color: var(--muted); padding-left: 12px; border-left: 2px solid var(--accent); max-width: 52ch; }
+  .card__cta { display: inline-flex; gap: 8px; margin-top: 8px; font-weight: 620; color: var(--accent); }
   .more { margin-top: var(--s-7); }
-  /* Things arrive from alternating sides, and the three paths flip up in 3D. */
+  @media (min-width: 760px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .card:not(.card--wide):last-child { grid-column: 1 / -1; } }
+  @media (min-width: 1100px) {
+    .cards { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; }
+    .card { grid-column: span 2; }
+    .card--wide { grid-column: span 3; }
+    .card:not(.card--wide):last-child { grid-column: span 2; }
+  }
+
+  .skills { background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%); }
+  .skills__panel { padding: clamp(16px, 3vw, 40px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); }
+  .skills:focus { outline: none; }
+
+  .lessons { background: var(--bg-2); }
+  .lessons__grid { display: grid; gap: clamp(32px, 5vw, 80px); align-items: start; }
+  .lessons__copy { display: grid; gap: var(--s-5); }
+  .lessons__copy h2 { max-width: 12ch; }
+  .promises { display: grid; gap: 10px; margin-block: var(--s-2) var(--s-3); }
+  .promises li { display: flex; gap: 12px; align-items: baseline; }
+  .promises__tick { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; translate: 0 4px; }
+  .levels { display: grid; gap: 12px; }
+  .level { --gx: 50%; --gy: 50%; position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 4px 16px; padding: 22px 24px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); overflow: hidden; }
+  .level::before { content: ''; position: absolute; inset: 0; background: radial-gradient(300px circle at var(--gx) var(--gy), #1f4bff14, transparent 60%); opacity: 0; transition: opacity 300ms; pointer-events: none; }
+  .level:hover::before { opacity: 1; }
+  .level__num { grid-row: span 2; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--bg); font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+  .level__name { font-size: var(--step-h3); font-weight: 650; letter-spacing: -.03em; }
+  .level__copy { color: var(--muted); font-size: var(--step-small); }
+  .level--note { grid-template-columns: 1fr; background: transparent; box-shadow: none; border: 1px dashed var(--line-strong); }
+  @media (min-width: 1000px) { .lessons__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .levels { margin-top: 56px; } }
+
+  .about { background: var(--bg); }
+  .about__grid { display: grid; gap: clamp(32px, 5vw, 80px); align-items: center; }
+  .about__photo { position: relative; max-width: 520px; border-radius: var(--radius-3); overflow: hidden; background: var(--raised); box-shadow: var(--shadow-3); }
+  .about__photo img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 20%; }
+  .about__photo figcaption { position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; background: #ffffffd9; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+  .about__copy { display: grid; gap: var(--s-6); }
+  .about__copy h2 { margin-top: var(--s-4); max-width: 14ch; }
+  .about__copy .lede { margin-top: var(--s-5); max-width: 44ch; }
+  .now { display: grid; border-top: 1px solid var(--line); }
+  .now li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 2px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .now__label { grid-row: span 2; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); padding-top: 4px; }
+  .now__title { font-weight: 620; letter-spacing: -.02em; }
+  .now__meta { font-size: 13.5px; color: var(--muted); }
+  @media (min-width: 1000px) { .about__grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+
+  /* The contact band: the one deep-navy moment on the page. */
+  .contact-band { position: relative; isolation: isolate; overflow: hidden; background: var(--navy); color: var(--navy-ink); padding-block: clamp(88px, 11vw, 168px); }
+  .contact-band__bg span { position: absolute; z-index: -1; border-radius: 50%; filter: blur(70px); }
+  .contact-band__bg span:first-child { width: 50vw; height: 50vw; right: -12vw; top: -20vw; background: radial-gradient(closest-side, #1f4bffaa, transparent); }
+  .contact-band__bg span:last-child { width: 40vw; height: 40vw; left: -14vw; bottom: -24vw; background: radial-gradient(closest-side, #5d7bff66, transparent); }
+  .contact-band__inner { display: grid; gap: var(--s-6); }
+  .contact-band__label { color: var(--navy-muted); }
+  .contact-band__label .section-mark { color: #9fb2ff; }
+  .contact-band__title { font-size: clamp(2.8rem, 1rem + 7vw, 8.4rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; max-width: 13ch; color: #fff; }
+  .contact-band__title span { color: #8ea6ff; }
+  .contact-band__lede { max-width: 52ch; color: var(--navy-muted); font-size: var(--step-lede); line-height: 1.45; }
+  .contact-band__row { display: grid; gap: var(--s-5); align-items: center; padding-top: var(--s-6); border-top: 1px solid var(--navy-line); }
+  .contact-band__email { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .contact-band__email a { font-family: var(--font-mono); font-size: clamp(1rem, .8rem + 1vw, 1.6rem); color: #fff; text-decoration: none; border-bottom: 1px solid #8ea6ff; min-height: 44px; display: inline-flex; align-items: center; overflow-wrap: anywhere; }
+  .copy-btn { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #ffffff4d; background: #ffffff14; color: #fff; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
+  .copy-btn:hover { background: #ffffff26; }
+  .contact-band__actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .contact-band__primary { background: #fff; border-color: #fff; color: var(--navy); }
+  .contact-band__primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .contact-band__social { display: inline-flex; align-items: center; gap: 6px; min-height: 52px; padding: 0 22px; border-radius: 999px; border: 1px solid #ffffff40; color: #fff; text-decoration: none; font-weight: 560; }
+  .contact-band__social:hover { border-color: #fff; background: #ffffff14; }
+  .contact-band :focus-visible { outline-color: #fff; }
+  .contact-band__tool { display: grid; gap: 6px; margin-top: var(--s-6); color: var(--navy-muted); font-size: var(--step-small); max-width: 80ch; }
+  .contact-band__tool span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #9fb2ff; }
+  @media (min-width: 1000px) { .contact-band__row { grid-template-columns: minmax(0, 1fr) auto; } }
+
   @media (prefers-reduced-motion: no-preference) {
-    :global(html.js) .now__list > li:not(.is-in):nth-child(odd) { transform: translateX(-56px); }
-    :global(html.js) .now__list > li:not(.is-in):nth-child(even) { transform: translateX(56px); }
-    :global(html.js) .paths > li:not(.is-in) { transform: perspective(900px) rotateX(-28deg) translateY(48px); transform-origin: top center; }
+    .marquee__track { animation: slide 42s linear infinite; }
+    .marquee__row--rev .marquee__track { animation-direction: reverse; animation-duration: 50s; }
+    .strip__track { animation: slide 60s linear infinite; }
+    .strip__row--rev .strip__track { animation-direction: reverse; animation-duration: 70s; }
+    .contact-band__bg span { animation: band-drift 16s ease-in-out infinite alternate; }
+    .contact-band__bg span:last-child { animation-duration: 20s; animation-direction: alternate-reverse; }
+    :global(html[data-motion='off']) :is(.marquee__track, .strip__track, .contact-band__bg span) { animation-play-state: paused; }
+    :global(html.js) .cards > li:not(.is-in) { transform: translateY(60px) scale(.97); }
+    :global(html.js) .levels > li:not(.is-in) { transform: translateX(60px); }
+    @supports (animation-timeline: view()) {
+      :global(html:not([data-motion='off'])) .about__photo img { animation: photo-pan linear both; animation-timeline: view(); animation-range: cover; }
+      :global(html:not([data-motion='off'])) .contact-band__title { animation: band-wipe linear both; animation-timeline: view(); animation-range: entry 10% cover 40%; }
+    }
   }
-
-  .paths { display: grid; border-top: 1px solid var(--line); }
-  .path { display: grid; gap: var(--s-4); padding: var(--s-6) 0 var(--s-7); border-bottom: 1px solid var(--line); text-decoration: none; height: 100%; }
-  .path__top { display: flex; justify-content: space-between; align-items: baseline; }
-  .path__top .num { font-size: 13px; color: var(--muted); }
-  .path__title { font-size: var(--step-h3); font-weight: 560; letter-spacing: -.03em; line-height: 1.15; max-width: 16ch; }
-  .path__copy { color: var(--muted); max-width: 40ch; }
-  .path__cta { margin-top: auto; font-weight: 520; display: inline-flex; gap: 8px; color: var(--accent); }
-  .path:hover .path__title { color: var(--accent); }
-  @media (min-width: 900px) {
-    .paths { grid-template-columns: repeat(3, 1fr); }
-    .path { padding: var(--s-6) var(--s-6) var(--s-7); border-bottom: 0; min-height: 360px; transition: background-color var(--d-3) var(--ease-out); }
-    .paths li + li .path { border-left: 1px solid var(--line); }
-    .paths li:first-child .path { padding-left: 0; }
-    .path:hover { background: var(--surface); }
-    .paths { border-bottom: 1px solid var(--line); }
-  }
-
-  .qslider { position: relative; }
-  .questions { display: flex; gap: var(--gutter); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 2px 8px; overscroll-behavior-x: contain; }
-  .questions::-webkit-scrollbar { display: none; }
-  .questions li { flex: none; width: min(560px, 84%); scroll-snap-align: start; }
-  .questions a { display: grid; align-content: space-between; gap: var(--s-6); height: 100%; min-height: 300px; padding: clamp(20px, 3vw, 36px); border: 1px solid var(--line-strong); border-radius: 22px; text-decoration: none; background: var(--surface); transition: border-color var(--d-2), background-color var(--d-2); }
-  .questions .num { font-size: 12px; color: var(--muted); }
-  .questions__q { font-size: clamp(1.35rem, 1rem + 1.4vw, 2.1rem); letter-spacing: -.035em; line-height: 1.15; font-weight: 520; }
-  .questions .chip { justify-self: start; }
-  .questions a:hover { border-color: var(--accent); }
-  .questions a:hover .questions__q { color: var(--accent); }
-  .qslider__bar { display: flex; align-items: center; gap: 14px; margin-top: var(--s-5); }
-  .qslider__btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; font-size: 17px; }
-  .qslider__btn:hover { border-color: var(--accent); color: var(--accent); }
-  .qslider__progress { flex: 1; height: 2px; background: var(--line); overflow: hidden; border-radius: 2px; }
-  .qslider__progress i { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; transform: scaleX(var(--p, .25)); transition: transform 400ms var(--ease-out); }
-  :global(html:not(.js)) .qslider__bar { display: none; }
+  @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes band-drift { to { transform: translate(-8vw, 6vw) scale(1.15); } }
+  @keyframes photo-pan { from { transform: scale(1.14) translateY(-4%); } to { transform: scale(1.14) translateY(4%); } }
+  @keyframes band-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 </style>
 
-<script>import '../scripts/slider';</script>
+<script>import '../scripts/home';</script>

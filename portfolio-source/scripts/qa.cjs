@@ -1,4 +1,5 @@
-/* Isolated browser QA for the redesigned portfolio. Linux-friendly.
+/* Isolated browser QA for the v4 "studio" portfolio (light theme, light gate,
+ * no chat). Linux-friendly.
  *
  *   PORTFOLIO_QA_URL=http://127.0.0.1:4174 \
  *   PLAYWRIGHT_EXECUTABLE=/path/to/chromium \
@@ -21,6 +22,7 @@ const executablePath = process.env.PLAYWRIGHT_EXECUTABLE || undefined;
 const axePath = process.env.AXE_PATH;
 const output = path.resolve('.qa');
 const routes = ['index', 'work', 'automations', 'research', 'cv', 'tutoring', 'contact'];
+const tours = ['inside/katana', 'inside/nookbase', 'inside/inos', 'inside/bitget', 'inside/bp'];
 const widths = [360, 390, 768, 1280, 1440];
 const results = [];
 const outbound = [];
@@ -55,12 +57,12 @@ function watch(page) {
   await fs.mkdir(path.join(output, 'screens'), { recursive: true });
   const browser = await chromium.launch({ executablePath });
 
-  /* 1. Every route, width and theme: one H1, no overflow, no broken images, no errors. */
-  for (const theme of ['light', 'dark']) {
+  /* 1. Every route (and tour) and width: one H1, no overflow, no broken images, no errors. */
+  for (const theme of ['light']) {
     for (const width of widths) {
       const context = await isolated(browser, { viewport: { width, height: 900 }, colorScheme: theme });
-      for (const route of routes) {
-        await check(`route ${route} ${width}px ${theme}`, async () => {
+      for (const route of [...routes, ...tours]) {
+        await check(`route ${route} ${width}px`, async () => {
           const page = await context.newPage();
           const errors = watch(page);
           const response = await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
@@ -78,7 +80,7 @@ function watch(page) {
           assert.deepEqual(state.broken, [], 'broken images');
           assert.deepEqual(state.dupIds, [], 'duplicate ids');
           assert.deepEqual(errors, [], 'page/console/http errors');
-          if (width === 1440 || width === 390) await page.screenshot({ path: path.join(output, 'screens', `${route}-${width}-${theme}.png`), fullPage: true });
+          if (width === 1440 || width === 390) await page.screenshot({ path: path.join(output, 'screens', `${route.replace('/', '-')}-${width}.png`), fullPage: true });
           await page.close();
         });
       }
@@ -86,13 +88,13 @@ function watch(page) {
     }
   }
 
-  /* 2. Accessibility (axe-core, WCAG 2.2 A/AA) in both themes at desktop and phone widths. */
+  /* 2. Accessibility (axe-core, WCAG 2.2 A/AA) at desktop and phone widths. */
   if (axePath) {
     const axeSource = await fs.readFile(axePath, 'utf8');
-    for (const theme of ['light', 'dark']) for (const width of [390, 1280]) {
+    for (const theme of ['light']) for (const width of [390, 1280]) {
       const context = await isolated(browser, { viewport: { width, height: 900 }, colorScheme: theme });
-      for (const route of routes) {
-        await check(`axe ${route} ${width}px ${theme}`, async () => {
+      for (const route of [...routes, ...tours]) {
+        await check(`axe ${route} ${width}px`, async () => {
           const page = await context.newPage();
           await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
           await page.addScriptTag({ content: axeSource });
@@ -138,613 +140,157 @@ function watch(page) {
     await context.close();
   });
 
-  /* 4. No JavaScript: content, navigation and email fallbacks remain. */
-  await check('no-JS routes and fallbacks', async () => {
+  /* 4. No JavaScript: content, navigation, the doors and email fallbacks remain. */
+  await check('no-JS routes, doors and fallbacks', async () => {
     const context = await isolated(browser, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    for (const route of routes) {
+    for (const route of [...routes, ...tours]) {
       await page.goto(`${base}/${route}.html`);
-      const state = await page.evaluate(() => ({ nav: [...document.querySelectorAll('#site-nav a')].filter(a => a.getBoundingClientRect().width > 0).length, overflow: document.documentElement.scrollWidth > innerWidth + 1 }));
+      const state = await page.evaluate(() => ({ nav: [...document.querySelectorAll('#site-nav a')].filter(a => a.getBoundingClientRect().width > 0).length, overflow: document.documentElement.scrollWidth > innerWidth + 1, gate: getComputedStyle(document.querySelector('[data-gate]')).display }));
       assert.ok(state.nav >= 5, `${route}: visible nav links without JS`);
       assert.ok(!state.overflow, `${route}: no overflow without JS`);
+      assert.equal(state.gate, 'none', `${route}: the light gate never covers a no-JS page`);
     }
     await page.goto(`${base}/tutoring.html`);
     assert.ok(await page.locator('noscript').count() > 0);
     assert.ok(!(await page.locator('form[data-enquiry]').isVisible()), 'guided form hidden without JS');
     await page.goto(`${base}/index.html`);
-    assert.ok(await page.locator('.agent__who img').isVisible(), 'hero photo visible without JS');
-    assert.match(await page.locator('[data-chat-log]').textContent(), /Hi, I’m Otto, Omar’s robot/, 'intro answer readable without JS');
-    assert.ok(await page.locator('[data-otto-stage] .otto-stage__poster [data-robot]').isVisible(), 'SVG Otto shown without JS');
-    assert.ok(!(await page.locator('[data-chat-choices]').isVisible()), 'choices hidden without JS (the links stand in)');
-    assert.equal(await page.locator('[data-hero] input, [data-hero] textarea').count(), 0, 'nothing to type into');
-    assert.ok(await page.locator('.chat__nojs a[href="/inside/katana.html"]').count() === 1, 'no-JS links into the tours');
-    assert.ok(await page.locator('.ticker').isVisible(), 'ticker visible without JS');
+    const doors = await page.locator('.doors a.door').evaluateAll(list => list.map(a => [a.textContent.replace(/\s+/g, ' ').trim().split(' ')[1], a.getAttribute('href')]));
+    assert.deepEqual(doors.map(([, href]) => href), ['/work.html', '/index.html#skills', '/tutoring.html', '/contact.html'], 'four doors are real links');
+    assert.ok(await page.locator('h1#hero-title').isVisible(), 'hero title readable without JS');
+    assert.ok(await page.locator('[data-robot-stage]').isVisible(), 'robot stage (or its placeholder) shown without JS');
+    assert.equal(await page.locator('[data-chat], [data-chat-choices], textarea[data-hero]').count(), 0, 'no chat UI');
     await context.close();
   });
 
-  /* 5. Homepage: Otto (3D, with the SVG Otto standing in), the choice-only
-   *    chat, the hand-off ("Take Otto's hand") and the inside tours. Visitors
-   *    never type: every Otto reply ends with choices (real buttons).
-   *    Headless Chromium only has software WebGL (SwiftShader), which the site
-   *    refuses by design (failIfMajorPerformanceCaveat), so 3D checks force it
-   *    with ?otto3d=force. SwiftShader frames take ~300ms, so 3D clicks go
-   *    through evaluate(). */
-  const settled = page => page.waitForFunction(() => !document.querySelector('[data-chat]').hasAttribute('data-busy'), null, { timeout: 15000 });
-  const choiceButton = (page, label) => page.locator('[data-chat-choices]').getByRole('button', { name: label, exact: true });
-  /** Choose a reply like a visitor (a real click), then wait for Otto to finish. */
-  const choose = async (page, label) => { await choiceButton(page, label).click(); await settled(page); };
-  /** The same, through evaluate() (3D pages, where a frame takes ~300ms). */
-  const pick = (page, label) => page.evaluate(text => {
-    const button = [...document.querySelectorAll('[data-chat-choices] button')].find(item => item.textContent.trim() === text);
-    if (!button) throw new Error(`no choice "${text}"`);
-    button.click();
-  }, label);
-  const choices = page => page.locator('[data-chat-choices] button').allTextContents().then(list => list.map(text => text.trim()));
-  const lastOtto = page => page.locator('.turn--agent').last();
-  const heroStage = '[data-otto-stage][data-stage-mode="hero"]';
-  const modeSettled = (page, timeout = 30000) => page.waitForFunction(sel => ['3d', 'svg'].includes(document.querySelector(sel).dataset.mode), heroStage, { timeout });
-  // Forced 3D: the 3 s deadline may show the SVG Otto first; wait for 3D or a real failure.
-  const mode3d = page => page.waitForFunction(sel => { const el = document.querySelector(sel); return el.dataset.mode === '3d' || ['fail', 'error', 'no-webgl', 'gate'].includes(el.dataset.reason); }, heroStage, { timeout: 60000 });
-  const lime = page => page.evaluate(() => window.__otto?.handle.snapshot().lime ?? 0);
-  const topics = ['His work', 'Research & study', 'Lessons for my child', 'Internships & hiring', 'Get in touch', 'Tell me a joke'];
-  const moods = ['Good, thanks', 'Bit tired, honestly', 'Who’s Omar?', 'And you, Otto?'];
-  for (const [label, options] of [['desktop', { viewport: { width: 1440, height: 900 } }], ['phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) {
-    await check(`otto ${label}: lands, greets and asks how you are; mood → topics → answers, all by choosing (no text box)`, async () => {
-      const context = await isolated(browser, { reducedMotion: 'no-preference', ...options });
-      const page = await context.newPage();
-      const errors = watch(page);
-      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-      assert.match(await page.locator('h1').textContent(), /Ask Otto anything\.\s*Well, almost\. About Omar\./);
-      assert.ok(await page.locator('.agent__who img').evaluate(img => img.currentSrc.includes('portrait-bust') && img.naturalWidth > 0), 'head-and-shoulders photo');
-      assert.match(await page.locator('[data-london-time]').textContent(), /^\d{2}:\d{2}$/);
-      assert.equal(await page.locator('[data-disclosure]').textContent(), 'Answers written by Omar. No AI model; nothing you choose leaves this page.');
-      assert.equal(await page.locator('[data-hero] input, [data-hero] textarea, [data-hero] select, [data-hero] [contenteditable]').count(), 0, 'nothing to type into in the hero');
-      await modeSettled(page);
-      assert.equal(await page.locator(heroStage).getAttribute('data-mode'), 'svg', `software WebGL is refused or fails the warm-up, so the SVG Otto stands in (${await page.locator(heroStage).getAttribute('data-reason')})`);
-      assert.ok(await page.locator(`${heroStage} [data-robot]`).isVisible(), 'SVG Otto visible');
-      await page.waitForFunction(() => document.querySelectorAll('.turn--agent').length >= 2 && /How are you doing\?/.test(document.querySelector('[data-chat-log]').textContent), null, { timeout: 9000 });
-      assert.match(await page.locator('.turn--agent').first().textContent(), /I’m Otto, Omar’s robot/);
-      assert.ok(await page.locator('[data-otto-bubble]').evaluate(el => el.hasAttribute('data-show') && el.textContent.length > 4), 'speech bubble shows Otto’s line');
-      assert.deepEqual(await choices(page), moods, 'mood choices');
-      // A tidy grid where the composer was: 2 per row, at least 44px tall, inside the card, never a hidden scroller.
-      const grid = await page.evaluate(() => {
-        const box = document.querySelector('[data-chat-choices]');
-        const card = document.querySelector('[data-chat]').getBoundingClientRect();
-        const rects = [...box.querySelectorAll('button')].map(button => button.getBoundingClientRect());
-        return { rows: new Set(rects.map(rect => Math.round(rect.top))).size, minHeight: Math.min(...rects.map(rect => rect.height)), inside: rects.every(rect => rect.left >= card.left - 1 && rect.right <= card.right + 1 && rect.bottom <= card.bottom + 1), scroller: box.scrollWidth > box.clientWidth + 1, below: box.getBoundingClientRect().top > document.querySelector('[data-chat-log]').getBoundingClientRect().bottom - 1 };
+  /* 5. The light gate: leaving ends opaque white, arriving starts white at first paint and reveals. */
+  const gateScenario = async ({ label, reducedMotion, motionOff, width }) => {
+    const context = await isolated(browser, { reducedMotion, viewport: { width, height: 900 } });
+    if (motionOff) await context.addInitScript(() => { try { sessionStorage.setItem('omar-motion', 'off'); } catch {} });
+    // On every document: record the gate's state at first paint, and whether a
+    // native view transition ever ran.
+    await context.addInitScript(() => {
+      window.__vt = 0;
+      addEventListener('pagereveal', event => { if (event.viewTransition) window.__vt++; });
+      requestAnimationFrame(() => {
+        const gate = document.querySelector('[data-gate]');
+        const white = gate?.querySelector('.gate__white');
+        window.__firstPaint = gate ? { display: getComputedStyle(gate).display, white: Number(getComputedStyle(white).opacity), arrive: document.documentElement.dataset.gate || '' } : null;
       });
-      assert.equal(grid.rows, 2, 'four mood choices sit two per row');
-      assert.ok(grid.minHeight >= 44, `choices at least 44px tall (${grid.minHeight})`);
-      assert.ok(grid.inside && !grid.scroller && grid.below, 'choices sit below the log, inside the card, with no horizontal scroller');
-      await choose(page, 'Good, thanks');
-      assert.match(await lastOtto(page).locator('.bubble').textContent(), /I’m here to talk about Omar\. Where shall we start\?/);
-      assert.deepEqual(await choices(page), topics, 'topic choices');
-      await choose(page, 'Lessons for my child');
-      assert.match(await lastOtto(page).locator('.bubble').textContent(), /enhanced DBS checked/);
-      assert.equal(await lastOtto(page).locator('a.card[href="/tutoring.html#lesson-enquiry"]').count(), 1, 'lesson enquiry card');
-      assert.equal(await lastOtto(page).locator('.turn__foot a[href="/tutoring.html"]').count(), 1, 'source link');
-      assert.equal(await page.locator('.turn--you').last().textContent(), 'Lessons for my child', 'the choice shows as the visitor’s bubble');
-      await choose(page, 'How do lessons work?');
-      assert.match(await lastOtto(page).locator('.bubble').textContent(), /intro call/);
-      await choose(page, 'Back to topics');
-      assert.deepEqual(await choices(page), topics, 'back to the topics');
-      await choose(page, 'Tell me a joke');
-      assert.ok((await lastOtto(page).locator('.bubble').textContent()).length > 20);
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1 || [...document.querySelectorAll('.chat *')].some(el => el.getBoundingClientRect().right > document.querySelector('.chat').getBoundingClientRect().right + 1 && getComputedStyle(el).position !== 'absolute'));
-      assert.ok(!overflow, 'no horizontal overflow; chat content stays inside the card');
-      assert.deepEqual(errors, []);
-      await context.close();
     });
-  }
-  await check('otto: breadth-first crawl of every choice (answers within 4): 2+ choices each, no duplicates, short labels, every answer reachable, no errors', async () => {
-    const intentIds = [...(await fs.readFile(path.join(__dirname, '..', 'src', 'data', 'agent.ts'), 'utf8')).matchAll(/id: '([\w-]+)', ask:/g)].map(match => match[1]);
-    assert.ok(intentIds.length >= 20, `intent ids read from agent.ts (${intentIds.length})`);
-    const context = await isolated(browser, { viewport: { width: 390, height: 844 } }); // reduced motion: instant replies
     const page = await context.newPage();
     const errors = watch(page);
-    await page.goto(`${base}/index.html?otto3d=off`, { waitUntil: 'networkidle' });
-    const fresh = async () => {
-      await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
-      await page.goto(`${base}/index.html?otto3d=off`, { waitUntil: 'domcontentloaded' });
-      await page.waitForSelector('[data-chat-choices] button');
-    };
-    const press = async label => {
-      await pick(page, label);
-      await page.waitForFunction(() => !document.querySelector('[data-chat]').hasAttribute('data-busy') || !document.querySelector('[data-otto-offer]').hidden, null, { timeout: 10000 });
-      if (await page.locator('[data-otto-offer]').isVisible()) {
-        assert.equal(await page.locator('[data-hero]').getAttribute('data-handoff'), 'offer', `${label}: Otto offers his hand`);
-        await page.locator('[data-offer-stay]').click();
-        await settled(page);
-      }
-    };
-    const read = () => page.evaluate(() => {
-      const turn = [...document.querySelectorAll('.turn--agent')].pop();
-      return { node: turn?.dataset.node ?? '', intent: turn?.dataset.intent ?? '', text: turn?.querySelector('.bubble')?.textContent ?? '', choices: [...document.querySelectorAll('[data-chat-choices] button')].map(button => ({ label: button.textContent.trim(), to: button.dataset.to, height: button.getBoundingClientRect().height })) };
-    });
-    const menus = /^(hello|mood-|topics$|work$|projects:|back:)/;
-    const queue = [{ path: [], to: 'hello' }];
-    const queued = new Set(['hello']);
-    const reached = new Set();
-    const problems = [];
-    let nodes = 0, clicks = 0, deepest = 0;
-    while (queue.length) {
-      const { path: steps, to } = queue.shift();
-      await fresh();
-      for (const label of steps) { await press(label); clicks += 1; }
-      const state = await read();
-      const where = steps.join(' → ') || 'greeting';
-      // The click landed on the reply it names (after "Stay here", a project's full answer).
-      const expected = to.startsWith('go:') ? to.slice(3) : to.startsWith('again:') ? `later:${to.slice(6)}` : to;
-      if (state.node !== expected) problems.push(`${where}: expected reply "${expected}", got "${state.node}"`);
-      nodes += 1;
-      deepest = Math.max(deepest, steps.length);
-      if (state.intent && steps.length <= 4) reached.add(state.intent);
-      const labels = state.choices.map(item => item.label);
-      if (!state.text.trim()) problems.push(`${where}: Otto said nothing`);
-      if (labels.length < 2) problems.push(`${where}: ${labels.length} choice(s)`);
-      if (labels.length > (menus.test(state.node) ? 6 : 4)) problems.push(`${where}: ${labels.length} choices`);
-      if (new Set(labels).size !== labels.length) problems.push(`${where}: duplicate labels ${labels.join(' | ')}`);
-      labels.filter(text => text.length > 30).forEach(text => problems.push(`${where}: label over 30 characters "${text}"`));
-      state.choices.filter(item => item.height < 44).forEach(item => problems.push(`${where}: "${item.label}" ${item.height}px tall`));
-      // No dead ends: every reply that isn't itself the topics (or the greeting) leads back to them.
-      if (!/^(hello|mood-|topics$)/.test(state.node) && !state.choices.some(item => item.to === 'topics')) problems.push(`${where}: no way back to the topics`);
-      // Breadth-first, so each reply is first met at its shallowest depth. The crawl
-      // carries on past depth 4 until every reachable reply has been checked.
-      for (const item of state.choices) {
-        if (queued.has(item.to)) continue;
-        queued.add(item.to);
-        queue.push({ path: [...steps, item.label], to: item.to });
-      }
-    }
-    results.push({ name: 'otto crawl', status: 'info', message: `${nodes} replies visited with ${clicks} clicks (deepest ${deepest} choices); ${reached.size}/${intentIds.length} answers reached within 4 choices` });
-    assert.deepEqual(problems, [], problems.join('; '));
-    const missing = intentIds.filter(id => !reached.has(id));
-    assert.deepEqual(missing, [], `answers not reachable within 4 choices: ${missing.join(', ')}`);
-    assert.deepEqual(errors, [], `console/page errors: ${errors.join('; ')}`);
-    await context.close();
-  });
-  for (const [label, options] of [['desktop', { viewport: { width: 1440, height: 900 } }], ['phone', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }]]) {
-    await check(`otto 3d ${label}: renders the ceramic robot (lit pixels), lazy-loaded after first paint`, async () => {
-      const context = await isolated(browser, { reducedMotion: 'no-preference', ...options });
-      const page = await context.newPage();
-      const errors = watch(page);
-      const scripts = [];
-      page.on('request', request => { if (request.resourceType() === 'script') scripts.push(request.url()); });
-      await page.goto(`${base}/index.html?otto3d=force`, { waitUntil: 'load' });
-      const before = scripts.length;
-      await mode3d(page);
-      assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d', `3D mode (${await page.locator(heroStage).getAttribute('data-reason')})`);
-      assert.ok(scripts.length > before, 'the 3D module loads after the load event');
-      await page.waitForFunction(() => document.querySelector('[data-otto-stage][data-stage-mode="hero"]').hasAttribute('data-landed'), null, { timeout: 30000 });
-      const snap = await page.evaluate(() => window.__otto.handle.snapshot());
-      assert.ok(snap.opaque > .012, `Otto drawn (${(snap.opaque * 100).toFixed(1)}% of the canvas opaque)`);
-      assert.ok(snap.lime > .002, `white armour lit, no colour cast (${(snap.lime * 100).toFixed(2)}%)`);
-      assert.ok(await page.locator(`${heroStage} canvas`).isVisible(), 'canvas visible');
-      await page.waitForFunction(sel => getComputedStyle(document.querySelector(`${sel} .otto-stage__poster`)).opacity === '0', heroStage, { timeout: 5000 }); // SVG poster faded out in 3D
-      assert.match(await page.evaluate(() => sessionStorage.getItem('otto3d')), /^(hi|lo)$/, 'tier remembered');
-      assert.deepEqual(errors.filter(e => !/GPU stall|WebGL|swiftshader/i.test(e)), []);
-      await context.close();
-    });
-  }
-  await check('otto 3d: hand-off on desktop, chosen via His work → KATANA: offer, Take Otto’s hand, dive, portal, inside page arrives; Back returns', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
-    const page = await context.newPage();
-    const errors = watch(page);
-    await page.goto(`${base}/index.html?otto3d=force`, { waitUntil: 'load' });
-    await mode3d(page);
-    assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d');
-    for (const [label, then] of [['Good, thanks', /Where shall we start/], ['His work', /Reasoning systems, mostly/]]) {
-      await pick(page, label);
-      await page.waitForFunction(pattern => !document.querySelector('[data-chat]').hasAttribute('data-busy') && new RegExp(pattern).test([...document.querySelectorAll('.turn--agent')].pop()?.textContent || ''), then.source, { timeout: 30000 });
-    }
-    assert.deepEqual(await choices(page), ['KATANA', 'NOOKBASE', 'INOS & OctiMind', 'Bitget models', 'BP pipeline', 'Back to topics'], 'His work lists the five projects');
-    await pick(page, 'KATANA');
-    await page.waitForFunction(() => /Let me take you inside/.test(document.querySelector('[data-chat-log]').textContent), null, { timeout: 15000 });
-    await page.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 15000 });
-    assert.equal(await page.locator('[data-hero]').getAttribute('data-handoff'), 'offer');
-    assert.match(await page.locator('[data-offer-take]').getAttribute('aria-label'), /KATANA tour/);
-    assert.ok(await page.evaluate(() => document.activeElement?.hasAttribute('data-offer-take')), 'focus on Take');
-    assert.equal(await page.locator('[data-otto-offer]').getAttribute('data-anchor'), 'palm', 'button sits by Otto’s palm');
-    await Promise.all([page.waitForURL(/\/inside\/katana\.html$/, { timeout: 30000 }), page.evaluate(() => document.querySelector('[data-offer-take]').click())]);
-    await page.waitForLoadState('load');
-    assert.match(await page.locator('h1').textContent(), /KATANA/);
-    assert.ok(await page.evaluate(() => document.documentElement.dataset.arrive === 'portal'), 'arrival marked as a portal hand-off');
-    assert.equal(await page.evaluate(() => sessionStorage.getItem('otto-handoff')), null, 'hand-off token consumed');
-    assert.ok(await page.locator('text=Concept visual, not product footage').count() >= 1);
-    await Promise.all([page.waitForURL(/index\.html/, { timeout: 15000 }), page.evaluate(() => document.querySelector('[data-inside-back]').click())]);
-    await page.waitForFunction(() => /Back from the inside! Where next\?/.test(document.querySelector('[data-chat-log]')?.textContent || '') && !document.querySelector('[data-chat]').hasAttribute('data-busy'), null, { timeout: 20000 });
-    assert.deepEqual(await choices(page), ['NOOKBASE', 'INOS & OctiMind', 'Bitget models', 'BP pipeline', 'Something else'], 'the other projects, or something else');
-    assert.ok(!(await page.locator('[data-hero]').getAttribute('data-handoff')), 'stage reset');
-    assert.equal(await page.locator('.otto-portal').count(), 0, 'portal removed');
-    await pick(page, 'Something else');
-    await page.waitForFunction(() => !document.querySelector('[data-chat]').hasAttribute('data-busy'), null, { timeout: 30000 });
-    assert.deepEqual(await choices(page), topics, '"Something else" goes back to the topics');
-    assert.deepEqual(errors.filter(e => !/GPU stall|WebGL|swiftshader/i.test(e)), []);
-    await context.close();
-  });
-  /* The hand-off ("Take Otto's hand") as one continuous move in every browser.
-   * Each scenario starts the ask without typing (omar:ask), takes Otto's hand,
-   * holds the navigation request to prove the cover is fully opaque at the
-   * moment the page changes, then checks that the tour paints the identical
-   * cover at DOMContentLoaded, reveals itself within 1.2 s, lands Otto in his
-   * dock and puts focus on the tour's h1. Matrix: 3D (?otto3d=force) and SVG,
-   * desktop and phone, motion on / reduced / Pause, view transitions on and
-   * off (off: the CSS is rewritten to @view-transition { navigation: none },
-   * as in browsers without cross-document view transitions). */
-  const coverProbe = () => {
-    const c = document.querySelector('[data-otto-cover]');
-    if (!c) return null;
-    const s = getComputedStyle(c), r = c.getBoundingClientRect();
-    const box = el => { const b = el?.getBoundingClientRect(); return b ? [b.left, b.top, b.width, b.height].map(v => Math.round(v)) : null; };
-    const win = c.querySelector('.otto-cover__win'), inner = c.querySelector('.otto-cover__inner');
-    return {
-      state: c.dataset.state || null, display: s.display, visibility: s.visibility, opacity: Number(s.opacity),
-      rect: [r.left, r.top, r.width, r.height].map(v => Math.round(v)), vw: document.documentElement.clientWidth, vh: innerHeight,
-      winClip: win ? getComputedStyle(win).clipPath : null, innerTransform: inner ? getComputedStyle(inner).transform : null,
-      innerOpacity: inner ? Number(getComputedStyle(inner).opacity) : null, innerBg: inner ? getComputedStyle(inner).backgroundColor : null,
-      title: box(c.querySelector('.otto-cover__title b')), bar: box(c.querySelector('.otto-cover__bar')),
-      text: (c.querySelector('.otto-cover__hud')?.textContent || '').replace(/\s+/g, ' ').trim(),
-      barTransform: getComputedStyle(c.querySelector('.otto-cover__bar i')).transform,
-      cursor: getComputedStyle(c.querySelector('.otto-cover__cursor')).opacity,
-    };
-  };
-  const arrivalRecorder = probeSource => {
-    if (!/\/inside\//.test(location.pathname)) return;
-    const probe = new Function(`return (${probeSource})()`);
-    const rec = window.__arrival = {};
-    addEventListener('pagereveal', event => { rec.revealVT = !!event.viewTransition; });
-    // The first frame that has the cover in it: what the visitor sees at first paint.
-    requestAnimationFrame(function first(now) { if (document.querySelector('[data-otto-cover]')) { rec.first = probe(); rec.firstT = now; } else if (document.readyState === 'loading') requestAnimationFrame(first); });
-    document.addEventListener('DOMContentLoaded', () => {
-      rec.t0 = performance.now();
-      rec.arrive = document.documentElement.dataset.arrive || null;
-      rec.dcl = probe();
-      rec.vtAnimations = document.getAnimations().filter(a => String(a.effect?.pseudoElement || '').includes('view-transition')).length;
-      // Where the flying Otto lands: jump his flight to its last frame for one synchronous measurement.
-      const flyer = document.querySelector('[data-cover-otto]'), dock = document.querySelector('[data-stage-mode="dock"] .robot');
-      const fly = flyer?.getAnimations().find(a => a.animationName === 'cover-fly');
-      if (fly && dock) {
-        const keep = fly.currentTime;
-        fly.currentTime = fly.effect.getComputedTiming().endTime - 1;
-        const a = flyer.getBoundingClientRect(), b = dock.getBoundingClientRect();
-        rec.landing = { flyer: [a.left, a.top, a.width], dock: [b.left, b.top, b.width] };
-        fly.currentTime = keep;
-      }
-      // The designed reveal: when the cover's own CSS timeline ends (the
-      // observed time below adds this machine's frame delays).
-      const gone = document.querySelector('[data-otto-cover]')?.getAnimations().find(a => /^cover-(gone|fade-out)$/.test(a.animationName));
-      // CSS animations start with the first frame, so the designed reveal is
-      // measured from the first frame that showed the cover.
-      const designed = () => {
-        const from = rec.firstT ?? performance.getEntriesByType('paint').find(entry => entry.name === 'first-paint')?.startTime;
-        if (gone && gone.startTime !== null && from !== undefined && rec.revealAt === undefined) rec.revealAt = Math.round(Number(gone.startTime) + Number(gone.effect.getComputedTiming().endTime) - from);
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(400);
+    // Sample the overlay just before navigation: gate.ts awaits two frames after writing the token.
+    await page.evaluate(() => {
+      const orig = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        orig.call(this, key, value);
+        if (key === 'omar-gate') requestAnimationFrame(() => {
+          const gate = document.querySelector('[data-gate]');
+          const white = gate.querySelector('.gate__white');
+          const box = white.getBoundingClientRect();
+          orig.call(sessionStorage, 'qa-leave', JSON.stringify({ state: gate.dataset.state, white: Number(getComputedStyle(white).opacity), clip: getComputedStyle(white).clipPath, cover: box.width >= innerWidth && box.height >= innerHeight }));
+        });
       };
-      const watch = () => {
-        designed();
-        const s = probe();
-        if (!s || s.display === 'none' || s.visibility === 'hidden' || s.opacity < .02) { rec.goneAt = Math.round(performance.now() - rec.t0); requestAnimationFrame(function late() { designed(); if (rec.revealAt === undefined && performance.now() - rec.t0 < 3000) requestAnimationFrame(late); }); return; }
-        requestAnimationFrame(watch);
-      };
-      watch();
-    }, { once: true });
-  };
-  const near = (a, b, tolerance = 2) => !!a && !!b && a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) <= tolerance);
-  async function handoffScenario({ label, kind, device, motion = 'on', vt = true, id = 'katana', name = 'KATANA', back = false }) {
-    const phone = device === 'phone';
-    const options = phone ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : { viewport: { width: 1440, height: 900 } };
-    const context = await isolated(browser, { reducedMotion: motion === 'reduce' ? 'reduce' : 'no-preference', ...options });
-    if (!vt) await context.route('**/_astro/*.css', async route => {
-      const response = await route.fetch();
-      await route.fulfill({ response, body: (await response.text()).replace(/@view-transition\s*\{\s*navigation:\s*auto\s*;?\s*\}/g, '@view-transition{navigation:none}') });
     });
-    if (motion === 'pause') await context.addInitScript(() => { try { sessionStorage.setItem('omar-motion', 'off'); } catch { /* storage unavailable */ } });
-    await context.addInitScript(arrivalRecorder, coverProbe.toString());
-    const page = await context.newPage();
-    const errors = watch(page);
-    const cdp = await context.newCDPSession(page); // attached before the hand-off (see below)
-    await page.goto(`${base}/index.html?otto3d=${kind === '3d' ? 'force' : 'off'}`, { waitUntil: 'load' });
-    if (kind === '3d') { await mode3d(page); assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d', `3D Otto (${await page.locator(heroStage).getAttribute('data-reason')})`); }
-    else await modeSettled(page);
-    await page.waitForTimeout(kind === '3d' ? 1500 : 600);
-    // Ask about the project without typing.
-    await page.evaluate(project => window.dispatchEvent(new CustomEvent('omar:ask', { detail: { id: project } })), id);
-    await page.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 20000 });
-    await page.waitForTimeout(kind === '3d' ? 1600 : 700); // his reach settles (3D frames are slow in software GL)
-    const anchor = await page.locator('[data-otto-offer]').getAttribute('data-anchor');
-    assert.equal(anchor, phone ? 'dock' : 'palm', phone ? 'phones get the tray under Otto' : 'the button is tethered to his palm');
-    const offerBox = await page.locator('[data-otto-offer]').boundingBox();
-    assert.ok(offerBox && offerBox.x >= 0 && offerBox.x + offerBox.width <= options.viewport.width + 1 && offerBox.y >= 0 && offerBox.y + offerBox.height <= options.viewport.height + 1, `offer fully on screen (${JSON.stringify(offerBox)})`);
-    const takeBox = await page.locator('[data-offer-take]').boundingBox();
-    assert.ok(takeBox.height >= 60, `a big Take button (${Math.round(takeBox.height)}px tall)`);
-    // Hold the navigation, so the leaving frame can be inspected.
-    let release, requested;
-    const navRequested = new Promise(resolve => { requested = resolve; });
-    await page.route(`**/inside/${id}.html`, route => {
-      if (!route.request().isNavigationRequest()) return route.continue();
-      release = () => route.continue();
-      requested();
-    });
-    // The leaving frame is recorded in the page at the instant it navigates
-    // ('otto:navigate' fires right before location.assign) and, while the
-    // request is held, captured over CDP (Playwright waits out a pending
-    // navigation before its own evaluate/screenshot).
-    await page.evaluate(probe => {
-      window.addEventListener('otto:handoff-done', event => { window.__chestRect = event.detail?.rect || null; }, { once: true });
-      window.addEventListener('otto:navigate', () => {
-        const cover = document.querySelector('[data-otto-cover]');
-        sessionStorage.setItem('qa-leaving', JSON.stringify({ ...new Function(`return (${probe})()`)(), navMs: Math.round(performance.now() - window.__clickT), chest: window.__chestRect || null, clipFrom: cover.style.getPropertyValue('--clip-from'), running: cover.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && !['cover-bar-load', 'cover-blink'].includes(a.animationName)).map(a => a.animationName) }));
-      }, { once: true });
-      window.__clickT = performance.now();
-      document.querySelector('[data-offer-take]').click();
-    }, coverProbe.toString());
-    await Promise.race([navRequested, page.waitForTimeout(40000)]);
-    assert.ok(release, 'the page navigated');
-    // While the request is held the old page stays painted: screenshot that
-    // frame (over CDP: Playwright's own calls wait for the navigation).
-    const shot = (await cdp.send('Page.captureScreenshot', { format: 'png' })).data;
-    await fs.writeFile(path.join(output, 'screens', `handoff-${label}-leaving.png`), Buffer.from(shot, 'base64'));
-    release();
-    await page.waitForURL(new RegExp(`/inside/${id}\\.html$`), { timeout: 20000 });
-    await page.waitForLoadState('load');
-    const leaving = await page.evaluate(() => JSON.parse(sessionStorage.getItem('qa-leaving') || 'null'));
-    assert.ok(leaving, 'the leaving frame was recorded');
-    // 1. Fully opaque at the moment of navigation.
-    assert.equal(leaving.state, 'on', 'cover settled (not mid-animation)');
-    assert.deepEqual(leaving.running, [], 'no cover animation still running');
-    assert.ok(leaving.display === 'block' && leaving.visibility === 'visible' && leaving.opacity === 1 && leaving.innerOpacity === 1, `cover visible and opaque (${JSON.stringify(leaving)})`);
-    assert.equal(leaving.winClip, 'none', 'cover window fully open');
-    assert.equal(leaving.innerTransform, 'none', 'cover at full size');
-    assert.match(leaving.innerBg, /^rgb\(7, 8, 7\)$/, 'cover background is solid');
-    assert.ok(near(leaving.rect, [0, 0, leaving.vw, leaving.vh], 1), `cover spans the viewport (${leaving.rect} vs ${leaving.vw}x${leaving.vh})`);
-    assert.equal(leaving.text.replace(/\s/g, ''), `otto://inside/${id}Inside${name}Entering${name}`.replace(/\s/g, ''), `the cover names the project (${leaving.text})`);
-    if (motion === 'on' && kind === '3d') assert.ok(leaving.chest && /^inset\(/.test(leaving.clipFrom), `the cover grew out of the chest screen (${leaving.clipFrom})`);
-    if (motion === 'on' && kind === 'svg') assert.match(leaving.clipFrom, /^circle\(/, 'the cover opened as an iris from his chest badge');
-    // 2. Navigation starts within 1.5 s of the tap (software WebGL paints a 3D frame every ~0.4 s, so 3D is reported, not judged).
-    results.push({ name: `handoff ${label}: tap → navigation`, status: 'info', message: `${leaving.navMs} ms` });
-    if (kind === 'svg') assert.ok(leaving.navMs <= 1500, `navigation ${leaving.navMs} ms after the tap`);
-    await page.waitForFunction(() => window.__arrival && 'goneAt' in window.__arrival && 'revealAt' in window.__arrival, null, { timeout: 8000 });
-    const arrival = await page.evaluate(() => ({ ...window.__arrival, vt: window.__ottoVT || '', active: document.activeElement?.id || null }));
-    // 3. The tour paints the identical cover at first paint.
-    assert.equal(arrival.arrive, 'portal', 'arrival marked before first paint');
-    const first = arrival.first ?? arrival.dcl;
-    assert.ok(first && first.display === 'block' && first.visibility === 'visible' && first.opacity === 1 && first.innerOpacity === 1, `the cover, opaque, in the first frame (${JSON.stringify(first)})`);
-    assert.ok(near(first.rect, [0, 0, first.vw, first.vh], 1), 'cover spans the viewport at first paint');
-    const dcl = arrival.dcl;
-    assert.ok(dcl && dcl.display === 'block' && dcl.visibility === 'visible' && dcl.opacity > (motion === 'on' ? .99 : 0), `the cover still on screen at DOMContentLoaded (${dcl && dcl.opacity})`);
-    assert.equal(first.text, leaving.text, 'same words on both sides');
-    assert.ok(near(first.title, leaving.title) && near(first.bar, leaving.bar), `same layout on both sides (title ${leaving.title} → ${first.title}, bar ${leaving.bar} → ${first.bar})`);
-    // 4. View transitions never double the move.
-    assert.equal(arrival.vtAnimations, 0, 'no view-transition animation on arrival');
-    if (vt) assert.ok(!arrival.revealVT || /pagereveal/.test(arrival.vt), `a native view transition, if any, was skipped (${arrival.vt})`);
-    else assert.ok(!arrival.revealVT && !arrival.vt, 'no view transition at all (as in Safari < 18.2 / Firefox)');
-    // 5. Revealed fast; Otto lands in his dock; focus on the tour.
-    results.push({ name: `handoff ${label}: tour revealed`, status: 'info', message: `${arrival.revealAt} ms after its first frame (CSS timeline); cover observed gone ${arrival.goneAt} ms after DOMContentLoaded` });
-    assert.ok(arrival.revealAt <= (motion === 'on' ? 1200 : 300), `the cover's timeline reveals the tour ${arrival.revealAt} ms after its first frame`);
-    assert.ok(arrival.goneAt <= 1500, `the cover is gone ${arrival.goneAt} ms after DOMContentLoaded`);
-    if (motion === 'on') {
-      assert.ok(arrival.landing, 'Otto flies to his dock');
-      assert.ok(near(arrival.landing.flyer, arrival.landing.dock, 3), `the big Otto lands exactly on the docked one (${arrival.landing.flyer} vs ${arrival.landing.dock})`);
-    } else assert.ok(!arrival.landing, 'no flight with motion reduced or paused');
-    assert.equal(arrival.active, 'tour-title', 'focus on the tour h1');
-    await page.waitForFunction(() => { const el = document.querySelector('[data-otto-stage][data-stage-mode="dock"] .robot'); return getComputedStyle(el).opacity === '1' || !!el.closest('[data-mode="3d"]'); }, null, { timeout: 2000 }); // Otto is in his dock
-    await page.waitForFunction(() => /We’re in\./.test(document.querySelector('[data-otto-bubble]')?.textContent || ''), null, { timeout: 5000 });
-    assert.ok((await page.locator('h1').textContent()).includes(name), 'the tour of that project');
-    await page.screenshot({ path: path.join(output, 'screens', `handoff-${label}-arrived.png`) });
-    // Pixel proof: the held leaving frame is the tour's own cover, pixel for
-    // pixel (nothing of the homepage shows through, nothing half-open). The
-    // tour's cover is held still at the leaving frame's bar and cursor state.
-    await page.evaluate(state => {
-      const c = document.querySelector('[data-otto-cover]');
-      delete document.documentElement.dataset.arrive;
-      c.dataset.state = 'on';
-      [c, ...c.querySelectorAll('*')].forEach(el => { el.style.animation = 'none'; });
-      c.querySelector('.otto-cover__bar i').style.transform = state.barTransform;
-      c.querySelector('.otto-cover__cursor').style.opacity = state.cursor;
-    }, leaving);
-    const reference = (await page.screenshot({ path: path.join(output, 'screens', `handoff-${label}-cover-reference.png`) })).toString('base64');
-    const diff = await page.evaluate(async ([a, b]) => {
-      const load = async src => { const img = new Image(); img.src = `data:image/png;base64,${src}`; await img.decode(); return img; };
-      const [x, y] = await Promise.all([load(a), load(b)]);
-      const w = Math.min(x.naturalWidth, y.naturalWidth), h = Math.min(x.naturalHeight, y.naturalHeight);
-      const read = img => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, w, h).data; };
-      const p = read(x), q = read(y);
-      let off = 0; for (let i = 0; i < p.length; i += 4) if (Math.abs(p[i] - q[i]) + Math.abs(p[i + 1] - q[i + 1]) + Math.abs(p[i + 2] - q[i + 2]) > 60) off++;
-      return off / (p.length / 4);
-    }, [shot, reference]);
-    results.push({ name: `handoff ${label}: leaving frame vs tour cover`, status: 'info', message: `${(diff * 100).toFixed(2)}% of pixels differ` });
-    assert.ok(diff < .01, `the leaving frame is the tour's cover (${(diff * 100).toFixed(2)}% of pixels differ)`);
-    await page.evaluate(() => { const c = document.querySelector('[data-otto-cover]'); c.removeAttribute('data-state'); [c, ...c.querySelectorAll('*')].forEach(el => { el.style.removeProperty('animation'); }); });
-    if (back) {
-      // Back to Otto: the cover comes down here and lifts on the homepage.
-      await Promise.all([page.waitForURL(/index\.html/, { timeout: 15000 }), page.evaluate(() => document.querySelector('[data-inside-back]').click())]);
-      await page.waitForFunction(() => /Back from the inside/.test(document.querySelector('[data-chat-log]')?.textContent || ''), null, { timeout: 15000 });
-      // (Software WebGL blocks the main thread for seconds while the 3D Otto compiles.)
-      await page.waitForFunction(() => { const c = document.querySelector('[data-otto-cover]'); const s = getComputedStyle(c); return s.display === 'none' || s.visibility === 'hidden'; }, null, { timeout: kind === '3d' ? 8000 : 1500 });
-      assert.ok(!(await page.locator('[data-hero]').getAttribute('data-handoff')), 'stage reset');
-    }
-    assert.deepEqual(errors.filter(e => !/GPU stall|WebGL|swiftshader/i.test(e)), []);
-    await context.close();
-  }
-  for (const scenario of [
-    { label: '3d-desktop-vt-on', kind: '3d', device: 'desktop', vt: true, back: true },
-    { label: '3d-phone-vt-off', kind: '3d', device: 'phone', vt: false },
-    { label: 'svg-desktop-vt-off', kind: 'svg', device: 'desktop', vt: false, id: 'nookbase', name: 'NOOKBASE' },
-    { label: 'svg-phone-vt-on', kind: 'svg', device: 'phone', vt: true, back: true },
-    { label: 'svg-phone-reduced', kind: 'svg', device: 'phone', motion: 'reduce', vt: true, id: 'bp', name: 'Competitor Intelligence Engine' },
-    { label: '3d-desktop-paused-vt-off', kind: '3d', device: 'desktop', motion: 'pause', vt: false, id: 'bitget', name: 'Crypto prediction models' },
-  ]) {
-    await check(`otto hand-off ${scenario.label}: opaque cover at navigation, identical cover at first paint, revealed ≤ 1.2 s, Otto docks, focus on h1`, () => handoffScenario(scenario));
-  }
-  await check('otto: hand-off on phone (SVG Otto): a tapped project counts down and takes you inside; the ring shows it', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-    const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await modeSettled(page);
-    for (const label of ['Good, thanks', 'His work']) { await choiceButton(page, label).tap(); await settled(page); }
-    await choiceButton(page, 'NOOKBASE').tap();
-    await page.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 10000 });
-    assert.equal(await page.locator('[data-otto-offer]').getAttribute('data-anchor'), 'dock', 'docked offer on phones');
-    assert.ok(await page.locator('[data-otto-offer]').evaluate(el => el.hasAttribute('data-counting')), 'countdown runs');
-    assert.equal(await page.locator('[data-offer-take] [data-offer-ring]').count(), 1, 'countdown ring present');
-    await page.waitForTimeout(1200);
-    assert.ok(await page.locator('[data-offer-ring]').evaluate(el => parseFloat(el.style.getPropertyValue('--p')) > .1), 'ring fills');
-    assert.match(await page.locator('#otto-offer-desc').textContent(), /about 4 seconds/, 'the timer is described to screen readers');
-    const box = await page.locator('[data-otto-offer]').boundingBox();
-    assert.ok(box && box.x >= 0 && box.x + box.width <= 391 && box.y + box.height <= 845, 'offer fully on screen');
-    await page.waitForURL(/inside\/nookbase/, { timeout: 12000 });
-    assert.match(await page.locator('h1').textContent(), /NOOKBASE/);
-    await context.close();
-  });
-  await check('otto: "Stay here" and Esc cancel the hand-off and show the full answer with what next', async () => {
-    const context = await isolated(browser, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
-    const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await choose(page, 'Good, thanks');
-    await choose(page, 'His work');
-    await choiceButton(page, 'BP pipeline').click();
-    await page.locator('[data-offer-stay]').waitFor({ state: 'visible', timeout: 10000 });
-    assert.ok(!(await page.locator('[data-otto-offer]').evaluate(el => el.hasAttribute('data-counting'))), 'no countdown with reduced motion');
-    assert.ok(await page.locator('[data-chat]').evaluate(el => el.inert), 'dimmed chat is inert during the offer');
-    await page.waitForTimeout(4500);
-    assert.ok(page.url().endsWith('/index.html'), 'never leaves without a choice when motion is reduced');
-    await page.locator('[data-offer-stay]').click();
-    await settled(page);
-    assert.ok(page.url().endsWith('/index.html'), 'stayed');
-    assert.ok(!(await page.locator('[data-hero]').getAttribute('data-handoff')), 'stage reset');
-    assert.ok(!(await page.locator('[data-chat]').evaluate(el => el.inert)), 'chat usable again');
-    assert.ok(await page.evaluate(() => !!document.activeElement && document.activeElement !== document.body), 'focus returned, not dropped to body');
-    assert.equal(await page.locator('[data-otto-cover]').evaluate(el => getComputedStyle(el).display), 'none', 'no cover when staying');
-    assert.match(await lastOtto(page).locator('.bubble').textContent(), /Bloomberg/);
-    assert.equal(await lastOtto(page).locator('a.card[href="/inside/bp.html"]').count(), 1, 'inside card offered');
-    assert.deepEqual(await choices(page), ['Take me inside after all', 'Tell me more', 'Other projects', 'Back to topics']);
-    await choose(page, 'Other projects');
-    assert.deepEqual(await choices(page), ['KATANA', 'NOOKBASE', 'INOS & OctiMind', 'Bitget models', 'Back to topics'], 'the other projects');
-    await choiceButton(page, 'Bitget models').click();
-    await page.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 10000 });
-    await page.keyboard.press('Escape');
-    await settled(page);
-    assert.ok(page.url().endsWith('/index.html'), 'Esc stays');
-    assert.ok(await page.locator('[data-otto-offer]').evaluate(el => el.hidden), 'offer closed');
-    assert.match(await lastOtto(page).locator('.bubble').textContent(), /no claim of trading returns/);
-    await choiceButton(page, 'Take me inside after all').click();
-    await page.locator('[data-offer-stay]').waitFor({ state: 'visible', timeout: 10000 });
-    await page.locator('[data-offer-stay]').click();
-    await settled(page);
-    assert.match(await lastOtto(page).locator('.bubble').textContent(), /Whenever you’re ready/);
-    await context.close();
-    // Motion on, keyboard only: Enter on a choice moves focus to the next reply's first choice; Take gets keyboard focus, so nothing counts down; the command menu's Esc is its own.
-    const live = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
-    const page2 = await live.newPage();
-    await page2.goto(`${base}/index.html?otto3d=off`, { waitUntil: 'networkidle' });
-    await page2.waitForTimeout(500);
-    await choiceButton(page2, 'Good, thanks').focus();
-    await page2.keyboard.press('Enter');
-    await settled(page2);
-    assert.equal(await page2.evaluate(() => document.activeElement?.textContent.trim()), 'His work', 'focus moves to the first new choice');
-    assert.ok(await page2.evaluate(() => document.activeElement.matches(':focus-visible')), 'and it shows');
-    await page2.keyboard.press('Enter');
-    await settled(page2);
-    assert.equal(await page2.evaluate(() => document.activeElement?.textContent.trim()), 'KATANA');
-    await page2.keyboard.press('Enter');
-    await page2.locator('[data-offer-take]').waitFor({ state: 'visible', timeout: 10000 });
-    await page2.waitForTimeout(5000);
-    assert.ok(page2.url().includes('/index.html'), 'a keyboard choice never auto-navigates');
-    await page2.keyboard.press('Control+k');
-    assert.ok(await page2.locator('[data-palette]').evaluate(el => el.open), 'menu opens over the offer');
-    await page2.keyboard.press('Escape');
-    assert.ok(!(await page2.locator('[data-palette]').evaluate(el => el.open)), 'Esc closes the menu');
-    assert.ok(await page2.locator('[data-otto-offer]').isVisible(), '…and leaves the offer open');
-    await page2.keyboard.press('Escape');
-    assert.ok(await page2.locator('[data-otto-offer]').evaluate(el => el.hidden), 'then Esc declines the offer');
-    await settled(page2);
-    assert.equal(await page2.evaluate(() => document.activeElement?.textContent.trim()), 'Take me inside after all', 'focus lands on the first choice after staying');
-    await live.close();
-  });
-  await check('otto: transcript and last choices survive a reload; Clear starts over; ?ask= takes intent ids only', async () => {
-    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
-    const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await choose(page, 'Good, thanks');
-    await choose(page, 'Research & study');
-    await choose(page, 'His degree');
-    const before = await choices(page);
-    assert.deepEqual(before, ['Tell me more', 'When does he graduate?', 'Any certifications?', 'Back to topics']);
-    assert.equal(await page.evaluate(() => localStorage.getItem('otto-history')), null, 'no typing history is kept');
-    await page.reload({ waitUntil: 'networkidle' });
-    assert.equal(await page.locator('.turn--you').count(), 3, 'choices restored');
-    assert.match(await lastOtto(page).textContent(), /Birkbeck/);
-    assert.deepEqual(await choices(page), before, 'the last choices come back');
-    await choose(page, 'When does he graduate?');
-    assert.match(await lastOtto(page).locator('.bubble').textContent(), /2028/);
-    await page.click('[data-chat-clear]');
-    assert.equal(await page.locator('.turn--you').count(), 0, 'cleared');
-    assert.deepEqual(await choices(page), moods, 'back to the greeting');
-    assert.equal(await page.evaluate(() => document.activeElement?.textContent.trim()), 'Good, thanks', 'focus on the first choice, not lost with the Clear button');
-    await page.goto(`${base}/index.html?ask=safe`, { waitUntil: 'networkidle' });
-    await settled(page);
-    assert.match(await lastOtto(page).textContent(), /enhanced DBS check/);
-    assert.equal(await page.locator('.turn--you').last().textContent(), 'Is Omar DBS checked?');
-    assert.deepEqual(await choices(page), ['How much are lessons?', 'Where’s he based?', 'Back to topics']);
-    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
-    for (const junk of ['are you DBS checked', 'idk', '<img src=x onerror=alert(1)>']) {
-      await page.goto(`${base}/index.html?ask=${encodeURIComponent(junk)}`, { waitUntil: 'networkidle' });
-      assert.equal(await page.locator('.turn--you').count(), 0, `?ask=${junk} is ignored`);
-      assert.deepEqual(await choices(page), moods, 'the greeting plays instead');
-    }
-    await context.close();
-  });
-  await check('otto: reduced motion keeps a still 3D Otto and answers instantly; Pause motion stills the SVG Otto', async () => {
-    const still = await isolated(browser, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
-    const page = await still.newPage();
-    await page.goto(`${base}/index.html?otto3d=force`, { waitUntil: 'load' });
-    assert.match(await page.locator('[data-greeting]').textContent(), /I’m Otto, Omar’s robot\. How are you doing\?/);
-    await mode3d(page);
-    assert.equal(await page.locator(heroStage).getAttribute('data-mode'), '3d');
-    const a = await lime(page); await page.waitForTimeout(1200); const b = await lime(page);
-    assert.ok(a > .0005 && a === b, `still frame (${a} vs ${b})`);
-    assert.match(await page.locator('[data-motion-toggle]').textContent(), /Play motion/);
+    // Click via the DOM so Playwright's wait for the doors' entrance animation is not timed.
     const started = Date.now();
-    for (const label of ['Good, thanks', 'Get in touch', 'Where’s he based?']) {
-      await pick(page, label);
-      await page.waitForFunction(() => !document.querySelector('[data-chat]').hasAttribute('data-busy'), null, { timeout: 15000 });
-    }
-    assert.ok(Date.now() - started < 6000, `instant answers (${Date.now() - started}ms for three)`);
-    assert.match(await lastOtto(page).textContent(), /London/);
-    assert.equal(await page.locator('.typing').count(), 0, 'no typing dots with reduced motion');
-    await still.close();
-    const live = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
-    const page2 = await live.newPage();
-    await page2.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await modeSettled(page2);
-    assert.notEqual(await page2.locator(`${heroStage} .robot__body`).evaluate(el => getComputedStyle(el).animationName), 'none', 'Otto floats');
-    await page2.click('[data-motion-toggle]');
-    assert.equal(await page2.evaluate(() => document.documentElement.dataset.motion), 'off');
-    assert.equal(await page2.locator(`${heroStage} .robot__body`).evaluate(el => getComputedStyle(el).animationName), 'none', 'Otto still');
-    assert.equal(await page2.locator('.chat__glow').evaluate(el => getComputedStyle(el).animationPlayState), 'paused');
-    assert.equal(await page2.locator('.ticker__track').first().evaluate(el => getComputedStyle(el).animationPlayState), 'paused');
-    const started2 = Date.now();
-    await choose(page2, 'Good, thanks');
-    assert.ok(Date.now() - started2 < 1500, 'Pause motion answers instantly too');
-    await page2.reload({ waitUntil: 'networkidle' });
-    assert.equal(await page2.evaluate(() => document.documentElement.dataset.motion), 'off', 'Pause remembered for the session');
-    await page2.click('[data-motion-toggle]');
-    await live.close();
-  });
-  await check('otto: ?otto3d=off and a failed 3D session fall back to the SVG Otto', async () => {
+    await Promise.all([page.waitForURL(/work\.html$/), page.evaluate(() => document.querySelector('.doors a[href="/work.html"]').click())]);
+    const leaveMs = Date.now() - started;
+    const leave = JSON.parse(await page.evaluate(() => sessionStorage.getItem('qa-leave')) || 'null');
+    assert.ok(leave, 'the door wrote the gate token');
+    assert.equal(leave.state, 'open', 'doors play the open gate');
+    assert.ok(leave.white >= .99 && leave.cover, `leaving page fully white (${JSON.stringify(leave)})`);
+    await page.waitForFunction(() => window.__firstPaint !== undefined, null, { timeout: 3000 });
+    const first = await page.evaluate(() => window.__firstPaint);
+    assert.equal(first.arrive, 'in', 'arrival marked before first paint');
+    assert.equal(first.display, 'block', 'gate painted at first paint');
+    assert.ok(first.white >= .99, `arriving page white at first paint (${first.white})`);
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-gate]')).visibility === 'hidden' || getComputedStyle(document.querySelector('[data-gate]')).display === 'none', null, { timeout: 1500 });
+    assert.equal(await page.evaluate(() => window.__vt), 0, 'no native view transition alongside the gate');
+    if (reducedMotion === 'reduce' || motionOff) assert.ok(leaveMs < 1500, `reduced/paused leave is quick (${leaveMs}ms)`);
+    // A same-page door: Skills on the homepage opens, jumps, reveals.
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.click('.doors a[href="/index.html#skills"]');
+    await page.waitForFunction(() => location.hash === '#skills' && !document.querySelector('[data-gate]').dataset.state, null, { timeout: 3000 });
+    const top = await page.locator('#skills').evaluate(el => el.getBoundingClientRect().top);
+    assert.ok(Math.abs(top) < 120, `jumped to skills (${top})`);
+    assert.deepEqual(errors, []);
+    results.push({ name: `gate ${label} leave duration`, status: 'info', message: `${leaveMs}ms click → next URL` });
+    await context.close();
+  };
+  for (const scenario of [
+    { label: 'motion 1440', reducedMotion: 'no-preference', width: 1440 },
+    { label: 'motion 390', reducedMotion: 'no-preference', width: 390 },
+    { label: 'reduced motion', reducedMotion: 'reduce', width: 1280 },
+    { label: 'Pause motion', reducedMotion: 'no-preference', motionOff: true, width: 1280 },
+  ]) await check(`light gate ${scenario.label}: opaque white leaving, white at first paint, revealed ≤ 1.5 s`, () => gateScenario(scenario));
+
+  await check('light gate: ordinary links use the quick gate; PDFs, mail and new tabs are untouched; back from bfcache is never white', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
-    await page.goto(`${base}/index.html?otto3d=off`, { waitUntil: 'networkidle' });
-    assert.equal(await page.locator(heroStage).getAttribute('data-mode'), 'svg');
-    assert.equal(await page.locator(heroStage).getAttribute('data-reason'), 'gate');
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await modeSettled(page);
-    assert.match(await page.locator(heroStage).getAttribute('data-reason'), /^(software|no-webgl)$/, 'CPU-rendered WebGL is refused up front');
-    assert.equal(await page.evaluate(() => sessionStorage.getItem('otto3d')), 'off', 'refused or slow WebGL is remembered for the session');
-    await page.goto(`${base}/inside/inos.html`, { waitUntil: 'networkidle' });
-    assert.equal(await page.locator('[data-otto-stage][data-stage-mode="dock"]').getAttribute('data-mode'), 'svg', 'inside dock stays SVG');
+    await Promise.all([page.waitForURL(/research\.html$/), page.click('#site-nav a[href="/research.html"]')]);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.gate), 'in');
+    await page.goBack({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(900);
+    assert.ok(!(await page.locator('[data-gate]').evaluate(el => el.dataset.state === 'open' || el.dataset.state === 'quick')), 'not left white after Back');
+    const untouched = await page.evaluate(() => {
+      const gate = document.querySelector('[data-gate]');
+      const tried = [];
+      for (const sel of ['a[href$=".pdf"]', 'a[href^="mailto:"]', 'a[target="_blank"]']) {
+        const link = document.querySelector(sel);
+        if (!link) continue;
+        link.addEventListener('click', event => event.preventDefault(), { once: true });
+        link.click();
+        tried.push(gate.dataset.state || '');
+      }
+      return tried;
+    });
+    assert.ok(untouched.every(state => state === ''), `gate ignored ${JSON.stringify(untouched)}`);
     await context.close();
   });
-  await check('command menu: Ctrl+K and ⌘K open; arrows + Enter navigate; Ask Otto items reach Otto; no free-text ask', async () => {
+
+  /* 6. Pause motion stops every loop; contact is one tap away everywhere. */
+  await check('Pause motion: visible, stops every looping animation and the hero video; persists for the session', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    const toggle = page.locator('.hero__pause');
+    assert.ok(await toggle.isVisible(), 'Pause motion visible in the hero');
+    await toggle.click();
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.motion), 'off');
+    const running = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).map(a => `${a.animationName} on ${a.effect.target?.className}`));
+    assert.deepEqual(running, [], 'no infinite animation keeps running');
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll('video')].filter(v => !v.paused).length), 0, 'videos paused');
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.motion), 'off', 'remembered for the session');
+    assert.match(await toggle.textContent(), /Play motion/);
+    await context.close();
+  });
+  for (const [label, viewport, mobile] of [['phone', { width: 390, height: 844 }, true], ['desktop', { width: 1280, height: 900 }, false]]) {
+    await check(`contact in one tap from every page (${label})`, async () => {
+      const context = await isolated(browser, { viewport, isMobile: mobile, hasTouch: mobile });
+      const page = await context.newPage();
+      for (const route of [...routes, ...tours]) {
+        await page.goto(`${base}/${route}.html`, { waitUntil: 'domcontentloaded' });
+        const cta = page.locator('.header__cta');
+        assert.ok(await cta.isVisible(), `${route}: header Contact visible`);
+        assert.equal(await cta.getAttribute('href'), '/contact.html');
+        if (mobile && !['contact', 'tutoring'].includes(route)) {
+          await page.evaluate(() => scrollTo(0, innerHeight * 2));
+          await page.waitForTimeout(500);
+          assert.ok(await page.locator('[data-float-contact]').isVisible(), `${route}: floating Contact after scrolling`);
+          assert.ok(await page.locator('.header__cta').isVisible(), `${route}: header Contact still visible (sticky)`);
+        }
+      }
+      await context.close();
+    });
+  }
+
+  await check('command menu: Ctrl+K and ⌘K open; arrows + Enter navigate through the gate; quick links; no chat items', async () => {
     const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
     await page.goto(`${base}/work.html`, { waitUntil: 'networkidle' });
@@ -763,32 +309,36 @@ function watch(page) {
     await page.keyboard.press('ArrowUp');
     await Promise.all([page.waitForURL(/research\.html$/), page.keyboard.press('Enter')]);
     await page.click('[data-palette-open]');
-    await page.keyboard.type('inside katana');
+    await page.keyboard.type('katana tour');
     await Promise.all([page.waitForURL(/inside\/katana\.html$/), page.keyboard.press('Enter')]);
     await page.click('[data-palette-open]');
-    await page.keyboard.type('internships');
-    await Promise.all([page.waitForURL(/index\.html\?ask=hire$/), page.keyboard.press('Enter')]);
-    await settled(page);
-    assert.match(await lastOtto(page).textContent(), /Sales & Trading/);
-    assert.equal(await page.locator('[data-palette] [data-free]').count(), 0, 'no free-text ask in the menu');
+    await page.keyboard.type('book a lesson');
+    await Promise.all([page.waitForURL(/tutoring\.html#lesson-enquiry$/), page.keyboard.press('Enter')]);
+    assert.equal(await page.locator('[data-palette] [data-group="Ask Otto"]').count(), 0, 'no Ask Otto group');
     await page.keyboard.press('Control+k');
     await page.keyboard.type('pizza recipes');
-    assert.equal(await page.locator('[data-palette-list] [role="option"]:not([hidden])').count(), 0, 'nothing to ask');
+    assert.equal(await page.locator('[data-palette-list] [role="option"]:not([hidden])').count(), 0);
     assert.match(await page.locator('[data-palette-status]').textContent(), /No results/);
-    const turns = await page.locator('.turn').count();
-    await page.keyboard.press('Enter');
-    assert.equal(await page.locator('.turn').count(), turns, 'Enter on no results does nothing');
-    await page.keyboard.press('Escape');
-    await page.keyboard.press('Control+k');
-    await page.keyboard.type('dbs');
-    await page.keyboard.press('Enter');
-    await settled(page);
-    assert.match(await lastOtto(page).textContent(), /enhanced DBS check/, 'an Ask Otto item answers in the homepage chat');
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('omar:ask', { detail: { text: 'idk' } })));
-    await page.waitForTimeout(300);
-    assert.match(await lastOtto(page).textContent(), /enhanced DBS check/, 'free text from omar:ask is ignored');
     await context.close();
   });
+
+  await check('project tours: render with honest caveats, chapter links, prev/next tours', async () => {
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    for (const id of ['katana', 'nookbase', 'inos', 'bitget', 'bp']) {
+      await page.goto(`${base}/inside/${id}.html`, { waitUntil: 'networkidle' });
+      const text = await page.locator('main').textContent();
+      if (id === 'katana') assert.match(text, /programme direction/);
+      if (id === 'bitget') assert.match(text, /No claim of trading performance/);
+      if (id === 'inos') assert.match(text, /wider R&D/);
+      if (id === 'nookbase') assert.match(text, /150 beta users/);
+      assert.equal(await page.locator('.rail a').count(), 5);
+      assert.equal(await page.locator('.tours a').count(), 2);
+      assert.equal(await page.locator('[data-otto-stage], .otto-dock').count(), 0, 'no Otto dock');
+    }
+    await context.close();
+  });
+
   await check('projects: list/grid switch is remembered', async () => {
     const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
@@ -803,105 +353,13 @@ function watch(page) {
     await page.click('[data-view-set="list"]');
     await context.close();
   });
-  for (const theme of ['light', 'dark']) for (const width of [360, 390, 768, 1280]) {
-    await check(`inside tours ${width}px ${theme}: render, indexable, no overflow, axe, Esc goes back`, async () => {
-      const context = await isolated(browser, { viewport: { width, height: 900 }, colorScheme: theme });
-      const page = await context.newPage();
-      const errors = watch(page);
-      const axeSource = axePath && (width === 390 || width === 1280) ? await fs.readFile(axePath, 'utf8') : '';
-      for (const id of ['katana', 'nookbase', 'inos', 'bitget', 'bp']) {
-        await page.goto(`${base}/inside/${id}.html`, { waitUntil: 'networkidle' });
-        assert.equal(await page.locator('h1').count(), 1);
-        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${id}: no overflow`);
-        assert.equal(await page.locator('meta[name="robots"][content*="noindex"]').count(), 0, `${id}: indexable`);
-        assert.ok(await page.locator('[data-otto-stage][data-stage-mode="dock"] [data-robot]').count() === 1, `${id}: Otto docked`);
-        assert.ok(await page.locator('[data-inside-back]').first().isVisible(), `${id}: Back to Otto`);
-        if (axeSource) {
-          await page.addScriptTag({ content: axeSource });
-          const violations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })).violations.map(v => `${v.id}: ${v.nodes.slice(0, 3).map(n => n.target.join(' ')).join(', ')}`));
-          assert.deepEqual(violations, [], `${id}: axe`);
-        }
-      }
-      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-      await Promise.all([page.waitForURL(/inside\/bitget/), page.evaluate(() => { location.href = '/inside/bitget.html'; })]);
-      await page.waitForLoadState('networkidle');
-      await page.keyboard.press('Escape');
-      await page.waitForURL(/index\.html/);
-      assert.deepEqual(errors, []);
-      await context.close();
-    });
-  }
-  await check('inside tours: no JavaScript still reads as a full page', async () => {
-    const context = await isolated(browser, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
-    const page = await context.newPage();
-    for (const id of ['katana', 'bitget']) {
-      await page.goto(`${base}/inside/${id}.html`);
-      const text = await page.locator('main').innerText();
-      assert.ok(text.length > 600, `${id}: content readable without JS (${text.length} chars)`);
-      assert.ok(await page.locator('[data-otto-stage] [data-robot]').isVisible(), `${id}: Otto visible`);
-      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${id}: no overflow`);
-    }
-    await context.close();
-  });
-
-  /* 5d. Motion pass: 3D orbit, sliding columns, question slider, Pause motion. */
-  await check('orbit: drifts, drag spins without opening a card, arrows step, tap opens; slider and columns move; Pause stops them', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
-    const page = await context.newPage();
-    const errors = watch(page);
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await page.locator('[data-orbit]').scrollIntoViewIfNeeded();
-    const spin = () => page.locator('[data-orbit-ring]').evaluate(el => parseFloat(el.style.getPropertyValue('--spin')) || 0);
-    const a = await spin(); await page.waitForTimeout(700);
-    assert.notEqual(await spin(), a, 'drifts on its own');
-    const box = await page.locator('[data-orbit]').boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 - 220, box.y + box.height / 2, { steps: 8 });
-    await page.mouse.up();
-    await page.waitForTimeout(900);
-    assert.ok(page.url().endsWith('/index.html'), 'drag did not open a card');
-    const before = await page.locator('[data-orbit-count]').textContent();
-    await page.click('[data-orbit-next]');
-    await page.waitForTimeout(800);
-    assert.notEqual(await page.locator('[data-orbit-count]').textContent(), before, 'arrow steps');
-    const front = await page.evaluate(() => { const items = [...document.querySelectorAll('[data-orbit-item]')]; return items.sort((x, y) => parseFloat(getComputedStyle(y).getPropertyValue('--o')) - parseFloat(getComputedStyle(x).getPropertyValue('--o')))[0].querySelector('a').getAttribute('href'); });
-    await Promise.all([page.waitForURL(url => url.pathname === front), page.evaluate(href => document.querySelector(`[data-orbit] a[href="${href}"]`).click(), front)]);
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    const track = page.locator('.cols__track').first();
-    assert.notEqual(await track.evaluate(el => getComputedStyle(el).animationName), 'none', 'columns glide');
-    await page.locator('[data-slider]').scrollIntoViewIfNeeded();
-    const left = await page.locator('[data-slider-track]').evaluate(el => el.scrollLeft);
-    await page.click('[data-slider-next]');
-    await page.waitForTimeout(900);
-    assert.ok(await page.locator('[data-slider-track]').evaluate(el => el.scrollLeft) > left, 'slider advances');
-    await page.evaluate(() => scrollTo(0, 0));
-    await page.click('[data-motion-toggle]');
-    await page.locator('[data-orbit]').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(300);
-    const b = await spin(); await page.waitForTimeout(800);
-    assert.equal(await spin(), b, 'orbit stops when motion is paused');
-    assert.equal(await track.evaluate(el => getComputedStyle(el).animationPlayState), 'paused', 'columns pause');
-    assert.deepEqual(errors, []);
-    await context.close();
-  });
-  await check('orbit without JavaScript is a swipeable row of links', async () => {
-    const context = await isolated(browser, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
-    const page = await context.newPage();
-    await page.goto(`${base}/index.html`);
-    assert.equal(await page.locator('.orbit__ring').evaluate(el => getComputedStyle(el).display), 'flex');
-    assert.ok(await page.locator('[data-orbit] a[href="/inside/katana.html"]').isVisible());
-    await context.close();
-  });
-
-  /* 5b. Numbers and scroll motion. */
-  await check('numbers count up to their CV values', async () => {
+  /* Numbers and scroll motion. */
+  await check('hero spec chips count up to their CV values', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    await page.locator('.stats').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1900);
-    assert.deepEqual(await page.locator('[data-count-to]').allTextContents(), ['150', '5', '3', '2']);
+    await page.waitForTimeout(2600);
+    assert.deepEqual(await page.locator('[data-count-to]').allTextContents(), ['150', '5', '3']);
     await context.close();
   });
   await check('scroll reveals finish visible', async () => {

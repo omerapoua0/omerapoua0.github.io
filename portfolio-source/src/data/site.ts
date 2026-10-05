@@ -4,6 +4,8 @@ export const site = {
   email: 'omerapoua0@gmail.com',
   // Personal GitHub for this portfolio. The CV PDF lists a separate work account.
   github: 'https://github.com/omerapoua0',
+  // From the CV header.
+  linkedin: 'https://www.linkedin.com/in/omaraboelella',
   location: 'London, UK',
   role: 'AI product engineer',
   description:

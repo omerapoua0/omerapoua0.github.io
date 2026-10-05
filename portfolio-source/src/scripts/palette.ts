@@ -1,10 +1,10 @@
 /*
  * Command menu: ⌘K / Ctrl+K (or any [data-palette-open] button) opens a native
  * <dialog>. Typing filters with a forgiving subsequence match; ↑/↓ move,
- * Enter runs. "Ask Otto" items open one of Otto's written answers in the
- * homepage chat (or the homepage with ?ask=<intent id>). There is no free-text
- * ask: Otto only answers what Omar wrote.
+ * Enter runs. Internal links go through the light gate (gate.ts) like any
+ * other link on the site.
  */
+const gate = () => (window as Window & { __gate?: (href: string, mode?: string) => void }).__gate;
 const dialog = document.querySelector<HTMLDialogElement>('[data-palette]');
 const input = dialog?.querySelector<HTMLInputElement>('[data-palette-input]');
 const list = dialog?.querySelector<HTMLElement>('[data-palette-list]');
@@ -71,26 +71,12 @@ if (dialog && input && list && typeof dialog.showModal === 'function') {
 
   const run = async (item: HTMLElement | undefined) => {
     if (!item) return;
-    const onHome = !!document.querySelector('[data-chat]');
-    const { href, ask, action } = item.dataset;
-    if (ask) {
-      close();
-      if (onHome) window.dispatchEvent(new CustomEvent('omar:ask', { detail: { id: ask } }));
-      else location.href = `/index.html?ask=${encodeURIComponent(ask)}`;
-    } else if (href) {
+    const { href, action } = item.dataset;
+    if (href) {
       close();
       if (item.hasAttribute('data-external')) window.open(href, '_blank', 'noopener');
+      else if (gate()) gate()!(href, 'open');
       else location.href = href;
-    } else if (action === 'theme') {
-      document.querySelector<HTMLButtonElement>('[data-theme-toggle]')?.click();
-      close();
-    } else if (action === 'sound') {
-      let next = 'on';
-      try { next = localStorage.getItem('omar-sound') === '"on"' ? 'off' : 'on'; localStorage.setItem('omar-sound', JSON.stringify(next)); } catch { /* storage unavailable */ }
-      window.dispatchEvent(new Event('omar:sound'));
-      const hint = item.querySelector('.palette__hint');
-      if (hint) hint.textContent = next === 'on' ? 'Sound on' : 'Sound off';
-      status.textContent = `Chat sounds ${next}.`;
     } else if (action === 'copy-email') {
       const email = item.querySelector('.palette__hint')?.textContent ?? '';
       let ok = false;

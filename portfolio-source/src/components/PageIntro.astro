@@ -14,8 +14,8 @@ const { section, meta = [] } = Astro.props;
 <style>
   .intro__aside { display: grid; gap: var(--s-4); }
   @media (prefers-reduced-motion: no-preference) {
-    #page-title { animation: intro-rise var(--d-5) var(--ease-out) both; }
-    .intro__body { animation: intro-fade var(--d-5) var(--ease-out) 160ms both; }
+    #page-title { animation: intro-rise var(--d-5) var(--ease-out) var(--enter-delay, 0ms) both; }
+    .intro__body { animation: intro-fade var(--d-5) var(--ease-out) calc(var(--enter-delay, 0ms) + 160ms) both; }
     @keyframes intro-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
     @keyframes intro-fade { from { opacity: 0; } to { opacity: 1; } }
   }

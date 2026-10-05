@@ -4,10 +4,12 @@ const year = new Date().getFullYear();
 ---
 <footer class="footer">
   <div class="wrap">
-    <div class="footer__cta">
-      <p class="label"><span class="section-mark">§</span> Contact</p>
-      <a class="footer__big" href="/contact.html">Have a question worth <em class="voice">working on?</em> <span class="arrow" aria-hidden="true">↗</span></a>
-      <a class="footer__email" href={`mailto:${site.email}`}>{site.email}</a>
+    <div class="footer__top">
+      <a class="footer__big" href="/contact.html" data-open>Let’s build <span>something.</span> <span class="footer__arrow" aria-hidden="true">↗</span></a>
+      <div class="footer__reach">
+        <a class="footer__email" href={`mailto:${site.email}`}>{site.email}</a>
+        <p>London, UK · lessons online worldwide</p>
+      </div>
     </div>
     <div class="footer__grid">
       <div>
@@ -15,9 +17,10 @@ const year = new Date().getFullYear();
         <ul>{[{ label: 'Home', href: '/index.html' }, ...navigation, { label: 'Contact', href: '/contact.html' }].map(item => <li><a href={item.href}>{item.label}</a></li>)}</ul>
       </div>
       <div>
-        <p class="label">Documents</p>
+        <p class="label">Elsewhere</p>
         <ul>
           <li><a href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">CV (PDF) ↗</a></li>
+          <li><a href={site.linkedin} target="_blank" rel="noopener">LinkedIn ↗</a></li>
           <li><a href={site.github} target="_blank" rel="noopener">GitHub ↗</a></li>
           <li><a href="/THIRD-PARTY-NOTICES.txt">Credits & licences</a></li>
         </ul>
@@ -25,32 +28,42 @@ const year = new Date().getFullYear();
       <div class="footer__note">
         <p class="label">How enquiries work</p>
         <p>Forms on this site prepare an email for you to review and send yourself. Nothing is sent, stored or booked by the website.</p>
+        <button class="footer__motion" type="button" data-motion-toggle>
+          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
+          <span data-motion-label>Pause motion</span>
+        </button>
       </div>
     </div>
     <div class="footer__base">
       <span>© {year} Omar Aboelella</span>
-      <span>London, UK · Online worldwide</span>
       <span>Built with Astro · no tracking</span>
     </div>
   </div>
 </footer>
 
 <style>
-  .footer { background: var(--plate); color: var(--plate-ink); padding-top: clamp(72px, 9vw, 140px); }
-  .footer .label { color: var(--plate-muted); }
+  .footer { position: relative; background: var(--surface); color: var(--ink); padding-top: clamp(64px, 8vw, 120px); border-top: 1px solid var(--line); overflow: hidden; }
   .footer a { text-decoration: none; }
-  .footer a:hover { color: #b7bdff; }
-  .footer__cta { display: grid; gap: var(--s-5); padding-bottom: clamp(56px, 7vw, 104px); border-bottom: 1px solid #262b35; }
-  .footer__big { font-size: clamp(2.4rem, 1.2rem + 5vw, 6.5rem); font-weight: 540; letter-spacing: -.05em; line-height: .98; max-width: 14ch; }
-  .footer__big .voice { color: #b7bdff; }
-  .footer__big .arrow { display: inline-block; font-size: .6em; transition: transform var(--d-3) var(--ease-out); }
-  .footer__big:hover .arrow { transform: translate(6px, -6px); }
-  .footer__email { font-family: var(--font-mono); font-size: clamp(14px, 1.4vw, 17px); color: var(--plate-muted); min-height: 44px; display: inline-flex; align-items: center; width: fit-content; }
+  .footer a:hover { color: var(--accent); }
+  .footer__top { display: grid; gap: var(--s-6); padding-bottom: clamp(48px, 6vw, 88px); border-bottom: 1px solid var(--line); }
+  .footer__big { font-size: clamp(2.6rem, 1rem + 6.4vw, 7.5rem); font-weight: 640; letter-spacing: -.055em; line-height: .92; max-width: 12ch; }
+  .footer__big span:first-child { color: var(--accent); }
+  .footer__arrow { display: inline-block; font-size: .55em; vertical-align: top; transition: transform var(--d-3) var(--ease-out); }
+  .footer__big:hover .footer__arrow { transform: translate(8px, -8px); }
+  .footer__reach { display: grid; gap: 4px; align-content: end; }
+  .footer__reach p { color: var(--muted); font-size: var(--step-small); }
+  .footer__email { font-family: var(--font-mono); font-size: clamp(14px, 1.3vw, 17px); min-height: 44px; display: inline-flex; align-items: center; width: fit-content; overflow-wrap: anywhere; }
   .footer__grid { display: grid; gap: var(--s-7); padding-block: var(--s-8); grid-template-columns: 1fr; }
   .footer__grid ul { display: grid; margin-top: var(--s-3); }
   .footer__grid li a { display: inline-flex; min-height: 40px; align-items: center; font-size: var(--step-small); }
-  .footer__note p:last-child { margin-top: var(--s-3); color: var(--plate-muted); font-size: var(--step-small); max-width: 40ch; }
-  .footer__base { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-6); padding-block: var(--s-5) calc(var(--s-5) + env(safe-area-inset-bottom)); border-top: 1px solid #262b35; font-family: var(--font-mono); font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: var(--plate-muted); }
-  .footer :focus-visible { outline-color: #b7bdff; }
-  @media (min-width: 768px) { .footer__grid { grid-template-columns: 1fr 1fr 2fr; } }
+  .footer__note > p:nth-child(2) { margin-top: var(--s-3); color: var(--muted); font-size: var(--step-small); max-width: 40ch; }
+  .footer__motion { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: var(--s-5); padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--bg-2); font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  .footer__motion:hover { border-color: var(--accent); color: var(--accent); }
+  .footer__base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2) var(--s-6); padding-block: var(--s-5) calc(var(--s-5) + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  :global(body.is-home) .footer__top { display: none; }
+  :global(body.is-home) .footer { padding-top: 0; }
+  @media (min-width: 900px) {
+    .footer__top { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+    .footer__grid { grid-template-columns: 1fr 1fr 2fr; }
+  }
 </style>

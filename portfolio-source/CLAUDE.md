@@ -13,98 +13,91 @@ Preserve user changes. Do not reset, clean, or delete unrelated work. Inspect
 before editing; use small, reviewable changes. No Supabase or paid service is
 required. This is a static portfolio, not a hosted backend.
 
-## Active architecture ("Proof" redesign, October 2026)
+## Active architecture (v4 "Studio" redesign, October 2026)
 
-- Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React remains
-  declared for lockfile stability but no page ships a React island. three.js
-  (already a dependency) renders the 3D Otto in a lazily loaded chunk.
+- Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React and three.js
+  remain declared for lockfile stability, but no page ships a React island or
+  three.js (`scripts/qa-content.mjs` fails the build output if three ships).
 - Pages: index, work, automations, research, cv, tutoring, contact, plus the
-  five inside tours `/inside/{katana,nookbase,inos,bitget,bp}.html`.
+  five project tours `/inside/{katana,nookbase,inos,bitget,bp}.html`.
 - `src/data/*.ts`: the single typed source of facts (projects, experience,
-  capabilities, site/status vocabulary). Change facts here, not in markup.
-- `src/layouts/Base.astro`: metadata, JSON-LD, font preloads, header, footer,
-  the inline head script (restores Pause motion; marks a portal arrival).
-- `src/styles/tokens.css`, `base.css`, `layout.css`, `forms.css`; component
-  styles are scoped in each `.astro` file. Palette: cool paper/ink + cobalt;
-  the dark homepage hero uses a single signal lime (#d9ff3f).
-- **Homepage hero: Otto, Omar's robot host** (`src/components/OttoHero.astro`).
-  - Stage: `src/scripts/otto-stage.ts` decides per `[data-otto-stage]` (hero
-    or inside-page dock) whether to load the 3D Otto: after `load`, idle and
-    on screen, with WebGL 2 (no software GL), no Save-Data/2G/low memory, and
-    a 3 s deadline. `data-mode` pending → 3d | svg; `?otto3d=off|force` for
-    testing; sessionStorage `otto3d` remembers hi/lo/off for the session.
-  - 3D Otto: `src/scripts/otto3d/` — `rig.ts` (procedural ceramic robot:
-    rounded shell, black glass visor, jointed arms and fingers, thruster),
-    `face.ts` (canvas-drawn eyes/mouth and chest screen), `motion.ts`
-    (spring-driven director: fly-in, wave, welcome, talk, offer/grab/pull),
-    `stage.ts` (renderer, lights, camera, adaptive resolution and frame cap,
-    slow-device bail-out, offscreen/hidden-tab pause, `window.__otto` debug).
-  - SVG Otto: `Robot.astro` + `robot.ts` (poses via `otto:state`); the poster
-    before 3D arrives and the fallback everywhere 3D is not used.
-  - Conversation, choice-only (visitors never type, so Otto never meets
-    "idk" or anything he can't answer): `src/data/agent.ts` (third-person
-    answers, cards, sources) + `src/data/otto.ts` (greeting, moods, follow-up
-    details, fact-free social lines, inside cards and the choice tree:
-    `reply(node)` gives Otto's line, pose and the next choices). `otto-chat.ts`:
-    greeting after Otto lands, choices as real buttons where a composer would
-    be (2 per row, 44px+), streaming, focus to the first new choice, polite
-    status, persistence of the transcript and last choices, `?ask=<intent id>`
-    (anything else is ignored). Back from a tour: "Back from the inside! Where
-    next?" with the other projects.
-  - Hand-off: `otto-handoff.ts`. For a project, Otto offers his hand: a big
-    "Take Otto's hand" button tethered to his palm on wide screens, a tray
-    right under him (his hand reaching down to it) on phones, plus "Stay
-    here"/Esc. A 4 s countdown runs only with motion on and pauses on
-    hover/focus. Take is one continuous move in every browser, with no view
-    transition: the button squeezes into his hand, he grips and pulls, then
-    3D: the camera dives into his chest screen ("ENTERING <NAME>",
-    `otto3d/stage.ts`) and `OttoCover.astro` grows out of that rectangle;
-    SVG: he zooms toward you as a lime iris opens from his chest badge. Only
-    once the cover is opaque does the browser go to `/inside/<id>.html`. The
-    inline head script in `Base.astro` (sessionStorage `otto-handoff`
-    {id, t}) marks `html[data-arrive="portal"]`, so the tour paints the
-    identical cover at first paint; CSS then completes the bar, collapses it
-    into the tour's monitor (rects measured by an inline script in
-    `inside/[id].astro`) and flies a big SVG Otto into his dock; native
-    cross-document view transitions are skipped for these page changes.
-    "Back to Otto" uses the same cover as a quick shutter (`otto-return`).
-    Reduced motion/Pause: a <= 200 ms cover fade on each side, no flight.
-  - Events: `otto:state|say|anchor|palm|handoff|handoff-done|ready|landed|fail|mode`,
-    `omar:motion|ask|sound` (`omar:ask` takes `{ id }` of an intent; free
-    text is ignored).
-- Inside tours: `src/pages/inside/[id].astro` + `inside.ts` (six chapters
-  narrated by Otto, chapter rail, Back to Otto/Esc, Otto docked).
+  capabilities, site/status vocabulary, `site.linkedin` from the CV header).
+- Palette (`src/styles/tokens.css`, light only, no theme toggle): studio
+  greys `#eef0f3`/`#f5f6f8`, white surfaces, ink `#0a0c10`, muted `#5a616d`,
+  lines `#d5d9df`, ONE electric-blue accent `#1f4bff` (hover `#1238e0`) and a
+  deep navy `#0b1640` for the homepage contact band and media plates. No lime
+  (`#d9ff3f`, checked by qa-content), no dark-green tints, no serif: `.voice`
+  words are blue Onest. Type: Onest + JetBrains Mono. Buttons are pills.
+- `src/layouts/Base.astro`: metadata, JSON-LD, header, footer, LightGate, the
+  floating Contact pill (phones, after scrolling; not on contact/tutoring), and
+  the inline head script (restores Pause motion; marks a light-gate arrival).
+- **Homepage** (`index.astro`): `HomeHero.astro` (one-line who, display title
+  with staggered word reveal, See my work / Book a lesson / Contact me, the
+  robot stage, spec chips that count up, Pause motion, drifting light blobs,
+  pointer-parallax grid and an outlined OMAR watermark), the four doors (Work,
+  Skills → `/index.html#skills`, Lessons, Contact; real links), then
+  `HomeSections.astro`: skills marquee, selected work (two image strips sliding
+  in opposite directions + five case cards opening the tours), skills with
+  evidence (`CapabilityMatrix`), lessons, about (portrait, CV), and the navy
+  contact band (mailto + copy, Write to Omar, LinkedIn, GitHub). `home.ts`:
+  hero parallax and copy-email. `fx.ts` (site-wide): card tilt, magnetic
+  buttons (`[data-magnetic]`), cursor-follow highlight (`[data-glow]`).
+- **The light gate** ("the robot opens it"): `LightGate.astro` + `gate.ts`.
+  Every internal page link leaves through white light; doors, cards and
+  primary CTAs (`[data-open]`, optional label value) play the full open: two
+  light seams close in like hands, meet at the centre, a white burst with a
+  blue rim fills the screen and a blue line runs. Other links play a quick
+  white rise. gate.ts navigates only once the white layer's animation has
+  finished (opaque), after writing sessionStorage `omar-gate` {t, path, label};
+  the Base head script marks `html[data-gate="in"]` before first paint so the
+  next page starts white and dissolves (~0.7 s) while `main` rises. A door to
+  a section of the same page opens, jumps, reveals. bfcache restores are never
+  white. There is no cross-document view transition (removed on purpose).
+  Reduced motion / Pause motion: a 160 ms fade out, 200 ms fade in.
+  `window.__gate(href, mode)` is used by the command menu.
+- **Robot media slot** (`RobotStage.astro`). Omar's photoreal robot is being
+  generated in Higgsfield. To use it, drop these into `public/robot/` and
+  rebuild (the component checks with `existsSync` at build time):
+  - `hero.webp`: poster (transparent or studio-grey background);
+  - `greet.mp4` (+ optional `greet.webm`): greeting loop, played by
+    `previews.ts` only while visible, with motion on and no Save-Data;
+  - `open.mp4` (+ optional `open.webm`): hands together → white light; the
+    gate plays it for `[data-open]` links instead of the CSS seams (capped at
+    1.6 s, then white). Keep it short and ending on white.
+  With no files, an abstract placeholder renders (white sphere with blue rim
+  light, two orbiting rings, a sensor slit; CSS only, marked PLACEHOLDER in
+  code). Never draw a cartoon robot or bring back the old Otto.
+- Header (`SiteHeader.astro`): glass bar, pill nav, ⌘K search, blue Contact
+  pill on every width, mobile sheet (with a Pause motion switch). Footer: light,
+  with Pause motion; its big CTA is hidden on the homepage (the contact band
+  replaces it). `CommandPalette.astro` + `palette.ts`: Quick links, pages,
+  work, tours, copy email, CV, LinkedIn, GitHub. No chat or Ask items.
+- Project tours: `src/pages/inside/[id].astro`, static, light: hero with the
+  concept visual, chapter rail (anchor links), five chapters, prev/next tours.
 - `hero-motion.ts` is the "Pause motion" switch (`html[data-motion]`,
-  `omar:motion`, remembered per session). `CommandPalette.astro` +
-  `palette.ts`: site-wide ⌘K/Ctrl+K menu (pages, inside tours, Ask Otto
-  items that open a written answer; no free-text ask).
-  `Ticker.astro`, `Stats.astro`, `Orbit.astro` (3D project ring), `Columns`,
-  `slider.ts`, `fx.ts`, `cursor.ts`, `[data-reveal]` scroll reveals.
-  `ProjectIndex` (filters, list/grid switch), `CaseStudy`, `ProjectMedia`
-  (duotone plates), `CapabilityMatrix`, `Timeline`, `Figure`.
-- `src/scripts/site.ts` (theme, menu sheet, header, sticky CTA), `forms.ts`
-  (enquiry engine), `project-index.ts`, `previews.ts`.
+  `omar:motion`, remembered per session). Every infinite loop must pause under
+  `html[data-motion='off']` (QA checks `document.getAnimations()`).
+- Other: `ProjectIndex`, `CaseStudy`, `ProjectMedia` (duotone plates),
+  `CapabilityMatrix`, `Timeline`, `Figure`, `PageIntro`, `SectionHead`;
+  `site.ts` (menu sheet, header shadow, floating pill, reveals, count-up),
+  `forms.ts`, `project-index.ts`, `previews.ts`, `cursor.ts`.
+- The old Otto chat/robot system (OttoHero, otto-chat/stage/handoff/take,
+  otto3d, Robot, OttoCover, data/otto.ts, data/agent.ts), Orbit, Columns,
+  Stats, Ticker and slider were removed in v4. Interior pages (work,
+  automations, research, cv, tutoring, contact) use the new tokens and chrome
+  but still await a deep restyle.
 
 The CrafterUI wheel was replaced at the user's request for a full redesign;
 keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 
 ## Important behaviour
 
-The hero has no stock video (the user rejected it as generic). Otto must stay
-light for everyone: the 3D chunk never loads before `load`, never on refused
-or software WebGL, Save-Data or low-memory devices, and the SVG Otto is always
-a complete experience. The chat is scripted, choice-only and must say so:
-no text box anywhere in the hero, keep the disclosure under the choices
-("Answers written by Omar. No AI model; nothing you choose leaves this
-page."), never call a model or send anything anywhere, and keep every answer
-within the CV and `src/data/*.ts` facts with a source link. After changing
-intents or the tree in `otto.ts`, rerun the QA crawler (`otto: breadth-first
-crawl`): every reply offers 2–6 choices (conversation 2–4, menus of places up
-to 6), labels of at most 30 characters, no duplicates in a set, a way back to
-the topics, and every intent reachable within 4 choices. Keep the visible
-"Pause motion" switch (WCAG 2.2.2), reduced-motion instant answers,
-offscreen/hidden-tab pausing, and readable content without JavaScript (intro
-answer and links).
+There is no chat UI anywhere and no "do you want to discover?" copy: copy is
+direct and specific, and contact is always one tap away (header pill on every
+page, floating pill on phones). Doors and cards are real links; everything
+reads without JavaScript (the gate never covers a no-JS page). Keep the visible
+"Pause motion" switch (WCAG 2.2.2), prefers-reduced-motion, first-load JS
+<= 30KB gz per page, and smooth GPU-friendly motion (transforms/opacity).
 
 The project index must keep server-rendered links that work without JS,
 keyboard focus parity with hover, and no scroll hijacking. Concept visuals stay
@@ -157,7 +150,7 @@ project dependencies. Do not report browser QA as passed until actually run.
 
 ## Acceptance checks after changes
 
-Check seven routes at phone/tablet/desktop widths, both themes, accessible
+Check seven routes and the tours at phone/tablet/desktop widths, the light gate, accessible
 keyboard navigation, no overflow or broken assets, no-JS links, media playback
 and fallbacks, project index/matrix interaction, and form validation/review/edit. Verify all
 facts, credits and true delivery status. Make the user-facing result concise.

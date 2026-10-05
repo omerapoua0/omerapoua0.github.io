@@ -1,38 +1,36 @@
 ---
 /* Site-wide command menu (⌘K / Ctrl+K, or the header button): pages, case
-   studies, Otto's written answers (Ask Otto: each opens the homepage chat at
-   that answer, never free text) and a few actions. A native <dialog> with a
-   combobox + listbox; links still work without it. */
+   studies, project tours, quick links and a few actions. A native <dialog>
+   with a combobox + listbox; links still work without it. */
 import { navigation, site } from '../data/site';
-import { intents } from '../data/agent';
 import { projects } from '../data/projects';
 
-type Item = { group: string; label: string; hint: string; href?: string; ask?: string; action?: string; keywords?: string; external?: boolean };
+type Item = { group: string; label: string; hint: string; href?: string; action?: string; keywords?: string; external?: boolean };
 const items: Item[] = [
-  { group: 'Pages', label: 'Home', hint: 'Talk to Otto', href: '/index.html', keywords: 'start chat otto robot' },
+  { group: 'Quick', label: 'See my work', hint: 'Case studies', href: '/work.html', keywords: 'projects portfolio' },
+  { group: 'Quick', label: 'Book a lesson', hint: 'Free 15-minute intro call', href: '/tutoring.html#lesson-enquiry', keywords: 'gcse a-level maths physics tutor book lesson' },
+  { group: 'Quick', label: 'Write to Omar', hint: 'Prepare an email', href: '/contact.html', keywords: 'email message contact hire' },
+  { group: 'Quick', label: 'Skills & evidence', hint: 'Capability matrix', href: '/index.html#skills', keywords: 'python stack matrix skills' },
+  { group: 'Pages', label: 'Home', hint: 'index.html', href: '/index.html', keywords: 'start' },
   ...navigation.map(item => ({ group: 'Pages', label: item.label, hint: item.href.replace('/', ''), href: item.href })),
   { group: 'Pages', label: 'Contact', hint: 'contact.html', href: '/contact.html', keywords: 'email message' },
   ...projects.map(project => ({ group: 'Work', label: project.name, hint: project.org, href: project.href, keywords: `${project.stack.join(' ')} ${project.role}` })),
-  { group: 'Work', label: 'Lesson enquiry', hint: 'Tutoring', href: '/tutoring.html#lesson-enquiry', keywords: 'gcse a-level maths physics tutor book' },
-  { group: 'Work', label: 'Skills & evidence', hint: 'Capability matrix', href: '/index.html#skills-title', keywords: 'python stack matrix' },
-  ...['katana', 'nookbase', 'inos', 'bitget', 'bp'].map(id => projects.find(project => project.id === id)!).filter(Boolean).map(project => ({ group: 'Inside', label: `Inside ${project.name}`, hint: 'Otto’s tour', href: `/inside/${project.id}.html`, keywords: `tour otto ${project.org}` })),
-  ...intents.map(intent => ({ group: 'Ask Otto', label: intent.ask, hint: 'Answer in the chat', ask: intent.id, keywords: (intent.keywords ?? []).join(' ') })),
+  ...['katana', 'nookbase', 'inos', 'bitget', 'bp'].map(id => projects.find(project => project.id === id)!).filter(Boolean).map(project => ({ group: 'Tours', label: `${project.name} tour`, hint: 'Project tour', href: `/inside/${project.id}.html`, keywords: `tour inside ${project.org}` })),
   { group: 'Actions', label: 'Copy email address', hint: site.email, action: 'copy-email', keywords: 'mail contact' },
   { group: 'Actions', label: 'Download CV (PDF)', hint: 'Opens in a new tab', href: '/Omar-Aboelella-CV.pdf', external: true, keywords: 'resume' },
-  { group: 'Actions', label: 'Switch colour theme', hint: 'Light / dark', action: 'theme', keywords: 'dark light mode' },
-  { group: 'Actions', label: 'Toggle chat sounds', hint: 'Off by default', action: 'sound', keywords: 'audio mute' },
+  { group: 'Actions', label: 'LinkedIn', hint: 'linkedin.com/in/omaraboelella', href: site.linkedin, external: true, keywords: 'profile social' },
   { group: 'Actions', label: 'GitHub', hint: 'github.com/omerapoua0', href: site.github, external: true, keywords: 'code source' },
 ];
 ---
 <dialog class="palette" data-palette aria-label="Command menu">
   <div class="palette__search">
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.75" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
-    <input type="text" data-palette-input role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Search pages, questions and actions" placeholder="Search pages, projects and questions…" autocomplete="off" spellcheck="false" />
+    <input type="text" data-palette-input role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Search pages, projects and actions" placeholder="Search pages, projects and actions…" autocomplete="off" spellcheck="false" />
     <button type="button" class="palette__esc" data-palette-close aria-label="Close command menu">Esc</button>
   </div>
   <ul class="palette__list" id="palette-list" role="listbox" aria-label="Results" data-palette-list>
     {items.map((item, index) => (
-      <li id={`palette-${index}`} role="option" aria-selected="false" class="palette__item" data-group={item.group} data-href={item.href} data-ask={item.ask} data-action={item.action} data-external={item.external ? '' : undefined} data-keywords={item.keywords ?? ''}>
+      <li id={`palette-${index}`} role="option" aria-selected="false" class="palette__item" data-group={item.group} data-href={item.href} data-action={item.action} data-external={item.external ? '' : undefined} data-keywords={item.keywords ?? ''}>
         <span class="palette__group" aria-hidden="true">{item.group}</span>
         <span class="palette__label">{item.label}</span>
         <span class="palette__hint">{item.hint}</span>
@@ -44,23 +42,23 @@ const items: Item[] = [
 </dialog>
 
 <style>
-  .palette { width: min(640px, calc(100vw - 24px)); max-height: min(560px, calc(100dvh - 120px)); margin: 12vh auto auto; padding: 0; border: 1px solid #ffffff24; border-radius: 18px; background: #0e0f0d; color: #f2f3ee; box-shadow: 0 40px 120px -20px #000c; overflow: hidden; }
+  .palette { width: min(640px, calc(100vw - 24px)); max-height: min(560px, calc(100dvh - 120px)); margin: 12vh auto auto; padding: 0; border: 1px solid var(--line); border-radius: 22px; background: var(--surface); color: var(--ink); box-shadow: 0 40px 120px -30px #0b164059, 0 0 0 6px #ffffff80; overflow: hidden; }
   .palette[open] { display: flex; flex-direction: column; }
-  .palette::backdrop { background: #05060599; backdrop-filter: blur(6px); }
-  .palette__search { display: flex; align-items: center; gap: 12px; padding: 0 12px 0 18px; border-bottom: 1px solid #ffffff1a; color: #a7aca0; }
-  .palette__search input { flex: 1; min-width: 0; min-height: 58px; border: 0; background: transparent; color: #f2f3ee; font: inherit; font-size: 17px; outline: none; }
-  .palette__search input::placeholder { color: #7d8277; }
-  .palette__esc { min-height: 30px; padding: 0 8px; border: 1px solid #ffffff2e; border-radius: 6px; background: transparent; color: #a7aca0; font-family: var(--font-mono); font-size: 11px; }
+  .palette::backdrop { background: #eef0f3a6; backdrop-filter: blur(10px); }
+  .palette__search { display: flex; align-items: center; gap: 12px; padding: 0 12px 0 18px; border-bottom: 1px solid var(--line); color: var(--muted); }
+  .palette__search input { flex: 1; min-width: 0; min-height: 60px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px; outline: none; }
+  .palette__search input::placeholder { color: #737a86; }
+  .palette__esc { min-height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--muted); font-family: var(--font-mono); font-size: 11px; }
   .palette__list { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 8px; scrollbar-width: thin; }
-  .palette__item { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 46px; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
-  .palette__item[aria-selected='true'] { background: #d9ff3f; color: #0b0d0a; }
-  .palette__group { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: #7d8277; }
-  .palette__item[aria-selected='true'] .palette__group, .palette__item[aria-selected='true'] .palette__hint { color: #2d3311; }
-  .palette__label { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .palette__hint { font-size: 12.5px; color: #8b9085; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 22ch; }
-  .palette__foot { display: flex; gap: 18px; padding: 10px 18px; border-top: 1px solid #ffffff1a; font-size: 12px; color: #7d8277; }
-  .palette__foot kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; margin-right: 4px; border: 1px solid #ffffff2e; border-radius: 5px; }
-  .palette :focus-visible { outline: 2px solid #d9ff3f; outline-offset: 2px; }
+  .palette__item { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 46px; padding: 6px 12px; border-radius: 12px; cursor: pointer; }
+  .palette__item[aria-selected='true'] { background: var(--accent); color: #fff; }
+  .palette__group { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  .palette__item[aria-selected='true'] .palette__group, .palette__item[aria-selected='true'] .palette__hint { color: #e3e9ff; }
+  .palette__label { font-size: 15px; font-weight: 520; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .palette__hint { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 24ch; }
+  .palette__foot { display: flex; gap: 18px; padding: 10px 18px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); background: var(--bg-2); }
+  .palette__foot kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; margin-right: 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
+  .palette :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .palette__search input:focus-visible { outline: none; }
   @media (max-width: 560px) {
     .palette { margin-top: 10px; max-height: calc(100dvh - 20px); }
@@ -70,10 +68,10 @@ const items: Item[] = [
     .palette__foot { display: none; }
   }
   @media (prefers-reduced-motion: no-preference) {
-    .palette[open] { animation: palette-in 220ms cubic-bezier(.23, 1, .32, 1); }
+    .palette[open] { animation: palette-in 260ms cubic-bezier(.23, 1, .32, 1); }
     .palette[open]::backdrop { animation: fade 220ms ease-out; }
   }
-  @keyframes palette-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } }
+  @keyframes palette-in { from { opacity: 0; transform: translateY(-10px) scale(.97); } }
   @keyframes fade { from { opacity: 0; } }
 </style>
 

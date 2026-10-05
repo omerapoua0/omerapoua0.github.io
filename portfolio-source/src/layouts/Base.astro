@@ -1,23 +1,23 @@
 ---
 import '@fontsource-variable/onest/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
-import '@fontsource/old-standard-tt/latin-400-italic.css';
 import '../styles/tokens.css';
 import '../styles/base.css';
 import '../styles/layout.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import CommandPalette from '../components/CommandPalette.astro';
-import OttoCover from '../components/OttoCover.astro';
+import LightGate from '../components/LightGate.astro';
 import { site } from '../data/site';
 import onestLatin from '@fontsource-variable/onest/files/onest-latin-wght-normal.woff2?url';
-import serifItalic from '@fontsource/old-standard-tt/files/old-standard-tt-latin-400-italic.woff2?url';
 
-/* cover: Otto's hand-off cover for an inside tour (the homepage gets the blank one). */
-interface Props { title: string; description?: string; home?: boolean; image?: string; noindex?: boolean; cover?: { id: string; name: string; media?: string } }
-const { title, description = site.description, home = false, image = '/portrait-hero.jpg', noindex = false, cover } = Astro.props;
+interface Props { title: string; description?: string; home?: boolean; image?: string; noindex?: boolean }
+const { title, description = site.description, home = false, image = '/portrait-hero.jpg', noindex = false } = Astro.props;
 const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 const fullTitle = home ? `${site.name} | ${title}` : `${title} | ${site.name}`;
+/* The floating Contact pill (phones) is redundant on the contact page and
+   would collide with the lesson page's own sticky call to action. */
+const floatingContact = !['/contact.html', '/tutoring.html'].includes(path);
 const person = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -26,7 +26,7 @@ const person = {
   worksFor: { '@type': 'Organization', name: 'Digis Squared' },
   url: site.url,
   email: `mailto:${site.email}`,
-  sameAs: [site.github],
+  sameAs: [site.github, site.linkedin],
   knowsAbout: ['AI product engineering', 'Agentic systems', 'LangGraph', 'Bayesian inference', 'Time-series forecasting', 'Mathematics', 'Maths and science tutoring'],
   homeLocation: { '@type': 'City', name: 'London' },
 };
@@ -38,10 +38,8 @@ const person = {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f1f2ef" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b0d11" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f5f6f8" />
     <link rel="preload" href={onestLatin} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={serifItalic} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/site.webmanifest" />
     {noindex && <meta name="robots" content="noindex" />}
@@ -55,31 +53,45 @@ const person = {
     <meta property="og:image:alt" content="Portrait of Omar Aboelella" />
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
-    <!-- Before first paint: theme, Pause motion, and Otto's hand-off arrival.
-         html[data-arrive="portal"]: a hand-off to this tour (sessionStorage otto-handoff {id, t}, < 10 s, matching path)
-         paints OttoCover at first paint; "return": "Back to Otto" (otto-return) on the homepage. The cover carries
-         these page changes in every browser, so a native cross-document view transition is skipped for them. -->
+    <!-- Before first paint: Pause motion, and arrival through the light gate.
+         sessionStorage omar-gate {t, path, label}: written by gate.ts just before
+         it navigates; fresh (< 8 s) and for this path, it marks html[data-gate="in"]
+         so LightGate paints opaque white on the first frame and then dissolves. -->
     <script is:inline>
-      (function(){var d=document.documentElement;d.classList.add('js');try{var t=localStorage.getItem('omar-theme');if(t==='light'||t==='dark')d.dataset.theme=t}catch(e){}
+      (function(){var d=document.documentElement;d.classList.add('js');
       try{var m=sessionStorage.getItem('omar-motion');if(m==='on'||m==='off')d.dataset.motion=m}catch(e){}
-      try{var p=location.pathname,n=Date.now(),h=JSON.parse(sessionStorage.getItem('otto-handoff')||'null'),r=JSON.parse(sessionStorage.getItem('otto-return')||'null');sessionStorage.removeItem('otto-return');
-      if(h&&n-h.t>=0&&n-h.t<10000&&p.indexOf('/inside/'+h.id)===0)d.dataset.arrive='portal';else if(r&&n-r.t>=0&&n-r.t<10000&&/^\/(index\.html)?$/.test(p))d.dataset.arrive='return'}catch(e){}
-      var c=function(){return document.querySelector('[data-otto-cover][data-state]')},s=function(e){if(e.viewTransition){e.viewTransition.skipTransition();window.__ottoVT=(window.__ottoVT||'')+e.type+' '}};
-      addEventListener('pagereveal',function(e){if(d.dataset.arrive||c())s(e)});addEventListener('pageswap',function(e){if(c())s(e)})})();
+      try{var g=JSON.parse(sessionStorage.getItem('omar-gate')||'null'),p=location.pathname==='/'?'/index.html':location.pathname,n=Date.now();sessionStorage.removeItem('omar-gate');
+      if(g&&n-g.t>=0&&n-g.t<8000&&g.path===p){d.dataset.gate='in';d.style.setProperty('--gate-label',JSON.stringify(String(g.label||'').slice(0,40)))}}catch(e){}})();
     </script>
   </head>
   <body class:list={[home ? 'is-home' : 'is-page']}>
-    {(home || cover) && <OttoCover {...cover} />}
+    <LightGate />
     <a href="#main" class="skip-link">Skip to content</a>
-    <SiteHeader overHero={home} />
+    <SiteHeader />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter />
+    {floatingContact && (
+      <a class="float-contact" href="/contact.html" data-open data-float-contact>
+        <span class="float-contact__dot" aria-hidden="true"></span>Contact Omar
+      </a>
+    )}
     <CommandPalette />
     <script>import '../scripts/site';</script>
+    <script>import '../scripts/gate';</script>
     <script>import '../scripts/previews';</script>
     <script>import '../scripts/cursor';</script>
     <script>import '../scripts/fx';</script>
     <script>import '../scripts/hero-motion';</script>
-    <script>import '../scripts/otto-stage';</script>
   </body>
 </html>
+
+<style>
+  /* Phones and tablets: a floating Contact pill once the header's own pill has
+     scrolled out of view (site.ts toggles data-show). Always a real link. */
+  .float-contact { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 45; display: none; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 620; font-size: 15px; text-decoration: none; box-shadow: 0 14px 34px -10px #1f4bff99, 0 0 0 4px #ffffffb3; transition: transform 420ms var(--ease-spring), opacity 300ms; }
+  .float-contact__dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px #ffffff4d; }
+  @media (max-width: 1099px) {
+    .float-contact { display: inline-flex; }
+    :global(html.js) .float-contact:not([data-show]) { transform: translateY(140%); opacity: 0; visibility: hidden; transition: transform 420ms var(--ease-spring), opacity 300ms, visibility 0s 300ms; }
+  }
+</style>
