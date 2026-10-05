@@ -60,8 +60,9 @@ const year = new Date().getFullYear();
   .footer__motion { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: var(--s-5); padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--bg-2); font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
   .footer__motion:hover { border-color: var(--accent); color: var(--accent); }
   .footer__base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2) var(--s-6); padding-block: var(--s-5) calc(var(--s-5) + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
-  :global(body.is-home) .footer__top { display: none; }
-  :global(body.is-home) .footer { padding-top: 0; }
+  /* Pages that close with the navy contact band don't repeat the big CTA. */
+  :global(body:is(.is-home, :has(main .band))) .footer__top { display: none; }
+  :global(body:is(.is-home, :has(main .band))) .footer { padding-top: 0; }
   @media (min-width: 900px) {
     .footer__top { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
     .footer__grid { grid-template-columns: 1fr 1fr 2fr; }

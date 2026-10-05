@@ -1,6 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
-import PageIntro from '../components/PageIntro.astro';
+import PageHero from '../components/PageHero.astro';
+import Marquee from '../components/Marquee.astro';
+import ContactBand from '../components/ContactBand.astro';
 import SectionHead from '../components/SectionHead.astro';
 import '../styles/forms.css';
 import { site } from '../data/site';
@@ -49,42 +51,88 @@ const faqs = [
 ];
 ---
 <Base title="Maths & science lessons" description="Online maths and science lessons for GCSE Foundation, GCSE Higher and A-level with Omar Aboelella. Enhanced DBS checked, free 15-minute intro call, reply within one working day.">
-  <PageIntro section="Lessons" meta={['Online', 'GCSE & A-level', 'Maths · Science']}>
-    <Fragment slot="title">Maths &amp; science, <em class="voice">made clear.</em></Fragment>
+  <PageHero
+    index={5}
+    section="Lessons"
+    meta={['Online', 'GCSE & A-level', 'Maths · Science']}
+    watermark="MATHS"
+    lines={[{ text: 'Maths & science,' }, { text: 'made clear.', accent: true }]}
+    chips={[
+      { text: 'DBS', label: 'enhanced check · for parents’ peace of mind' },
+      { value: 15, label: 'minute intro call · free' },
+      { value: 1, label: 'working day · to reply to every enquiry' },
+      { value: levels.length, label: 'levels · GCSE Foundation to A-level' },
+    ]}
+  >
     <p class="lede">Personal online lessons for GCSE Foundation, GCSE Higher and A-level. Build a method you understand, not just an answer you remember.</p>
-    <div class="actions lesson-actions"><a class="btn btn--accent" href="#lesson-enquiry">Start a lesson enquiry <span class="arrow arrow--down" aria-hidden="true">↓</span></a><a class="btn btn--ghost" href="#how">How it works</a></div>
-    <dl slot="aside" class="creds">
-      <div><dt class="label">Teaching now</dt><dd>Mathematics &amp; Physics Teaching Assistant, Southfields Academy: GCSE Higher maths and physics for international and EAL students.</dd></div>
-      <div><dt class="label">Studying</dt><dd>BSc Computer Science &amp; Mathematics, Birkbeck, University of London.</dd></div>
-    </dl>
-  </PageIntro>
+    <div slot="aside" class="creds">
+      <p class="creds__kicker"><span class="creds__dot" aria-hidden="true"></span>Your tutor</p>
+      <div class="creds__who">
+        <picture>
+          <source srcset="/portrait-avatar.webp" type="image/webp" />
+          <img src="/portrait-avatar.jpg" alt="" width="96" height="96" loading="eager" decoding="async" />
+        </picture>
+        <p><strong>Omar Aboelella</strong><span>Maths &amp; Physics TA · Southfields Academy</span></p>
+      </div>
+      <dl>
+        <div><dt class="label">Teaching now</dt><dd>Mathematics &amp; Physics Teaching Assistant, Southfields Academy: GCSE Higher maths and physics for international and EAL students.</dd></div>
+        <div><dt class="label">Studying</dt><dd>BSc Computer Science &amp; Mathematics, Birkbeck, University of London.</dd></div>
+      </dl>
+    </div>
+    <Fragment slot="actions">
+      <a class="btn btn--accent" href="#lesson-enquiry" data-magnetic>Start a lesson enquiry <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+      <a class="btn btn--ghost" href="#how">How it works</a>
+    </Fragment>
+  </PageHero>
 
   <section class="trust" aria-label="What you can expect">
-    <ul class="wrap trust__list">
-      {trust.map(item => <li><span class="trust__mark" aria-hidden="true">✓</span><span><strong>{item.title}</strong><span>{item.copy}</span></span></li>)}
+    <ul class="wrap trust__list" data-reveal-stagger="scale">
+      {trust.map(item => <li><span class="trust__mark" aria-hidden="true"><svg viewBox="0 0 16 16" width="12" height="12"><path d="m3 8.5 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span><span><strong>{item.title}</strong><span>{item.copy}</span></span></li>)}
     </ul>
   </section>
 
-  <section class="section wrap" aria-labelledby="levels-title">
-    <SectionHead mark="1" label="Levels" id="levels-title">One path, <em class="voice">your pace.</em>
-      <p slot="aside">Choose your current course, not the grade you hope to reach. We start from where you are.</p>
-    </SectionHead>
-    <ol class="levels">
-      {levels.map((level, index) => <li><span class="num">{String(index + 1).padStart(2, '0')}</span><h3>{level.name}</h3><p class="muted">{level.copy}</p></li>)}
-    </ol>
-  </section>
+  <Marquee rows={[['GCSE Foundation', 'GCSE Higher', 'A-level', 'Maths', 'Physics'], ['Chemistry', 'Biology', 'Combined science', 'Exam technique', 'Proof']]} size="md" tone="clear" />
 
-  <section class="section section--surface" id="how" aria-labelledby="how-title">
+  <section class="stage" aria-labelledby="levels-title">
     <div class="wrap">
-      <SectionHead mark="2" label="How it starts" id="how-title">From enquiry <em class="voice">to first lesson.</em></SectionHead>
-      <ol class="process">
-        {process.map((step, index) => <li><span class="process__num num">{index + 1}</span><h3>{step.title}</h3><p class="muted">{step.copy}</p></li>)}
+      <SectionHead mark="01" label="Levels" id="levels-title">One path, <em class="voice">your pace.</em>
+        <p slot="aside">Choose your current course, not the grade you hope to reach. We start from where you are.</p>
+      </SectionHead>
+      <ol class="levels">
+        <li class="levels__path" aria-hidden="true"><i data-fx="grow-x"></i></li>
+        {levels.map((level, index) => (
+          <li class="level" data-reveal="scale" style={`--reveal-delay:${index * 120}ms`} data-glow data-tilt>
+            <span class="level__step"><span class="idx">{['i', 'ii', 'iii'][index]}</span></span>
+            <h3>{level.name}</h3>
+            <p class="muted">{level.copy}</p>
+            <a class="go" href="#lesson-enquiry">Enquire for {level.name} <span aria-hidden="true">↓</span></a>
+          </li>
+        ))}
       </ol>
     </div>
   </section>
 
-  <section class="section wrap" id="lesson-enquiry" aria-labelledby="enquiry-title">
-    <SectionHead mark="3" label="Lesson enquiry" id="enquiry-title">A little about you, <em class="voice">a better first call.</em>
+  <section class="stage stage--white" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <SectionHead mark="02" label="How it starts" id="how-title">From enquiry <em class="voice">to first lesson.</em>
+        <p slot="aside">Five steps, no payment online. Nothing is booked until we’ve talked and agreed the details by email.</p>
+      </SectionHead>
+      <ol class="process">
+        <li class="process__line" aria-hidden="true"><i data-fx="grow-y"></i></li>
+        {process.map((step, index) => (
+          <li class="process__step" data-reveal="right" style={`--reveal-delay:${index * 80}ms`}>
+            <span class="process__num num">{index + 1}</span>
+            <h3>{step.title}</h3>
+            <p class="muted">{step.copy}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="stage stage--grey" id="lesson-enquiry" aria-labelledby="enquiry-title">
+    <div class="wrap">
+    <SectionHead mark="03" label="Lesson enquiry" id="enquiry-title">A little about you, <em class="voice">a better first call.</em>
       <p slot="aside">Five short steps. At the end you check your answers and send the email from your own app. Nothing is sent, stored or booked by this website.</p>
     </SectionHead>
     <div class="form-shell" data-form-shell>
@@ -196,14 +244,24 @@ const faqs = [
         </form>
       </div>
     </div>
-  </section>
-
-  <section class="section section--rule wrap" aria-labelledby="faq-title">
-    <SectionHead mark="4" label="Questions" id="faq-title">Before you <em class="voice">enquire.</em></SectionHead>
-    <div class="faq">
-      {faqs.map(item => <details><summary>{item.q}</summary><p>{item.a}</p></details>)}
     </div>
   </section>
+
+  <section class="stage" aria-labelledby="faq-title">
+    <div class="wrap faq-wrap">
+      <SectionHead mark="04" label="Questions" id="faq-title">Before you <em class="voice">enquire.</em></SectionHead>
+      <div class="faq" data-reveal-stagger>
+        {faqs.map(item => <details><summary>{item.q}</summary><p>{item.a}</p></details>)}
+      </div>
+    </div>
+  </section>
+
+  <ContactBand
+    title="Not about lessons?"
+    accent="Write anyway."
+    lede="Projects, roles or research: the general contact form prepares an email you check and send yourself. For lessons, the enquiry above is quickest."
+    next={{ href: '/contact.html', label: 'Contact', note: 'Email, LinkedIn, GitHub, or a short guided message.' }}
+  />
 
   <div class="sticky-cta" data-sticky-cta="#lesson-enquiry, #page-title, footer" hidden>
     <a class="btn btn--accent" href="#lesson-enquiry">Start a lesson enquiry <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
@@ -212,47 +270,65 @@ const faqs = [
 </Base>
 
 <style>
-  .lesson-actions { margin-top: var(--s-6); }
-  .creds { display: grid; border-top: 1px solid var(--line-strong); }
-  .creds > div { display: grid; gap: 6px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .creds { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 30px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-3); }
+  .creds__kicker { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .creds__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px #1d6b4a22; }
+  .creds__who { display: flex; align-items: center; gap: 14px; }
+  .creds__who img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--line); }
+  .creds__who p { display: grid; gap: 2px; }
+  .creds__who span { font-size: var(--step-small); color: var(--muted); }
+  .creds dl { display: grid; border-top: 1px solid var(--line); }
+  .creds dl > div { display: grid; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--line); }
   .creds dd { margin: 0; font-size: var(--step-small); }
-  .trust { border-bottom: 1px solid var(--line); background: var(--surface); }
-  .trust__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-  .trust__list li { display: flex; gap: 12px; padding: 20px 16px 20px 0; border-bottom: 1px solid var(--line); }
+
+  .trust { padding-block: clamp(20px, 3vw, 36px); }
+  .trust__list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+  .trust__list li { display: flex; gap: 12px; padding: 18px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); }
   .trust__list li > span:last-child { display: grid; gap: 2px; font-size: var(--step-small); }
   .trust__list li > span:last-child > span { color: var(--muted); font-size: 14px; }
-  .trust__mark { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-weight: 700; }
-  @media (min-width: 1100px) {
-    .trust__list { grid-template-columns: repeat(5, 1fr); }
-    .trust__list li { border-bottom: 0; padding: 24px 20px; }
-    .trust__list li:first-child { padding-left: 0; }
-    .trust__list li + li { border-left: 1px solid var(--line); }
-  }
-  .levels { display: grid; border-top: 1px solid var(--line-strong); counter-reset: level; }
-  .levels li { position: relative; display: grid; gap: var(--s-3); padding: var(--s-6) 0; border-bottom: 1px solid var(--line); }
-  .levels .num { font-size: 12px; color: var(--accent); }
-  .levels h3 { font-size: var(--step-h2); }
+  .trust__mark { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
+  @media (min-width: 1100px) { .trust__list { grid-template-columns: repeat(5, 1fr); } }
+
+  .levels { position: relative; display: grid; gap: 16px; }
+  .levels__path { display: none; }
+  .level { --gx: 50%; --gy: 50%; position: relative; display: grid; gap: var(--s-3); align-content: start; padding: 28px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); overflow: hidden; }
+  .level::before { content: ''; position: absolute; inset: 0; background: radial-gradient(320px circle at var(--gx) var(--gy), #1f4bff17, transparent 60%); opacity: 0; transition: opacity 300ms; pointer-events: none; }
+  .level:hover::before { opacity: 1; }
+  .level__step { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: var(--bg); }
+  .level__step .idx { font-size: 15px; }
+  .level h3 { font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.6rem); letter-spacing: -.05em; }
+  .level:last-of-type { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .level:last-of-type :is(.muted, .go, .idx) { color: #e3e9ff; }
+  .level:last-of-type .level__step { background: #ffffff26; }
   @media (min-width: 900px) {
-    .levels { grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
-    .levels li { border-bottom: 0; padding: var(--s-6) var(--s-6) var(--s-7) 0; }
-    .levels li + li { border-left: 1px solid var(--line); padding-left: var(--s-6); }
-    .levels li + li::before { content: '→'; position: absolute; left: -12px; top: var(--s-6); width: 24px; height: 24px; display: grid; place-items: center; background: var(--bg); color: var(--muted); font-size: 14px; }
+    .levels { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter); }
+    .levels__path { display: block; position: absolute; left: 10%; right: 10%; top: 56px; height: 2px; background: var(--line); }
+    .levels__path i { position: absolute; inset: 0; background: var(--accent); transform-origin: 0 50%; }
+    .level:nth-of-type(3) { translate: 0 28px; }
+    .level:nth-of-type(4) { translate: 0 56px; }
+    .levels { padding-bottom: 56px; }
   }
-  .process { display: grid; gap: 0; border-top: 1px solid var(--line-strong); }
-  .process li { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 16px; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
-  .process__num { grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--line-strong); border-radius: 50%; font-size: 13px; }
-  .process h3 { font-size: 1.15rem; }
-  @media (min-width: 1024px) {
-    .process { grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line); }
-    .process li { grid-template-columns: 1fr; padding: var(--s-6) var(--s-5) var(--s-6) 0; border-bottom: 0; align-content: start; }
-    .process li + li { padding-left: var(--s-5); border-left: 1px solid var(--line); }
-    .process__num { grid-row: auto; margin-bottom: var(--s-3); }
+
+  .process { position: relative; display: grid; gap: 14px; padding-left: 64px; }
+  .process__line { position: absolute; left: 23px; top: 24px; bottom: 24px; width: 2px; background: var(--line); }
+  .process__line i { position: absolute; inset: 0; background: var(--accent); transform-origin: 50% 0; }
+  .process__step { position: relative; display: grid; gap: 4px; padding: 20px 22px; border-radius: var(--radius-2); background: var(--bg-2); border: 1px solid var(--line); }
+  .process__num { position: absolute; left: -64px; top: 16px; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); color: var(--accent); font-size: 14px; font-weight: 600; box-shadow: 0 0 0 6px var(--surface); }
+  .process h3 { font-size: 1.2rem; }
+  @media (min-width: 1100px) {
+    .process { grid-template-columns: repeat(5, minmax(0, 1fr)); padding-left: 0; padding-top: 74px; gap: var(--gutter); }
+    .process__line { left: 24px; right: 24px; top: 24px; bottom: auto; width: auto; height: 2px; }
+    .process__line i { transform-origin: 0 50%; }
+    .process__line i { animation-name: fx-grow-x !important; }
+    .process__step { background: transparent; border: 0; padding: 0; }
+    .process__num { left: 0; top: -74px; }
   }
+
   .brief__list { display: grid; margin-top: var(--s-3); }
   .brief__list > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: var(--step-small); }
   .brief__list dt { color: var(--muted); }
-  .brief__list dd { margin: 0; font-weight: 520; color: var(--muted); }
-  .brief__list dd[data-filled] { color: var(--ink); }
+  .brief__list dd { margin: 0; font-weight: 520; color: var(--muted); transition: color var(--d-3); }
+  .brief__list dd[data-filled] { color: var(--accent); }
   .brief__foot { margin-top: var(--s-4); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
   .brief-line { display: none; font-size: 14px; font-weight: 520; color: var(--accent); }
   .small { font-size: var(--step-small); }
@@ -264,15 +340,16 @@ const faqs = [
     .brief-line { display: block; }
     .form-shell__aside { order: 2; }
   }
-  .faq { border-top: 1px solid var(--line-strong); }
-  .faq details { border-bottom: 1px solid var(--line); }
-  .faq summary { display: flex; justify-content: space-between; gap: var(--s-4); align-items: center; min-height: 64px; padding: 12px 0; cursor: pointer; font-size: 1.1rem; font-weight: 540; letter-spacing: -.015em; list-style: none; }
+  .faq { display: grid; gap: 10px; }
+  .faq details { border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); padding: 0 22px; transition: box-shadow 300ms; }
+  .faq details[open] { box-shadow: var(--shadow-2); }
+  .faq summary { display: flex; justify-content: space-between; gap: var(--s-4); align-items: center; min-height: 68px; padding: 12px 0; cursor: pointer; font-size: 1.1rem; font-weight: 560; letter-spacing: -.015em; list-style: none; }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: '+'; font-family: var(--font-mono); font-size: 20px; color: var(--accent); transition: transform var(--d-3) var(--ease-out); }
-  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq summary::after { content: '+'; flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--bg); font-family: var(--font-mono); font-size: 18px; color: var(--accent); transition: transform var(--d-3) var(--ease-out), background-color var(--d-2), color var(--d-2); }
+  .faq details[open] summary::after { transform: rotate(45deg); background: var(--accent); color: #fff; }
   .faq details p { padding-bottom: var(--s-5); max-width: 64ch; color: var(--muted); }
-  @media (min-width: 1024px) { .faq { max-width: 880px; } }
-  .sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 12px var(--margin) calc(12px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line-strong); transition: transform var(--d-3) var(--ease-out); }
+  @media (min-width: 1024px) { .faq-wrap { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: var(--gutter); align-items: start; } .faq-wrap :global(.section-head) { grid-template-columns: 1fr; } }
+  .sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 12px var(--margin) calc(12px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--bg-2) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--line); transition: transform var(--d-3) var(--ease-out); }
   .sticky-cta .btn { width: 100%; }
   .sticky-cta[data-hidden] { transform: translateY(110%); }
   @media (min-width: 768px) { .sticky-cta { display: none !important; } }

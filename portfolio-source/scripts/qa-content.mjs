@@ -100,6 +100,15 @@ expect(!/data-chat|otto-choice|Ask Otto|I’m Otto/.test(Object.values(html).joi
 expect(!/do you want to discover/i.test(all), 'Vague “discover” copy remains');
 for (const href of ['/work.html', '/index.html#skills', '/tutoring.html', '/contact.html']) expect(new RegExp(`class="door[^"]*"[^>]*href="${href.replace('.', '\\.')}"|href="${href.replace('.', '\\.')}"[^>]*class="door`).test(html.index), `index: door to ${href} missing`);
 for (const [name, source] of everyPage) expect(/class="header__cta"[^>]*href="\/contact\.html"|href="\/contact\.html"[^>]*class="header__cta"/.test(source), `${name}: header Contact missing`);
+// Interior pages: studio hero, and a contact band (mailto + Write to Omar) on every page but contact.
+for (const page of ['work', 'automations', 'research', 'cv', 'tutoring', 'contact']) expect(/class="phero[\s"]/.test(html[page]), `${page}: studio hero missing`);
+for (const [name, source] of everyPage.filter(([name]) => !['index', 'contact'].includes(name))) {
+  expect(/<section class="band"/.test(source), `${name}: contact band missing`);
+  expect(/class="btn band__primary"[^>]*href="\/contact\.html|href="\/contact\.html[^"]*"[^>]*class="btn band__primary"/.test(source), `${name}: band Write to Omar missing`);
+}
+for (const [name, source] of everyPage) expect(/data-motion-toggle/.test(source), `${name}: Pause motion control missing`);
+expect(/class="direct"/.test(html.contact) && /class="quick__list"/.test(html.contact), 'contact: direct card or topic shortcuts missing');
+expect(!/class="intro[\s"]|section-mark">§/.test(Object.values(html).join(' ') + Object.values(insideHtml).join(' ')), 'An old v3 page intro remains');
 expect(!/preview-(otto|3d)/.test(Object.values(html).join(' ')), 'A link to a retired preview page remains');
 for (const id of inside) {
   const source = insideHtml[id];
@@ -120,4 +129,4 @@ expect(!media.some(file => /^hero-(editorial|still)/.test(file)), 'Stock hero fi
 
 info.forEach(line => console.log(line));
 if (failures.length) { failures.forEach(line => console.error('FAIL', line)); process.exitCode = 1; }
-else console.log(`Content checks passed (${required.length + 16} rules).`);
+else console.log(`Content checks passed (${required.length} wording rules plus structure, budget, palette and journey rules).`);

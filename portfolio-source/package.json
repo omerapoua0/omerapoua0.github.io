@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check:portfolio": "tsc --noEmit --skipLibCheck --jsx react-jsx --module ESNext --moduleResolution bundler --target ES2022 --allowImportingTsExtensions --strict src/scripts/site.ts src/scripts/gate.ts src/scripts/home.ts src/scripts/hero-motion.ts src/scripts/cursor.ts src/scripts/palette.ts src/scripts/fx.ts src/scripts/forms.ts src/scripts/previews.ts src/scripts/project-index.ts src/data/site.ts src/data/projects.ts src/data/experience.ts src/data/capabilities.ts",
+    "check:portfolio": "tsc --noEmit --skipLibCheck --jsx react-jsx --module ESNext --moduleResolution bundler --target ES2022 --allowImportingTsExtensions --strict src/scripts/site.ts src/scripts/gate.ts src/scripts/hero-motion.ts src/scripts/cursor.ts src/scripts/palette.ts src/scripts/fx.ts src/scripts/forms.ts src/scripts/previews.ts src/scripts/project-index.ts src/data/site.ts src/data/projects.ts src/data/experience.ts src/data/capabilities.ts",
     "astro": "astro"
   },
   "devDependencies": {

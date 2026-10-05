@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
-import PageIntro from '../components/PageIntro.astro';
+import PageHero from '../components/PageHero.astro';
+import Marquee from '../components/Marquee.astro';
 import '../styles/forms.css';
 import { site } from '../data/site';
 
@@ -13,21 +14,50 @@ const topics = [
 ];
 ---
 <Base title="Contact" description="Talk to Omar Aboelella about an AI project, an automation, a research question or an opportunity. Prepares an email you send yourself.">
-  <PageIntro section="Contact" meta={['London, UK', 'Prepares an email you send']}>
-    <Fragment slot="title">What are you <em class="voice">working on?</em></Fragment>
+  <PageHero
+    index={7}
+    section="Contact"
+    meta={['London, UK', 'Prepares an email you send']}
+    watermark="HELLO"
+    lines={[{ text: 'What are you' }, { text: 'working on?', accent: true }]}
+  >
     <p class="lede">A project, a question, a workflow that takes too long. Tell me where you are and what you’re trying to figure out.</p>
-    <div slot="aside" class="contact-direct">
-      <p class="label">Direct</p>
-      <a class="contact-email" href={`mailto:${site.email}`}>{site.email}</a>
-      <p class="muted">Looking for maths or science lessons? <a href="/tutoring.html#lesson-enquiry">Start a lesson enquiry instead ↗</a></p>
+    <div slot="aside" class="direct">
+      <p class="direct__kicker"><span aria-hidden="true"></span>Direct</p>
+      <div class="direct__email">
+        <a class="contact-email" href={`mailto:${site.email}`}>{site.email}</a>
+        <button type="button" class="direct__copy" data-copy-email={site.email} hidden><span data-copy-label>Copy</span></button>
+        <span class="sr-only" role="status" data-copy-status></span>
+      </div>
+      <ul class="direct__links">
+        <li><a href={site.linkedin} target="_blank" rel="noopener"><span>LinkedIn</span><span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a></li>
+        <li><a href={site.github} target="_blank" rel="noopener"><span>GitHub</span><span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a></li>
+        <li><a href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener"><span>CV (PDF)</span><span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a></li>
+      </ul>
+      <a class="direct__lessons" href="/tutoring.html#lesson-enquiry" data-open="Lessons"><span><b>Looking for maths or science lessons?</b> Start a lesson enquiry instead</span><span aria-hidden="true">↗</span></a>
     </div>
-  </PageIntro>
+    <Fragment slot="actions">
+      <a class="btn btn--accent" href="#write" data-magnetic>Write a message <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+      <a class="btn btn--ghost" href={`mailto:${site.email}`}>Email directly</a>
+    </Fragment>
+  </PageHero>
 
-  <section class="section wrap" aria-labelledby="contact-form-title">
+  <nav class="quick wrap" aria-label="Jump straight to a topic">
+    <p class="label">Skip a step: start with a topic</p>
+    <ul class="quick__list" data-reveal-stagger="scale">
+      {topics.map(topic => <li><a href={`/contact.html?topic=${encodeURIComponent(topic.value)}#write`} data-no-gate>{topic.title}<span aria-hidden="true">→</span></a></li>)}
+      <li><a class="quick__lessons" href="/tutoring.html#lesson-enquiry" data-open="Lessons">Lessons<span aria-hidden="true">↗</span></a></li>
+    </ul>
+  </nav>
+
+  <Marquee rows={[['Projects', 'Automations', 'Research', 'Opportunities', 'Lessons', 'Hello']]} size="md" tone="clear" />
+
+  <section class="stage stage--grey" id="write" aria-labelledby="contact-form-title">
+    <div class="wrap">
     <h2 id="contact-form-title" class="sr-only">Prepare a message</h2>
     <div class="form-shell" data-form-shell>
       <aside class="form-shell__aside" aria-label="What to include">
-        <p class="label"><span class="section-mark">§</span> A useful first message</p>
+        <p class="eyebrow"><b>01</b>A useful first message</p>
         <p>You don’t need a polished brief. A little context and a clear question are enough.</p>
         <dl class="include">
           <div><dt>For projects</dt><dd>The problem, the current tools and what a useful outcome would look like.</dd></div>
@@ -87,17 +117,40 @@ const topics = [
         </form>
       </div>
     </div>
+    </div>
   </section>
   <script>import '../scripts/forms';</script>
 </Base>
 
 <style>
-  .contact-direct { display: grid; gap: var(--s-3); }
-  .contact-email { font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); font-weight: 540; letter-spacing: -.03em; text-decoration: none; border-bottom: 1px solid var(--accent); width: fit-content; min-height: 44px; display: inline-flex; align-items: center; overflow-wrap: anywhere; }
-  .contact-email:hover { color: var(--accent); }
-  .include { display: grid; border-top: 1px solid var(--line-strong); }
-  .include > div { padding: 14px 0; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
-  .include dt { font-weight: 560; }
+  .direct { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 32px); border-radius: var(--radius-3); background: var(--navy); color: #fff; box-shadow: var(--shadow-3); position: relative; overflow: hidden; isolation: isolate; }
+  .direct::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(70% 60% at 90% 0%, #1f4bff99, transparent 70%); }
+  .direct__kicker { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9fb2ff; }
+  .direct__kicker span { width: 8px; height: 8px; border-radius: 50%; background: #8ea6ff; box-shadow: 0 0 0 4px #8ea6ff33; }
+  .direct__email { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .contact-email { font-family: var(--font-mono); font-size: clamp(1rem, .85rem + .7vw, 1.4rem); color: #fff; text-decoration: none; border-bottom: 1px solid #8ea6ff; min-height: 44px; display: inline-flex; align-items: center; overflow-wrap: anywhere; }
+  .direct__copy { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #ffffff4d; background: #ffffff14; color: #fff; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
+  .direct__copy:hover { background: #ffffff26; }
+  .direct__links { display: grid; border-top: 1px solid var(--navy-line); }
+  .direct__links a { display: flex; justify-content: space-between; align-items: center; min-height: 52px; border-bottom: 1px solid var(--navy-line); color: #fff; text-decoration: none; font-weight: 560; transition: padding var(--d-3) var(--ease-out), color var(--d-2); }
+  .direct__links a:hover { padding-left: 8px; color: #b9c7ff; }
+  .direct__lessons { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 16px; background: #ffffff12; border: 1px solid #ffffff26; color: var(--navy-muted); text-decoration: none; font-size: var(--step-small); }
+  .direct__lessons b { color: #fff; display: block; }
+  .direct__lessons:hover { background: var(--accent); color: #fff; }
+  .direct :focus-visible { outline-color: #fff; }
+
+  .quick { display: grid; gap: var(--s-4); padding-block: clamp(28px, 4vw, 48px); }
+  .quick__list { display: flex; flex-wrap: wrap; gap: 10px; }
+  .quick__list a { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); text-decoration: none; font-weight: 580; transition: background-color var(--d-2), color var(--d-2), border-color var(--d-2), transform var(--d-3) var(--ease-spring), box-shadow var(--d-3); }
+  .quick__list a span { color: var(--accent); transition: transform var(--d-3) var(--ease-out); }
+  .quick__list a:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px -14px var(--accent-glow); }
+  .quick__list a:hover span { color: #fff; transform: translateX(3px); }
+  .quick__lessons { background: var(--navy) !important; color: #fff; border-color: var(--navy) !important; }
+  .quick__lessons span { color: #9fb2ff !important; }
+
+  .include { display: grid; gap: 10px; }
+  .include > div { padding: 16px 18px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); display: grid; gap: 4px; }
+  .include dt { font-weight: 600; }
   .include dd { margin: 0; color: var(--muted); font-size: var(--step-small); }
   .small { font-size: var(--step-small); }
   .text-btn { border: 0; padding: 0; background: none; color: var(--accent); text-decoration: underline; text-underline-offset: .2em; min-height: 24px; }

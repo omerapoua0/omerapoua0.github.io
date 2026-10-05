@@ -39,9 +39,43 @@ required. This is a static portfolio, not a hosted backend.
   `HomeSections.astro`: skills marquee, selected work (two image strips sliding
   in opposite directions + five case cards opening the tours), skills with
   evidence (`CapabilityMatrix`), lessons, about (portrait, CV), and the navy
-  contact band (mailto + copy, Write to Omar, LinkedIn, GitHub). `home.ts`:
-  hero parallax and copy-email. `fx.ts` (site-wide): card tilt, magnetic
-  buttons (`[data-magnetic]`), cursor-follow highlight (`[data-glow]`).
+  contact band (mailto + copy, Write to Omar, LinkedIn, GitHub). `fx.ts`
+  (site-wide): card tilt, magnetic buttons (`[data-magnetic]`), cursor-follow
+  highlight (`[data-glow]`), pointer parallax on heroes
+  (`[data-pointer-parallax]` sets --mx/--my) and scroll velocity for marquees.
+- **Interior pages** (v4 restyle). Shared parts: `PageHero.astro` (numbered
+  eyebrow "01/07", huge uppercase title with staggered word reveal, lede,
+  calls to action, optional aside card, counting spec chips, drifting light,
+  pointer-parallax grid, outlined watermark word), `Marquee.astro`
+  (aria-hidden sliding words; the facts are also on the page as text),
+  `ContactBand.astro` (navy band: mailto + copy, Write to Omar pre-set to a
+  topic, LinkedIn, GitHub, and a "Next" page link; it closes every page but
+  home and contact, and hides the footer's big CTA), `SectionHead` (blue
+  number pill), and `src/styles/studio.css` (panels, eyebrow pills, reveal
+  variants `data-reveal="left|right|scale|wipe"`, `data-reveal-stagger="…"`
+  passes its value to children, scroll-driven `data-fx="parallax|grow-x|
+  grow-y|slide-x"`, and the reading-progress line on top of the header).
+  - Projects: fanned plate deck, stack marquee, the restyled `ProjectIndex`
+    (pill filters, card rows, sticky pane) and `CaseStudy` panels with a
+    sticky drifting plate and "Open the tour".
+  - Automations: live schematic card; sticky scrollytelling of the BP
+    pipeline (`[data-scrolly]` + `[data-scrolly-step]`, site.ts sets
+    `data-at`); offer cards that open the form pre-filled; principles on a
+    line that draws as you scroll.
+  - Research: the five questions as cards that stack (sticky) on desktop.
+  - About & CV: portrait card with parallax, profile facts, two timelines
+    whose rail draws on scroll, education cards, skills marquee and pills.
+  - Lessons: tutor card, promise cards, levels path, five-step process line,
+    the guided enquiry, FAQ cards, and a small band for non-lesson enquiries.
+  - Contact: navy "Direct" card (mailto + copy, LinkedIn, GitHub, CV, lessons
+    shortcut), topic shortcuts (`?topic=…#write` pre-select the form), the
+    guided message form.
+  - Tours: hero with word reveal and the project name as watermark, stack
+    marquee, sticky chapter rail with scroll-spy (`[data-spy]`), chapter
+    cards (the stage chapter is navy), prev/next tour cards with plates, and
+    a band whose Next is the next tour.
+  `site.ts` also handles copy-email buttons (`[data-copy-email]`), scroll-spy
+  and scrollytelling.
 - **The light gate** ("the robot opens it"): `LightGate.astro` + `gate.ts`.
   Every internal page link leaves through white light; doors, cards and
   primary CTAs (`[data-open]`, optional label value) play the full open: two
@@ -78,14 +112,12 @@ required. This is a static portfolio, not a hosted backend.
   `omar:motion`, remembered per session). Every infinite loop must pause under
   `html[data-motion='off']` (QA checks `document.getAnimations()`).
 - Other: `ProjectIndex`, `CaseStudy`, `ProjectMedia` (duotone plates),
-  `CapabilityMatrix`, `Timeline`, `Figure`, `PageIntro`, `SectionHead`;
+  `CapabilityMatrix`, `Timeline`, `Figure`, `SectionHead`;
   `site.ts` (menu sheet, header shadow, floating pill, reveals, count-up),
   `forms.ts`, `project-index.ts`, `previews.ts`, `cursor.ts`.
 - The old Otto chat/robot system (OttoHero, otto-chat/stage/handoff/take,
   otto3d, Robot, OttoCover, data/otto.ts, data/agent.ts), Orbit, Columns,
-  Stats, Ticker and slider were removed in v4. Interior pages (work,
-  automations, research, cv, tutoring, contact) use the new tokens and chrome
-  but still await a deep restyle.
+  Stats, Ticker, slider, `PageIntro` and `home.ts` were removed in v4.
 
 The CrafterUI wheel was replaced at the user's request for a full redesign;
 keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.

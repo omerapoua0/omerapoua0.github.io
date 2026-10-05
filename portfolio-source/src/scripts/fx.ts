@@ -1,7 +1,8 @@
 /*
  * Small site-wide motion: 3D tilt toward the pointer on [data-tilt] cards
  * (fine pointers only), magnetic buttons ([data-magnetic]), a cursor-follow
- * highlight ([data-glow] reads --gx/--gy), and scroll velocity fed to CSS as --scroll-vel so
+ * highlight ([data-glow] reads --gx/--gy), pointer parallax on heroes
+ * ([data-pointer-parallax] sets --mx/--my), and scroll velocity fed to CSS as --scroll-vel so
  * bands like the ticker lean and speed up as you scroll. All of it stops
  * with reduced motion or when motion is paused.
  */
@@ -45,6 +46,24 @@ if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       card.style.setProperty('--gx', `${(event.clientX - box.left).toFixed(0)}px`);
       card.style.setProperty('--gy', `${(event.clientY - box.top).toFixed(0)}px`);
     });
+  });
+}
+
+/* Pointer parallax for heroes ([data-pointer-parallax]): the grid, watermark
+   and robot stage read --mx/--my (-1..1). */
+if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  document.querySelectorAll<HTMLElement>('[data-pointer-parallax]').forEach(hero => {
+    let raf = 0, x = 0, y = 0;
+    const apply = () => { raf = 0; hero.style.setProperty('--mx', x.toFixed(3)); hero.style.setProperty('--my', y.toFixed(3)); };
+    hero.addEventListener('pointermove', event => {
+      if (still()) return;
+      const box = hero.getBoundingClientRect();
+      x = ((event.clientX - box.left) / box.width - .5) * 2;
+      y = ((event.clientY - box.top) / box.height - .5) * 2;
+      if (!raf) raf = requestAnimationFrame(apply);
+    });
+    hero.addEventListener('pointerleave', () => { x = 0; y = 0; if (!raf) raf = requestAnimationFrame(apply); });
+    window.addEventListener('omar:motion', () => { if (still()) { x = 0; y = 0; apply(); } });
   });
 }
 

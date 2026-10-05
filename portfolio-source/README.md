@@ -16,6 +16,12 @@ previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for histo
 - **Everywhere:** a Contact pill in the header (and floating on phones), a
   ⌘K / Ctrl+K command menu (quick links, pages, case studies, tours, copy email,
   CV, LinkedIn, GitHub) and a visible Pause motion switch.
+- **Every page:** a studio hero (numbered eyebrow, word-by-word title,
+  counting spec chips, drifting light, a watermark word), sliding marquees,
+  slides, wipes and scroll-drawn lines, sticky storytelling where it helps
+  (the BP pipeline on Automations, stacking questions on Research, the tour
+  chapter rail), and a navy contact band with the email, Write to Omar and
+  the next page.
 - **Projects:** a server-rendered project index with a sticky duotone preview
   pane, area filters and a remembered list/grid switch, case studies with explicit stage notes, and a
   capability matrix linking each skill to where the CV shows it in use.
@@ -50,7 +56,9 @@ the light gate (leaving page opaque white, arriving page white at first paint
 and revealed within 1.5 s, reduced motion and Pause motion fades, same-page
 doors, bfcache), Pause motion stopping every loop, Contact in one tap from
 every page, the command menu, the project index and matrix, the mobile menu,
-both enquiry journeys and LCP/CLS.
+both enquiry journeys, the interior heroes and contact bands, scroll
+reveals finishing visible on every page, the scrollytelling, scroll-spy and
+contact topic shortcuts, gate hops from interior pages, and LCP/CLS.
 
 Build success does not mean publication. Do not deploy without explicit user
 authorisation. Preserve copyright notices, retained credits and personal-data

@@ -1,12 +1,16 @@
 ---
+/* A vertical timeline: a rail whose blue line draws as you scroll (where
+   scroll timelines are supported), a node per role and a card that slides in. */
 import type { Role } from '../data/experience';
 import { statusLabel } from '../data/site';
 interface Props { roles: Role[]; }
 const { roles } = Astro.props;
 ---
 <ol class="timeline">
-  {roles.map(role => (
-    <li class="timeline__row">
+  <li class="timeline__rail" aria-hidden="true"><i data-fx="grow-y"></i></li>
+  {roles.map((role, index) => (
+    <li class="timeline__row" data-reveal="right" style={`--reveal-delay:${index * 60}ms`}>
+      <span class="timeline__node" aria-hidden="true"></span>
       <p class="timeline__period num">{role.period}</p>
       <div class="timeline__body">
         <p class="label">{role.org}</p>
@@ -14,7 +18,7 @@ const { roles } = Astro.props;
         <p class="muted">{role.text}</p>
         <div class="timeline__foot">
           <span class:list={['chip', `chip--${role.status}`]}>{statusLabel[role.status]}</span>
-          {role.href && <a class="link-arrow" href={role.href}>Related <span aria-hidden="true">↗</span></a>}
+          {role.href && <a class="go" href={role.href}>Related <span aria-hidden="true">↗</span></a>}
         </div>
       </div>
     </li>
@@ -22,12 +26,17 @@ const { roles } = Astro.props;
 </ol>
 
 <style>
-  .timeline { border-top: 1px solid var(--line-strong); }
-  .timeline__row { display: grid; gap: var(--s-2); padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
-  .timeline__period { font-size: 12.5px; color: var(--muted); letter-spacing: .02em; padding-top: .3em; }
+  .timeline { position: relative; display: grid; gap: 14px; padding-left: 34px; }
+  .timeline__rail { position: absolute; left: 9px; top: 12px; bottom: 12px; width: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .timeline__rail i { position: absolute; inset: 0; background: linear-gradient(var(--accent), #6f8bff); transform-origin: 50% 0; }
+  .timeline__row { position: relative; display: grid; gap: 6px 24px; padding: 22px 24px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); transition: box-shadow 400ms var(--ease-out); }
+  .timeline__row:hover { box-shadow: var(--shadow-2); }
+  .timeline__node { position: absolute; left: -31px; top: 28px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); box-shadow: 0 0 0 5px var(--bg); }
+  .timeline__row:hover .timeline__node { background: var(--accent); }
+  .timeline__period { font-size: 12.5px; color: var(--accent); letter-spacing: .02em; padding-top: .3em; font-weight: 600; }
   .timeline__body { display: grid; gap: var(--s-2); }
+  .timeline__body h3 { font-size: clamp(1.25rem, 1.05rem + .7vw, 1.6rem); }
   .timeline__body p.muted { max-width: 64ch; }
-  .timeline__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: 4px; }
-  .timeline__foot .link-arrow { min-height: 32px; font-size: var(--step-small); }
-  @media (min-width: 768px) { .timeline__row { grid-template-columns: 200px minmax(0, 1fr); gap: var(--gutter); } }
+  .timeline__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; margin-top: 4px; }
+  @media (min-width: 768px) { .timeline__row { grid-template-columns: 180px minmax(0, 1fr); } }
 </style>

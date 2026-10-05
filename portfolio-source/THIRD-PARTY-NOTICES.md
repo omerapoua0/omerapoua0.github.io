@@ -2,9 +2,10 @@
 
 ## Previously used: editorial film
 
-The homepage no longer uses stock footage: the hero is now an original,
-code-drawn interactive network of Omar's skills. Earlier revisions of this
-repository distributed the following, so its credits are retained.
+The site no longer uses stock footage: the v4 "Studio" homepage hero is a
+display title with an original CSS light-sculpture placeholder (a robot media
+slot; see below). Earlier revisions of this repository distributed the
+following, so its credits are retained.
 
 The earlier hero was an edited 20-second live-action film assembled from four
 Mixkit clips individually identified as Stock Video Free License assets:
@@ -25,8 +26,8 @@ Source credits, hashes and output verification: hero-editorial-manifest.json.
 The October 2026 "Proof" redesign applies a further cool colour grade to the
 same edit and adds VP9 WebM encodes; shots, timing and credits are unchanged.
 
-The hero's skill network, project schematics (Bitget, BP and research figures)
-and other diagrams on the site are original
+Project schematics (Bitget, BP and research figures), the Automations
+pipeline schematic and other diagrams on the site are original
 code-drawn explanatory visuals, not results, data or product screenshots. Supplied
 company marks retain their respective owners' rights; their presence
 identifies the stated project or work history only.
@@ -120,7 +121,7 @@ SOFTWARE.
 
 ## Fonts
 
-The template declares the following Fontsource font packages. The corresponding font files are licensed under the SIL Open Font License 1.1, not the MIT license for the website code. Their original copyright notices follow. A declaration here does not mean every font is shipped in every build. The current "Proof" design ships Onest (text and display), Old Standard TT italic (accents) and JetBrains Mono (labels and data).
+The template declares the following Fontsource font packages. The corresponding font files are licensed under the SIL Open Font License 1.1, not the MIT license for the website code. Their original copyright notices follow. A declaration here does not mean every font is shipped in every build. The current v4 "Studio" design ships only Onest (text and display) and JetBrains Mono (labels and data); Old Standard TT and the other declared families are no longer shipped.
 
 - Onest: Copyright 2021 The Onest Project Authors (https://github.com/simpals/onest). Package `@fontsource-variable/onest` 5.2.11.
 - Inter Tight: Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter-tight). Package `@fontsource-variable/inter-tight` 5.3.0. Typeface of the previous revision, verified against the installed package LICENSE on 2 October 2026.
@@ -237,10 +238,16 @@ Organisation and project marks retain their respective owners' rights. They are 
 
 Project concept images and videos must not be described as screenshots of a live product unless independently established. The original portrait is used without generating a replacement face or body.
 
-## Otto, the robot host
+## v4 "Studio" visuals (October 2026)
 
-- Otto is an original character made for this portfolio. The SVG Otto (`src/components/Robot.astro`) is an original drawing; the 3D Otto (`src/scripts/otto3d/`) is built in code from primitive shapes (rounded boxes, capsules, an extruded visor) with canvas-drawn faces. No third-party models, textures, scenes or characters are used.
-- The 3D Otto is rendered with three.js 0.185.1 (core plus the `RoundedBoxGeometry` and `RoomEnvironment` add-ons), bundled into a lazily loaded script. three.js is distributed under the MIT License:
+- The light gate (page transition), the robot media slot's placeholder (a white sphere with blue rim light and two rings), the light blobs, grids, watermarks, marquees and the Automations pipeline schematic are original CSS/SVG made for this portfolio. No third-party models, textures, scenes, characters or animation libraries are used, and no new dependency was added.
+- Robot media slot: if Omar adds his own robot images or clips to `public/robot/` (for example generated with Higgsfield), they are Omar's supplied content, used under the terms of the service that generated them. They depict a robot, not Omar. Until such files exist, only the placeholder above is shipped.
+- Omar's portrait on About & CV and the lessons page is his real photograph, cropped only; it is not generated or altered.
+
+## Previously used: Otto, the robot host
+
+- Otto was an original character made for this portfolio: an original SVG drawing (`Robot.astro`) and a 3D version built in code from primitive shapes (`src/scripts/otto3d/`). Otto, its chat and both renderers were removed in the v4 redesign (October 2026) and are no longer shipped.
+- The 3D Otto was rendered with three.js 0.185.1 (core plus the `RoundedBoxGeometry` and `RoomEnvironment` add-ons). three.js remains declared in `package.json` for lockfile stability but no page ships it. Because earlier revisions distributed it, its MIT License is retained:
 
 ```text
 The MIT License

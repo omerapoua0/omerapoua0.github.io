@@ -254,6 +254,25 @@ function watch(page) {
   });
 
   /* 6. Pause motion stops every loop; contact is one tap away everywhere. */
+  await check('Pause motion on every page: the footer switch stops every loop (marquees, light, decks, pipelines)', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    const left = [];
+    for (const route of [...routes, ...tours]) {
+      await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+      await page.evaluate(() => sessionStorage.removeItem('omar-motion'));
+      await page.reload({ waitUntil: 'networkidle' });
+      const looping = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).length);
+      if (route !== 'index' && looping === 0) left.push(`${route}: no ambient motion at all`);
+      await page.locator('.footer__motion').click();
+      const running = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).map(a => a.animationName));
+      if (running.length) left.push(`${route}: ${running.join(', ')}`);
+      await page.locator('.footer__motion').click();
+    }
+    assert.deepEqual(left, []);
+    await context.close();
+  });
+
   await check('Pause motion: visible, stops every looping animation and the hero video; persists for the session', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
@@ -362,15 +381,78 @@ function watch(page) {
     assert.deepEqual(await page.locator('[data-count-to]').allTextContents(), ['150', '5', '3']);
     await context.close();
   });
-  await check('scroll reveals finish visible', async () => {
+  await check('scroll reveals (slides, wipes, scales) finish visible on every page', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    const total = await page.evaluate(() => document.body.scrollHeight);
-    for (let y = 0; y < total; y += 400) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(60); }
-    await page.waitForTimeout(1200);
-    const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.classList.contains('is-in') || Number(getComputedStyle(el).opacity) < .99).length);
-    assert.equal(hidden, 0);
+    const problems = [];
+    for (const route of [...routes, ...tours]) {
+      await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+      const total = await page.evaluate(() => document.body.scrollHeight);
+      for (let y = 0; y < total; y += 400) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(50); }
+      await page.waitForTimeout(1300);
+      const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.closest('[hidden]') && (!el.classList.contains('is-in') || Number(getComputedStyle(el).opacity) < .99 || !/^(none|inset\(0(px)?( round [^)]*)?\))$/.test(getComputedStyle(el).clipPath))).map(el => el.className || el.tagName));
+      if (hidden.length) problems.push(`${route}: ${hidden.slice(0, 3).join(' | ')}`);
+    }
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
+  await check('interior pages: studio hero, navy contact band with mailto + Write to Omar, and a next step', async () => {
+    const context = await isolated(browser, { viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    for (const route of [...routes.filter(r => r !== 'index'), ...tours]) {
+      await page.goto(`${base}/${route}.html`, { waitUntil: 'domcontentloaded' });
+      assert.equal(await page.locator('h1').count(), 1);
+      if (!route.startsWith('inside/')) assert.ok(await page.locator('.phero h1#page-title').count() === 1, `${route}: studio hero`);
+      if (route === 'contact') {
+        assert.ok(await page.locator('.direct a[href^="mailto:"]').isVisible(), 'contact: direct email');
+        assert.ok(await page.locator('.quick__list a').count() >= 5, 'contact: topic shortcuts');
+        continue;
+      }
+      const band = page.locator('section.band');
+      assert.equal(await band.count(), 1, `${route}: contact band`);
+      assert.ok(await band.locator('a[href^="mailto:omerapoua0@gmail.com"]').count() === 1, `${route}: band mailto`);
+      assert.match(await band.locator('.band__primary').getAttribute('href'), /^\/contact\.html/, `${route}: band Write to Omar`);
+      assert.ok(await band.locator('.band__primary').getAttribute('data-open') !== null, `${route}: band opens through the gate`);
+      assert.ok(await band.locator('.band__next').count() === 1, `${route}: next step`);
+      assert.equal(await page.locator('.footer__top').isVisible(), false, `${route}: no duplicate footer CTA`);
+    }
+    await context.close();
+  });
+
+  await check('storytelling: the BP pipeline follows the scroll; the tour rail tracks the chapter; contact topic shortcuts pre-select', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/automations.html`, { waitUntil: 'networkidle' });
+    const seen = new Set();
+    for (const step of await page.locator('[data-scrolly-step]').all()) {
+      await step.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      await page.waitForTimeout(250);
+      seen.add(await page.locator('[data-scrolly]').getAttribute('data-at'));
+    }
+    assert.deepEqual([...seen], ['0', '1', '2', '3'], 'each story step lights its stage');
+    const sticky = await page.locator('.story__visual').evaluate(el => getComputedStyle(el).position);
+    assert.equal(sticky, 'sticky');
+    await page.goto(`${base}/inside/katana.html`, { waitUntil: 'networkidle' });
+    await page.locator('#stage').evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('.rail a[data-active]').getAttribute('href'), '#stage');
+    await page.goto(`${base}/contact.html`, { waitUntil: 'networkidle' });
+    await Promise.all([page.waitForURL(/topic=Research#write$/), page.click('.quick__list a[href*="topic=Research"]')]);
+    await page.waitForLoadState('networkidle');
+    assert.ok(await page.locator('input[name="topic"][value="Research"]').isChecked(), 'topic pre-selected');
+    await context.close();
+  });
+
+  await check('light gate from interior pages: case study → tour (open), band → contact (open)', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/work.html`, { waitUntil: 'networkidle' });
+    await Promise.all([page.waitForURL(/inside\/nookbase\.html$/), page.evaluate(() => document.querySelector('#nookbase a[href="/inside/nookbase.html"]').click())]);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.gate), 'in', 'arrived through the gate');
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-gate]')).visibility === 'hidden' || getComputedStyle(document.querySelector('[data-gate]')).display === 'none', null, { timeout: 1500 });
+    await Promise.all([page.waitForURL(/contact\.html\?topic=Project$/), page.evaluate(() => document.querySelector('.band__primary').click())]);
+    assert.ok(await page.locator('input[name="topic"][value="Project"]').isChecked(), 'band topic carried into the form');
     await context.close();
   });
 

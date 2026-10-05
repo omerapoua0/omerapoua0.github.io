@@ -1,0 +1,73 @@
+/* Shared "studio" patterns for every page: panels, eyebrow pills, reveal
+   variants, scroll-driven parallax and progress, and the reading-progress
+   bar. Pure CSS; everything degrades to a static, readable page. */
+
+/* A white studio panel: rounded, soft product-shot shadow. */
+.panel { position: relative; background: var(--surface); border: 1px solid #ffffff; border-radius: var(--radius-3); box-shadow: var(--shadow-2); }
+.panel--quiet { background: var(--bg-2); border-color: var(--line); box-shadow: none; }
+
+/* Small mono pill used above section titles. */
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; padding: 6px 14px 6px 8px; border-radius: 999px; background: #ffffffb3; border: 1px solid #ffffff; box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.eyebrow b { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; letter-spacing: .02em; }
+
+/* Number labels in "01/05" form. */
+.idx { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.idx span { color: var(--muted); font-weight: 400; }
+
+/* Pill list (stacks, skills, tags). */
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pills > li { padding: 8px 14px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-size: 14px; font-weight: 540; line-height: 1.3; overflow-wrap: anywhere; }
+
+/* Reading progress: a thin blue line on top of the header, driven by scroll
+   position where the browser supports scroll timelines (no JavaScript). */
+.scroll-progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-progress { display: block; position: fixed; left: 0; right: 0; top: 0; z-index: 60; height: 2px; background: var(--accent); box-shadow: 0 0 10px #1f4bff80; transform-origin: 0 50%; pointer-events: none; animation: fx-grow-x linear both; animation-timeline: scroll(root); }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Reveal variants (site.ts adds .is-in): slide from a side, scale up, or
+     wipe open. The hidden start state only applies with JavaScript. */
+  html.js [data-reveal='left']:not(.is-in) { transform: translateX(-72px); }
+  html.js [data-reveal='right']:not(.is-in) { transform: translateX(72px); }
+  html.js [data-reveal='scale']:not(.is-in) { transform: translateY(48px) scale(.94); }
+  html.js [data-reveal='wipe'] { transition: clip-path 1200ms var(--ease-out), opacity 600ms var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
+  html.js [data-reveal='wipe']:not(.is-in) { opacity: 0; transform: none; clip-path: inset(0 55% 0 0 round var(--radius-3)); }
+  /* (Never clip to nothing: a fully clipped element never intersects, so it would never reveal.) */
+  html.js [data-reveal='up-wipe'] { transition: clip-path 1100ms var(--ease-out), transform 1100ms var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
+  html.js [data-reveal='up-wipe']:not(.is-in) { opacity: 1; transform: translateY(40px); clip-path: inset(45% 0 0 0); }
+
+  @supports (animation-timeline: view()) {
+    /* Parallax: an element drifts against the scroll while it crosses the screen. */
+    html:not([data-motion='off']) [data-fx~='parallax'] { animation: fx-parallax linear both; animation-timeline: view(); animation-range: cover; }
+    html:not([data-motion='off']) [data-fx~='parallax-slow'] { animation: fx-parallax-slow linear both; animation-timeline: view(); animation-range: cover; }
+    /* Progress lines that draw as their section scrolls through. */
+    html:not([data-motion='off']) [data-fx~='grow-y'] { animation: fx-grow-y linear both; animation-timeline: view(); animation-range: entry 30% exit 40%; }
+    html:not([data-motion='off']) [data-fx~='grow-x'] { animation: fx-grow-x linear both; animation-timeline: view(); animation-range: entry 40% cover 55%; }
+    /* Big outlined numerals slide sideways as you pass. */
+    html:not([data-motion='off']) [data-fx~='slide-x'] { animation: fx-slide-x linear both; animation-timeline: view(); animation-range: cover; }
+  }
+}
+@keyframes fx-parallax { from { transform: translateY(9%); } to { transform: translateY(-9%); } }
+@keyframes fx-parallax-slow { from { transform: translateY(40px); } to { transform: translateY(-40px); } }
+@keyframes fx-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes fx-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes fx-slide-x { from { transform: translateX(6%); } to { transform: translateX(-6%); } }
+
+/* Section rhythm on interior pages. */
+.stage { padding-block: var(--section); }
+.stage--tight { padding-block: clamp(56px, 7vw, 112px); }
+.stage--white { background: var(--surface); border-block: 1px solid var(--line); }
+.stage--grey { background: var(--bg-2); }
+.stage + .stage:not(.stage--white):not(.stage--grey) { padding-top: 0; }
+
+/* A big outlined numeral behind a block ("01", "Q3"). */
+.ghost-num { font-size: clamp(5rem, 2rem + 10vw, 12rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #0a0c1017; user-select: none; pointer-events: none; }
+
+/* Text link with an arrow and a growing underline. */
+.go { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; color: var(--accent); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 calc(100% - 8px) / 0 1.5px no-repeat; transition: background-size var(--d-3) var(--ease-out); }
+.go:hover, .go:focus-visible { background-size: 100% 1.5px; }
+.go span[aria-hidden] { transition: transform var(--d-3) var(--ease-out); }
+.go:hover span[aria-hidden] { transform: translate(3px, -3px); }

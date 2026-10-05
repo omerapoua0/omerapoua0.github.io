@@ -1,0 +1,113 @@
+---
+/* Studio hero for interior pages: numbered eyebrow, a huge uppercase title
+   whose words slide up in sequence, a lede, calls to action, optional aside
+   (portrait, contact card) and spec chips that count up. Behind it: drifting
+   blue/white light, a grid that follows the pointer and an outlined watermark
+   word. Facts in chips come from src/data or the CV. Everything is readable
+   without JavaScript; the entrance waits for the light gate (--enter-delay). */
+interface Line { text: string; accent?: boolean }
+interface Chip { value?: number; prefix?: string; text?: string; label: string }
+interface Props { index: number; section: string; lines: Line[]; watermark: string; meta?: string[]; chips?: Chip[]; compact?: boolean }
+const { index, section, lines, watermark, meta = [], chips = [], compact = false } = Astro.props;
+let wordIndex = 0;
+const pad = (value: number) => String(value).padStart(2, '0');
+---
+<section class:list={['phero', { 'phero--compact': compact, 'phero--aside': Astro.slots.has('aside') }]} data-pointer-parallax data-own-entrance aria-labelledby="page-title">
+  <div class="phero__bg" aria-hidden="true">
+    <span class="phero__grid"></span>
+    <span class="phero__blob phero__blob--a"></span>
+    <span class="phero__blob phero__blob--b"></span>
+    <span class="phero__mark">{watermark}</span>
+  </div>
+  <div class="wrap phero__inner">
+    <div class="phero__copy">
+      <p class="phero__eyebrow"><span class="phero__idx">{pad(index)}<span>/07</span></span><span class="phero__section">{section}</span>{meta.map(item => <span class="phero__meta">{item}</span>)}</p>
+      <h1 id="page-title" class="phero__title">
+        {lines.map(line => (
+          <span class:list={['phero__line', { 'phero__line--accent': line.accent }]}>
+            {line.text.split(' ').map(word => <span class="phero__word"><span style={`--w:${wordIndex++}`}>{word}</span></span>)}
+          </span>
+        ))}
+      </h1>
+      <div class="phero__body"><slot /></div>
+      {Astro.slots.has('actions') && <div class="phero__actions"><slot name="actions" /></div>}
+    </div>
+    {Astro.slots.has('aside') && <div class="phero__aside"><slot name="aside" /></div>}
+    {chips.length > 0 && (
+      <ul class="phero__chips" aria-label="At a glance">
+        {chips.map((chip, at) => (
+          <li class="pspec" style={`--c:${at}`}>
+            <span class="pspec__num">{chip.text ?? <>{chip.prefix}<span data-count-to={chip.value}>{chip.value}</span></>}</span>
+            <span class="pspec__label">{chip.label}</span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</section>
+
+<style>
+  .phero { position: relative; isolation: isolate; overflow: clip; margin-top: calc(var(--header) * -1); padding-top: var(--header); background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 85%); border-bottom: 1px solid var(--line); }
+  .phero__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .phero__grid { position: absolute; inset: -40px; background:
+      linear-gradient(#0a0c100c 1px, transparent 1px) 0 0 / 56px 56px,
+      linear-gradient(90deg, #0a0c100c 1px, transparent 1px) 0 0 / 56px 56px;
+    -webkit-mask: radial-gradient(70% 80% at 70% 40%, #000 15%, transparent 72%); mask: radial-gradient(70% 80% at 70% 40%, #000 15%, transparent 72%);
+    transform: translate3d(calc(var(--mx, 0) * 14px), calc(var(--my, 0) * 12px), 0); transition: transform 900ms var(--ease-out); }
+  .phero__blob { position: absolute; border-radius: 50%; filter: blur(60px); will-change: transform; }
+  .phero__blob--a { width: 48vw; height: 48vw; right: -12vw; top: -14vw; background: radial-gradient(closest-side, #1f4bff33, #1f4bff00); }
+  .phero__blob--b { width: 34vw; height: 34vw; left: -8vw; bottom: -16vw; background: radial-gradient(closest-side, #ffffff, #ffffff00); }
+  .phero__mark { position: absolute; right: -2vw; bottom: -.12em; font-size: clamp(7rem, 24vw, 26rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #0a0c1010; white-space: nowrap; transform: translate3d(calc(var(--mx, 0) * -22px), 0, 0); transition: transform 1200ms var(--ease-out); user-select: none; }
+
+  .phero__inner { position: relative; display: grid; gap: clamp(28px, 4vw, 48px); padding-top: clamp(36px, 7vw, 104px); padding-bottom: clamp(44px, 6vw, 88px); }
+  .phero__copy { display: grid; align-content: start; min-width: 0; }
+  .phero__eyebrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; width: fit-content; max-width: 100%; padding: 6px 14px 6px 6px; border-radius: 999px; background: #ffffffb3; border: 1px solid #ffffff; box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+  .phero__idx { display: inline-flex; align-items: baseline; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; }
+  .phero__idx span { color: #e3e9ff; font-weight: 400; }
+  .phero__meta { color: var(--muted); }
+  .phero__meta::before { content: '·'; margin-right: 12px; color: var(--line-strong); }
+  .phero__title { margin-top: 26px; font-size: clamp(2.35rem, .9rem + 5.6vw, 6.6rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; text-transform: uppercase; max-width: 16ch; }
+  .phero__line { display: block; }
+  .phero__line--accent { color: var(--accent); }
+  .phero__word { display: inline-block; overflow: clip; overflow-clip-margin: .1em; padding-bottom: .05em; margin-right: .2em; vertical-align: top; }
+  .phero__word:last-child { margin-right: 0; }
+  .phero__word > span { display: inline-block; }
+  .phero__body { display: grid; gap: var(--s-4); margin-top: clamp(22px, 2.6vw, 32px); max-width: 58ch; }
+  .phero__body :global(.lede) { max-width: 46ch; color: var(--ink-2); }
+  .phero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+  .phero__aside { min-width: 0; }
+  .phero__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .pspec { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-radius: 16px; background: #ffffffc2; border: 1px solid #ffffff; box-shadow: var(--shadow-1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .pspec__num { font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .pspec__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
+  .phero--compact .phero__title { font-size: clamp(2.35rem, .9rem + 5vw, 5.6rem); }
+
+  @media (min-width: 900px) { .phero__chips { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 1100px) {
+    .phero--aside .phero__inner { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); column-gap: clamp(32px, 4vw, 72px); align-items: center; }
+    .phero--aside .phero__title { font-size: clamp(3rem, 1rem + 4.2vw, 5.6rem); max-width: none; }
+    .phero--aside .phero__chips { grid-column: 1 / -1; }
+  }
+  @media (max-width: 520px) {
+    .phero__actions .btn { flex: 1 1 auto; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .phero__blob--a { animation: ph-blob-a 22s ease-in-out infinite alternate; }
+    .phero__blob--b { animation: ph-blob-b 26s ease-in-out infinite alternate; }
+    :global(html[data-motion='off']) .phero__blob { animation-play-state: paused; }
+    :global(html.js) .phero__word > span { animation: ph-word 900ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 100ms + var(--w) * 55ms); }
+    :global(html.js) .phero__eyebrow { animation: ph-up 800ms var(--ease-out) both; animation-delay: var(--enter-delay, 0ms); }
+    :global(html.js) :is(.phero__body, .phero__actions) { animation: ph-up 900ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 520ms); }
+    :global(html.js) .phero__actions { animation-delay: calc(var(--enter-delay, 0ms) + 640ms); }
+    :global(html.js) .phero__aside { animation: ph-aside 1200ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 260ms); }
+    :global(html.js) .pspec { animation: ph-up 800ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 760ms + var(--c) * 90ms); }
+    :global(html.js) .phero__mark { animation: ph-mark 1600ms var(--ease-out) both; animation-delay: var(--enter-delay, 0ms); }
+  }
+  @keyframes ph-word { from { transform: translateY(105%); } }
+  @keyframes ph-up { from { opacity: 0; transform: translateY(26px); } }
+  @keyframes ph-aside { from { opacity: 0; transform: translateY(70px) scale(.96); } }
+  @keyframes ph-mark { from { opacity: 0; translate: 8% 0; } }
+  @keyframes ph-blob-a { to { transform: translate(-10vw, 8vw) scale(1.15); } }
+  @keyframes ph-blob-b { to { transform: translate(12vw, -8vw) scale(1.2); } }
+</style>

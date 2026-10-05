@@ -1,6 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
-import PageIntro from '../components/PageIntro.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHead from '../components/SectionHead.astro';
+import Marquee from '../components/Marquee.astro';
+import ContactBand from '../components/ContactBand.astro';
 import Figure from '../components/Figure.astro';
 import { statusLabel, type Status } from '../data/site';
 
@@ -53,61 +56,96 @@ const entries: { id: string; aliases?: string[]; area: string; status: Status; s
 const legend: Status[] = ['progress', 'incoming', 'exploratory', 'aspiration'];
 ---
 <Base title="Research interests" description="Omar Aboelella’s research notebook: independent research on AI in higher education, an incoming optimisation and ML placement, quantitative modelling and quantum computing. Exploratory, not published work.">
-  <PageIntro section="Research notebook" meta={['Questions, not papers']}>
-    <Fragment slot="title">Questions worth <em class="voice">staying curious about.</em></Fragment>
+  <PageHero
+    index={3}
+    section="Research notebook"
+    meta={['Questions, not papers']}
+    watermark="WHY?"
+    lines={[{ text: 'Questions worth' }, { text: 'staying curious about.', accent: true }]}
+    chips={[
+      { value: entries.length, label: 'open questions in this notebook' },
+      { text: '2026 →', label: 'AI & higher education · in progress' },
+      { text: 'Summer ’27', label: 'Santander placement · incoming' },
+      { text: 'Unpublished', label: 'all of it · no papers claimed' },
+    ]}
+  >
     <p class="lede">The mathematical ideas behind the systems I build, and the directions I want to understand more deeply.</p>
-    <div slot="aside">
-      <p class="note">These are independent research, exploratory interests and an upcoming placement. None of it is published work. Doctoral research is a longer-term ambition.</p>
+    <div slot="aside" class="legend-card">
+      <p class="label">How to read the labels</p>
       <ul class="legend" aria-label="Status labels">{legend.map(status => <li><span class:list={['chip', `chip--${status}`]}>{statusLabel[status]}</span></li>)}</ul>
+      <p class="note">These are independent research, exploratory interests and an upcoming placement. None of it is published work. Doctoral research is a longer-term ambition.</p>
     </div>
-  </PageIntro>
+    <Fragment slot="actions">
+      <a class="btn" href="#questions">Read the questions <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+      <a class="btn btn--ghost" href="/contact.html?topic=Research" data-open="Contact">Compare notes</a>
+    </Fragment>
+  </PageHero>
 
-  <section class="wrap notebook" aria-label="Research questions">
-    {entries.map((entry, index) => (
-      <article class="entry" id={entry.id} aria-labelledby={`${entry.id}-q`}>
-        {entry.aliases?.map(alias => <span id={alias} class="entry__alias"></span>)}
-        <div class="entry__side">
-          <p class="label"><span class="num">Q{index + 1}</span> / {entry.area}</p>
-          <span class:list={['chip', `chip--${entry.status}`]}>{entry.statusText}</span>
-        </div>
-        <div class="entry__main">
-          <h2 id={`${entry.id}-q`}>{entry.question}</h2>
-          <p class="lede">{entry.lede}</p>
-          {entry.body.map(paragraph => <p>{paragraph}</p>)}
-          <p class="entry__tags">{entry.tags}</p>
-          {entry.link && <a class="link-arrow" href={entry.link.href}>{entry.link.label} <span aria-hidden="true">↗</span></a>}
-        </div>
-        {entry.figure && <figure class="plate plate--type entry__figure"><Figure kind="ai-he" /></figure>}
-      </article>
-    ))}
+  <Marquee rows={[['AI evaluation', 'Learning outcomes', 'Optimisation', 'Machine learning', 'Credit scoring'], ['Probability', 'Stochastic processes', 'Time series', 'Qiskit', 'Linear algebra']]} size="md" />
+
+  <section class="stage stage--grey" id="questions" aria-labelledby="questions-title">
+    <div class="wrap">
+      <SectionHead mark="01" label="The notebook" id="questions-title">Five questions, <em class="voice">honestly labelled.</em>
+        <p slot="aside">Each card says what the question is, why it matters to me and exactly how far along it is.</p>
+      </SectionHead>
+      <div class="stack">
+        {entries.map((entry, index) => (
+          <article class="entry" id={entry.id} aria-labelledby={`${entry.id}-q`} style={`--n:${index}`}>
+            {entry.aliases?.map(alias => <span id={alias} class="entry__alias"></span>)}
+            <div class="entry__side">
+              <span class="entry__q" aria-hidden="true">Q{index + 1}</span>
+              <p class="label">{entry.area}</p>
+              <span class:list={['chip', `chip--${entry.status}`]}>{entry.statusText}</span>
+              {entry.figure && <figure class="plate plate--type entry__figure"><Figure kind="ai-he" /></figure>}
+            </div>
+            <div class="entry__main">
+              <p class="idx">Q{index + 1}<span>/{String(entries.length).padStart(2, '0')}</span></p>
+              <h2 id={`${entry.id}-q`}>{entry.question}</h2>
+              <p class="lede">{entry.lede}</p>
+              {entry.body.map(paragraph => <p>{paragraph}</p>)}
+              <p class="entry__tags">{entry.tags}</p>
+              {entry.link && <a class="go" href={entry.link.href}>{entry.link.label} <span aria-hidden="true">↗</span></a>}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
   </section>
 
-  <section class="section wrap">
-    <div class="closing">
-      <p class="label"><span class="section-mark">§</span> Compare notes</p>
-      <h2>Working on a <em class="voice">related question?</em></h2>
-      <p class="muted">I’d welcome a conversation about a paper, an experiment or a research opportunity.</p>
-      <div class="actions"><a class="btn btn--accent" href="/contact.html?topic=Research">Start a research conversation <span class="arrow" aria-hidden="true">↗</span></a></div>
-    </div>
-  </section>
+  <ContactBand
+    title="Working on a"
+    accent="related question?"
+    lede="I’d welcome a conversation about a paper, an experiment or a research opportunity."
+    topic="Research"
+    primary="Start a research conversation"
+    next={{ href: '/cv.html', label: 'About & CV', note: 'Where these questions come from: work, study and teaching.' }}
+  />
 </Base>
 
 <style>
-  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--s-5); }
-  .entry { position: relative; display: grid; gap: var(--s-5); padding-block: clamp(48px, 6vw, 88px); border-bottom: 1px solid var(--line); }
+  .legend-card { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 32px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-3); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* Question cards stack on desktop: each one sticks a little lower than the
+     last, so the notebook piles up as you read. */
+  .stack { display: grid; gap: 20px; }
+  .entry { position: relative; display: grid; gap: var(--s-5); padding: clamp(22px, 3vw, 44px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--header) + 24px); }
   .entry__alias { position: absolute; top: 0; }
   .entry__side { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; align-content: start; }
+  .entry__q { display: none; }
   .entry__main { display: grid; gap: var(--s-4); }
-  .entry__main h2 { font-size: clamp(1.8rem, 1.2rem + 2.2vw, 3.1rem); max-width: 22ch; }
-  .entry__main p:not(.lede):not(.entry__tags) { max-width: 62ch; }
+  .entry__main h2 { font-size: clamp(1.7rem, 1.1rem + 2vw, 2.9rem); letter-spacing: -.045em; line-height: 1.04; max-width: 24ch; }
+  .entry__main .lede { color: var(--accent); }
+  .entry__main p:not(.lede):not(.entry__tags):not(.idx) { max-width: 62ch; color: var(--ink-2); }
   .entry__tags { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
-  .entry__figure { padding: var(--s-5); }
+  .entry__figure { width: 100%; padding: var(--s-4); border-radius: var(--radius-2); }
   @media (min-width: 1024px) {
-    .entry { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); }
-    .entry__side { grid-column: 1 / span 3; flex-direction: column; align-items: start; position: sticky; top: calc(var(--header) + 32px); align-self: start; }
-    .entry__main { grid-column: 4 / span 7; }
-    .entry__figure { grid-column: 4 / span 7; }
+    .entry { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); column-gap: clamp(32px, 4vw, 64px); }
+    .entry__side { flex-direction: column; align-items: start; }
+    .entry__q { display: block; font-size: clamp(5rem, 3rem + 5vw, 9rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px var(--accent); }
   }
-  .closing { display: grid; gap: var(--s-5); }
-  .closing h2 { max-width: 16ch; }
+  @media (min-width: 1024px) and (min-height: 760px) {
+    .stack { gap: 40px; }
+    .entry { position: sticky; top: calc(var(--header) + 24px + var(--n) * 18px); min-height: min(560px, calc(100vh - var(--header) - 140px)); box-shadow: 0 -2px 6px #0a0c100a, var(--shadow-3); }
+  }
 </style>

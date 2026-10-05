@@ -4,7 +4,7 @@ const { mark, label, id } = Astro.props;
 ---
 <div class="section-head" data-reveal>
   <div class="section-head__title">
-    <p class="label"><span class="section-mark">§{mark}</span> {label}</p>
+    <p class="eyebrow"><b>{mark}</b>{label}</p>
     <h2 id={id}><slot /></h2>
   </div>
   {Astro.slots.has('aside') && <div><slot name="aside" /></div>}

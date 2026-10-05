@@ -44,7 +44,7 @@ if (header) {
 document.querySelectorAll<HTMLElement>('[data-reveal-stagger]').forEach(group => {
   [...group.children].forEach((child, index) => {
     if (!(child instanceof HTMLElement)) return;
-    child.setAttribute('data-reveal', '');
+    child.setAttribute('data-reveal', group.dataset.revealStagger || '');
     child.style.setProperty('--reveal-delay', `${Math.min(index, 8) * 80}ms`);
   });
 });
@@ -77,6 +77,53 @@ if (counters.length && 'IntersectionObserver' in window && !window.matchMedia('(
   }), { threshold: .5 });
   counters.forEach(element => counter.observe(element));
 }
+
+/* Copy the email address (the address itself is always a mailto link). */
+document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach(button => {
+  if (!navigator.clipboard) return;
+  button.hidden = false;
+  const label = button.querySelector('[data-copy-label]');
+  const status = button.parentElement?.querySelector('[data-copy-status]');
+  button.addEventListener('click', async () => {
+    const email = button.dataset.copyEmail ?? '';
+    let ok = false;
+    try { await Promise.race([navigator.clipboard.writeText(email), new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500))]); ok = true; } catch { ok = false; }
+    if (label) label.textContent = ok ? 'Copied' : 'Copy failed';
+    if (status) status.textContent = ok ? 'Email address copied.' : `Could not copy. The address is ${email}.`;
+    window.setTimeout(() => { if (label) label.textContent = 'Copy'; }, 1800);
+  });
+});
+
+/* Scroll-spy: in a [data-spy] navigation, the link whose section is in the
+   middle of the screen gets data-active; the nav gets --spy-progress (0..1). */
+document.querySelectorAll<HTMLElement>('[data-spy]').forEach(spy => {
+  const links = [...spy.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
+  const targets = links.map(link => document.getElementById(decodeURIComponent(link.hash.slice(1)))).filter((el): el is HTMLElement => !!el);
+  if (!targets.length || !('IntersectionObserver' in window)) return;
+  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const at = targets.indexOf(entry.target as HTMLElement);
+    links.forEach((link, index) => link.toggleAttribute('data-active', index === at));
+    spy.style.setProperty('--spy-progress', String(targets.length > 1 ? at / (targets.length - 1) : 1));
+  }), { rootMargin: '-45% 0px -50% 0px' });
+  targets.forEach(target => observer.observe(target));
+});
+
+/* Scrollytelling: a [data-scrolly] block gets data-at = the index of the
+   [data-scrolly-step] crossing the middle of the screen, so a sticky visual
+   can follow the story. Without JavaScript every step simply reads in order. */
+document.querySelectorAll<HTMLElement>('[data-scrolly]').forEach(block => {
+  const steps = [...block.querySelectorAll<HTMLElement>('[data-scrolly-step]')];
+  if (!steps.length || !('IntersectionObserver' in window)) return;
+  block.dataset.at = '0';
+  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const at = steps.indexOf(entry.target as HTMLElement);
+    block.dataset.at = String(at);
+    steps.forEach((step, index) => step.toggleAttribute('data-current', index === at));
+  }), { rootMargin: '-45% 0px -45% 0px' });
+  steps.forEach(step => observer.observe(step));
+});
 
 /* Live London time in the homepage status line (not shown without JavaScript). */
 const londonTime = document.querySelector<HTMLTimeElement>('[data-london-time]');

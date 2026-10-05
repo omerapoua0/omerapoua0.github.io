@@ -1,0 +1,42 @@
+---
+/* A decorative band of words sliding sideways (aria-hidden: the same facts
+   are on the page as real text). Rows alternate direction; every other word
+   is outlined. It leans with scroll speed (--scroll-vel from fx.ts) and stops
+   with Pause motion or reduced motion. */
+interface Props { rows: string[][]; size?: 'xl' | 'md'; tone?: 'white' | 'navy' | 'clear'; speed?: number }
+const { rows, size = 'xl', tone = 'white', speed = 46 } = Astro.props;
+/* Each half of the track must be wider than the screen, so short lists repeat. */
+const fill = (words: string[]) => { let out = [...words]; while (out.length < 10) out = out.concat(words); return out; };
+---
+<div class:list={['mq', `mq--${size}`, `mq--${tone}`]} aria-hidden="true" style={`--mq-speed:${speed}s`}>
+  {rows.map((row, r) => (
+    <div class:list={['mq__row', { 'mq__row--rev': r % 2 === 1 }]}>
+      <div class="mq__track">
+        {[0, 1].map(() => (
+          <span class="mq__set">{fill(row).map((word, i) => <span class:list={['mq__word', { 'mq__word--ghost': (i + r) % 2 === 1 }]}>{word}<i></i></span>)}</span>
+        ))}
+      </div>
+    </div>
+  ))}
+</div>
+
+<style>
+  .mq { overflow: hidden; display: grid; gap: 4px; padding: clamp(16px, 2.2vw, 30px) 0; }
+  .mq--white { background: var(--surface); border-block: 1px solid var(--line); }
+  .mq--navy { background: var(--navy); color: #fff; }
+  .mq__track { display: flex; width: max-content; }
+  .mq__set { display: flex; flex: none; transform: skewX(calc(var(--scroll-vel, 0) * -12deg)); }
+  .mq__word { display: inline-flex; align-items: center; gap: .5em; padding-right: .5em; font-weight: 660; letter-spacing: -.05em; line-height: 1.12; white-space: nowrap; }
+  .mq--xl .mq__word { font-size: clamp(1.7rem, 1rem + 3vw, 3.8rem); }
+  .mq--md .mq__word { font-size: clamp(1.15rem, .9rem + 1.2vw, 1.9rem); letter-spacing: -.035em; }
+  .mq__word--ghost { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
+  .mq--navy .mq__word--ghost { -webkit-text-stroke-color: #c9d3ff; }
+  .mq__word i { width: .3em; height: .3em; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 .12em var(--accent-soft); }
+  .mq--navy .mq__word i { background: #8ea6ff; box-shadow: 0 0 0 .12em #8ea6ff33; }
+  @media (prefers-reduced-motion: no-preference) {
+    .mq__track { animation: mq-slide var(--mq-speed) linear infinite; }
+    .mq__row--rev .mq__track { animation-direction: reverse; animation-duration: calc(var(--mq-speed) * 1.18); }
+    :global(html[data-motion='off']) .mq__track { animation-play-state: paused; }
+  }
+  @keyframes mq-slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+</style>

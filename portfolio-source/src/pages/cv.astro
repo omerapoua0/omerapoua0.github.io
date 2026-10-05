@@ -1,97 +1,193 @@
 ---
 import Base from '../layouts/Base.astro';
-import PageIntro from '../components/PageIntro.astro';
+import PageHero from '../components/PageHero.astro';
 import SectionHead from '../components/SectionHead.astro';
+import Marquee from '../components/Marquee.astro';
 import Timeline from '../components/Timeline.astro';
+import ContactBand from '../components/ContactBand.astro';
 import { certifications, education, languages, researchAndTeaching, skillGroups, technicalExperience } from '../data/experience';
+
+/* Split a CV skill line on commas that are not inside brackets. */
+const split = (items: string) => items.split(/,\s*(?![^()]*\))/).map(item => item.trim()).filter(Boolean);
+const allSkills = skillGroups.flatMap(group => split(group.items)).map(item => item.replace(/\s*\(.*\)$/, ''));
+const half = Math.ceil(allSkills.length / 2);
 ---
 <Base title="About & CV" description="About Omar Aboelella: AI Product Engineer at Digis Squared, BSc Computer Science & Mathematics student at Birkbeck, Maths & Physics Teaching Assistant. Experience, education, certifications and CV.">
-  <PageIntro section="About & CV" meta={['London, UK', 'Arabic · English']}>
-    <Fragment slot="title">I like making difficult things <em class="voice">make sense.</em></Fragment>
+  <PageHero
+    index={4}
+    section="About & CV"
+    meta={['London, UK', 'Arabic · English']}
+    watermark="CV"
+    lines={[{ text: 'I like making difficult things' }, { text: 'make sense.', accent: true }]}
+    chips={[
+      { value: certifications.length, label: 'certifications · IBM, Google, Microsoft' },
+      { text: '2028', label: 'BSc CS & Maths, Birkbeck · expected' },
+      { value: languages.length, label: 'languages · Arabic & English' },
+      { text: 'Distinction', label: 'Access to HE Engineering · 2025' },
+    ]}
+  >
     <p class="lede">I’m Omar Aboelella: AI product engineer, Computer Science &amp; Mathematics student and tutor, based in London.</p>
-    <div class="actions cv-actions"><a class="btn btn--accent" href="/Omar-Aboelella-CV.pdf" download>Download CV <span class="arrow arrow--down" aria-hidden="true">↓</span></a><a class="btn btn--ghost" href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">Open PDF <span class="arrow" aria-hidden="true">↗</span></a></div>
     <figure slot="aside" class="portrait">
-      <img src="/omar-aboelella.jpg" alt="Portrait of Omar Aboelella" width="900" height="1200" loading="eager" decoding="async" />
-      <figcaption class="label">Omar Aboelella · London</figcaption>
+      <div class="portrait__frame">
+        <picture>
+          <source srcset="/portrait-hero.webp" type="image/webp" />
+          <img src="/portrait-hero.jpg" alt="Portrait of Omar Aboelella" width="720" height="900" loading="eager" decoding="async" data-fx="parallax-slow" />
+        </picture>
+      </div>
+      <figcaption><span>Omar Aboelella</span><span>London</span></figcaption>
     </figure>
-  </PageIntro>
+    <Fragment slot="actions">
+      <a class="btn btn--accent" href="/Omar-Aboelella-CV.pdf" download data-magnetic>Download CV <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+      <a class="btn btn--ghost" href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">Open PDF <span class="arrow" aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+      <a class="btn btn--ghost" href="/contact.html?topic=Opportunity" data-open="Contact">Get in touch</a>
+    </Fragment>
+  </PageHero>
 
-  <section class="section wrap" aria-labelledby="profile-title">
-    <div class="profile">
-      <div>
-        <p class="label"><span class="section-mark">§1</span> Profile</p>
+  <section class="stage" aria-labelledby="profile-title">
+    <div class="wrap profile">
+      <div class="profile__head" data-reveal>
+        <p class="eyebrow"><b>01</b>Profile</p>
         <h2 id="profile-title">Understand it. Build it. <em class="voice">Explain it.</em></h2>
       </div>
-      <div class="profile__copy">
+      <div class="profile__copy" data-reveal>
         <p class="lede">I build machine-learning and optimisation systems from the mathematics through to production code.</p>
         <p>I’m strong in Python, SQL and statistical modelling, with practical experience in Bayesian inference, predictive modelling and data pipelines. My work spans network autonomy, predictive modelling, market intelligence and learning products.</p>
         <p>Engineering and teaching ask me to do something similar: find the structure inside a difficult problem and make the next step clearer. Longer term, I want to pursue deeper research in optimisation and intelligent systems.</p>
-        <dl class="facts profile__facts">
-          <div><dt class="label">Studying</dt><dd>BSc (Hons) Computer Science &amp; Mathematics, Birkbeck · targeting First Class Honours</dd></div>
-          <div><dt class="label">Looking for</dt><dd>A Sales &amp; Trading or quantitative internship, applying mathematics and programming to markets and systematic decision-making</dd></div>
-          <div><dt class="label">Languages</dt><dd>{languages.map(item => `${item.name} (${item.level.toLowerCase()})`).join(', ')}</dd></div>
-        </dl>
+      </div>
+      <dl class="profile__facts" data-reveal-stagger="scale">
+        <div><dt class="label">Studying</dt><dd>BSc (Hons) Computer Science &amp; Mathematics, Birkbeck · targeting First Class Honours</dd></div>
+        <div><dt class="label">Looking for</dt><dd>A Sales &amp; Trading or quantitative internship, applying mathematics and programming to markets and systematic decision-making</dd></div>
+        <div><dt class="label">Languages</dt><dd>{languages.map(item => `${item.name} (${item.level.toLowerCase()})`).join(', ')}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="stage stage--grey" id="experience" aria-labelledby="experience-title">
+    <div class="wrap">
+      <SectionHead mark="02" label="Experience" id="experience-title">The work <em class="voice">so far.</em>
+        <p slot="aside">As on my CV, newest first. Each role links to where it shows up on this site.</p>
+      </SectionHead>
+      <div class="xp">
+        <div class="xp__group">
+          <h3 class="xp__title"><span class="idx">A</span> Technical experience</h3>
+          <Timeline roles={technicalExperience} />
+        </div>
+        <div class="xp__group">
+          <h3 class="xp__title"><span class="idx">B</span> Research &amp; teaching</h3>
+          <Timeline roles={researchAndTeaching} />
+        </div>
+      </div>
+      <p class="muted fine">My wider work experience also includes Rapport.</p>
+    </div>
+  </section>
+
+  <section class="stage" id="education" aria-labelledby="education-title">
+    <div class="wrap">
+      <SectionHead mark="03" label="Education" id="education-title">Always <em class="voice">a student.</em></SectionHead>
+      <ol class="edu" data-reveal-stagger="scale">
+        {education.map((item, index) => (
+          <li class:list={['edu__card', { 'edu__card--lead': index === 0 }]} data-glow>
+            <p class="edu__period num">{item.period}</p>
+            <p class="label">{item.org}</p>
+            <h3>{item.title}</h3>
+            <p class="muted">{item.text}</p>
+          </li>
+        ))}
+        <li class="edu__card edu__card--certs">
+          <p class="edu__period num">Certifications</p>
+          <p class="label">Professional learning</p>
+          <ul class="certs">{certifications.map(name => <li>{name}</li>)}</ul>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <Marquee rows={[allSkills.slice(0, half), allSkills.slice(half)]} tone="navy" size="md" />
+
+  <section class="stage stage--grey" id="skills" aria-labelledby="skills-title">
+    <div class="wrap">
+      <SectionHead mark="04" label="Skills" id="skills-title">Ideas <em class="voice">into systems.</em>
+        <p slot="aside">As listed on my CV. For where each skill was used, see the <a href="/index.html#skills-title">capability matrix</a>.</p>
+      </SectionHead>
+      <dl class="skills" data-reveal-stagger>
+        {skillGroups.map((group, index) => (
+          <div class="skills__group">
+            <dt><span class="idx">{String(index + 1).padStart(2, '0')}</span> {group.title}</dt>
+            <dd><ul class="pills">{split(group.items).map(item => <li>{item}</li>)}</ul></dd>
+          </div>
+        ))}
+      </dl>
+      <div class="cv-cta" data-reveal="wipe">
+        <div>
+          <p class="label">The full CV</p>
+          <p class="cv-cta__title">Everything above, on one page.</p>
+        </div>
+        <div class="actions">
+          <a class="btn" href="/Omar-Aboelella-CV.pdf" download>Download CV <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+          <a class="btn btn--accent" href="/contact.html?topic=Opportunity" data-open="Contact">Talk about a role <span class="arrow" aria-hidden="true">↗</span></a>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="section section--rule wrap" id="experience" aria-labelledby="experience-title">
-    <SectionHead mark="2" label="Experience" id="experience-title">The work <em class="voice">so far.</em></SectionHead>
-    <h3 class="group-title label">Technical experience</h3>
-    <Timeline roles={technicalExperience} />
-    <h3 class="group-title label">Research &amp; teaching</h3>
-    <Timeline roles={researchAndTeaching} />
-    <p class="muted fine">My wider work experience also includes Rapport.</p>
-  </section>
-
-  <section class="section section--rule wrap" id="education" aria-labelledby="education-title">
-    <SectionHead mark="3" label="Education" id="education-title">Always <em class="voice">a student.</em></SectionHead>
-    <ol class="timeline-lite">
-      {education.map(item => (
-        <li><p class="num">{item.period}</p><div><p class="label">{item.org}</p><h3>{item.title}</h3><p class="muted">{item.text}</p></div></li>
-      ))}
-      <li><p class="num">Certifications</p><div><p class="label">Professional learning</p><ul class="certs">{certifications.map(name => <li>{name}</li>)}</ul></div></li>
-    </ol>
-  </section>
-
-  <section class="section section--rule wrap" id="skills" aria-labelledby="skills-title">
-    <SectionHead mark="4" label="Skills" id="skills-title">Ideas <em class="voice">into systems.</em>
-      <p slot="aside">As listed on my CV. For where each skill was used, see the <a href="/index.html#skills-title">capability matrix</a>.</p>
-    </SectionHead>
-    <dl class="skills">
-      {skillGroups.map(group => <div><dt class="label">{group.title}</dt><dd>{group.items}</dd></div>)}
-    </dl>
-  </section>
+  <ContactBand
+    title="Hiring, collaborating"
+    accent="or just curious?"
+    lede="Roles, internships, research or projects. Write a line or two; the form prepares an email you check and send yourself."
+    topic="Opportunity"
+    next={{ href: '/tutoring.html', label: 'Lessons', note: 'GCSE & A-level maths and science, online, with a free 15-minute intro call.' }}
+  />
 </Base>
 
 <style>
-  .cv-actions { margin-top: var(--s-6); }
-  .portrait { position: relative; max-width: 420px; justify-self: end; width: 100%; }
-  .portrait img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center top; background: var(--raised); }
-  .portrait figcaption { margin-top: var(--s-3); }
+  .portrait { position: relative; width: min(100%, 440px); justify-self: center; display: grid; gap: 12px; }
+  .portrait__frame { border-radius: var(--radius-3); overflow: hidden; background: var(--raised); box-shadow: var(--shadow-3); border: 8px solid #fff; }
+  .portrait img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 20%; scale: 1.18; }
+  .portrait figcaption { display: flex; justify-content: space-between; gap: 10px; padding: 0 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+
   .profile { display: grid; gap: var(--s-6); }
-  .profile__copy { display: grid; gap: var(--s-5); }
-  .profile__copy > p:not(.lede) { max-width: 62ch; }
-  .profile__facts { margin-top: var(--s-4); }
+  .profile__head { display: grid; gap: var(--s-4); }
+  .profile__head h2 { max-width: 14ch; }
+  .profile__copy { display: grid; gap: var(--s-4); }
+  .profile__copy > p:not(.lede) { max-width: 62ch; color: var(--ink-2); }
+  .profile__facts { display: grid; gap: 12px; }
+  .profile__facts > div { display: grid; gap: 8px; padding: 22px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); }
   .profile__facts dd { margin: 0; }
   @media (min-width: 1024px) {
     .profile { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); }
-    .profile > div:first-child { grid-column: 1 / span 5; }
+    .profile__head { grid-column: 1 / span 5; }
     .profile__copy { grid-column: 7 / span 6; }
+    .profile__facts { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--s-5); }
   }
-  .group-title { margin: var(--s-7) 0 var(--s-3); }
-  .group-title:first-of-type { margin-top: 0; }
-  .fine { margin-top: var(--s-5); font-size: var(--step-small); }
-  .timeline-lite { border-top: 1px solid var(--line-strong); }
-  .timeline-lite > li { display: grid; gap: var(--s-2); padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
-  .timeline-lite > li > p.num { font-size: 12.5px; color: var(--muted); padding-top: .3em; }
-  .timeline-lite > li > div { display: grid; gap: var(--s-2); }
-  .certs { display: grid; gap: 6px; }
-  .certs li { font-weight: 500; }
-  .certs li::before { content: '— '; color: var(--accent); }
-  @media (min-width: 768px) { .timeline-lite > li { grid-template-columns: 200px minmax(0, 1fr); gap: var(--gutter); } }
-  .skills { display: grid; border-top: 1px solid var(--line-strong); }
-  .skills > div { display: grid; gap: var(--s-2); padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
-  .skills dd { margin: 0; max-width: 70ch; }
-  @media (min-width: 768px) { .skills > div { grid-template-columns: 200px minmax(0, 1fr); gap: var(--gutter); } }
+
+  .xp { display: grid; gap: var(--s-7); }
+  .xp__title { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-5); font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+  .xp__title .idx { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; }
+  @media (min-width: 1200px) { .xp { grid-template-columns: 1fr 1fr; column-gap: var(--gutter); align-items: start; } .xp :global(.timeline__row) { grid-template-columns: 1fr; } }
+  .fine { margin-top: var(--s-6); font-size: var(--step-small); }
+
+  .edu { display: grid; gap: 14px; }
+  .edu__card { --gx: 50%; --gy: 50%; position: relative; display: grid; gap: 8px; align-content: start; padding: 26px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+  .edu__card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(300px circle at var(--gx) var(--gy), #1f4bff14, transparent 60%); opacity: 0; transition: opacity 300ms; pointer-events: none; }
+  .edu__card:hover::before { opacity: 1; }
+  .edu__period { font-size: 12.5px; color: var(--accent); font-weight: 600; }
+  .edu__card h3 { font-size: clamp(1.3rem, 1.1rem + .8vw, 1.8rem); }
+  .edu__card--lead { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 30px 60px -30px var(--accent-glow); }
+  .edu__card--lead :is(.edu__period, .label, .muted) { color: #e3e9ff; }
+  .edu__card--certs { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .edu__card--certs :is(.edu__period, .label) { color: #9fb2ff; }
+  .certs { display: grid; gap: 8px; margin-top: 6px; }
+  .certs li { display: flex; gap: 10px; align-items: center; font-weight: 560; }
+  .certs li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #8ea6ff; box-shadow: 0 0 0 4px #8ea6ff33; }
+  @media (min-width: 768px) { .edu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1200px) { .edu { grid-template-columns: 1.4fr 1fr 1fr 1.2fr; } }
+
+  .skills { display: grid; gap: 14px; }
+  .skills__group { display: grid; gap: 14px; padding: 24px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); }
+  .skills__group dt { display: flex; gap: 10px; align-items: baseline; font-weight: 640; font-size: 1.15rem; letter-spacing: -.02em; }
+  .skills__group dd { margin: 0; }
+  @media (min-width: 900px) { .skills { grid-template-columns: 1fr 1fr; } }
+  .cv-cta { display: grid; gap: var(--s-5); align-items: center; margin-top: var(--s-7); padding: clamp(24px, 3vw, 40px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); }
+  .cv-cta__title { font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.6rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; margin-top: 6px; }
+  @media (min-width: 900px) { .cv-cta { grid-template-columns: 1fr auto; } }
 </style>

@@ -1,93 +1,234 @@
 ---
 import Base from '../layouts/Base.astro';
-import PageIntro from '../components/PageIntro.astro';
+import PageHero from '../components/PageHero.astro';
 import SectionHead from '../components/SectionHead.astro';
-import Figure from '../components/Figure.astro';
+import Marquee from '../components/Marquee.astro';
+import ContactBand from '../components/ContactBand.astro';
 
 const offers = [
-  { num: '01', area: 'Information', title: 'Research & reporting', copy: 'Source collection, structured summaries and recurring reports that keep a route back to the evidence.', brief: 'research and reporting' },
-  { num: '02', area: 'Coordination', title: 'AI & agent workflows', copy: 'Multi-step reasoning, retrieval and tool use, with checkpoints for the decisions a person needs to own.', brief: 'an AI workflow' },
-  { num: '03', area: 'Integration', title: 'Connected data', copy: 'APIs, Python and structured pipelines that move information between systems and cut repeated handling.', brief: 'data integration' },
+  { num: '01', area: 'Information', title: 'Research & reporting', copy: 'Source collection, structured summaries and recurring reports that keep a route back to the evidence.', brief: 'research and reporting', glyph: 'M4 5h16M4 10h16M4 15h10M4 20h7' },
+  { num: '02', area: 'Coordination', title: 'AI & agent workflows', copy: 'Multi-step reasoning, retrieval and tool use, with checkpoints for the decisions a person needs to own.', brief: 'an AI workflow', glyph: 'M12 3v4M12 17v4M3 12h4M17 12h4M7 7l2 2M15 15l2 2M17 7l-2 2M9 15l-2 2' },
+  { num: '03', area: 'Integration', title: 'Connected data', copy: 'APIs, Python and structured pipelines that move information between systems and cut repeated handling.', brief: 'data integration', glyph: 'M4 7h6v10H4zM14 7h6v10h-6zM10 12h4' },
 ];
 const principles = [
   { title: 'Map the existing process', copy: 'What triggers it? Which tools and people are involved? Where does the time disappear?' },
   { title: 'Keep control where it matters', copy: 'Define permissions, review points and what should stop for a human decision.' },
   { title: 'Test the awkward cases', copy: 'Missing data, failed requests and uncertain results deserve attention before a workflow becomes routine.' },
 ];
+const story = [
+  { step: 'Gather', title: 'Pull the sources, every week.', copy: 'An automated weekly pipeline pulls competitor data from Bloomberg and other sources for the offshore-wind market intelligence team.' },
+  { step: 'Analyse', title: 'Run the same analysis, the same way.', copy: 'The steps that used to be rebuilt by hand become one process the team can run again.' },
+  { step: 'Deliver', title: 'Land it in the format people use.', copy: 'The output is an Excel report, in the format the team already worked with, not a new tool to learn.' },
+];
 ---
 <Base title="Automations" description="Practical automation for research, data and AI workflows, with clear checkpoints and human oversight. Based on Omar Aboelella’s competitor-intelligence pipeline work at BP.">
-  <PageIntro section="Automations" meta={['Research', 'Data', 'AI workflows']}>
-    <Fragment slot="title">Less repetition. <em class="voice">More room to think.</em></Fragment>
+  <PageHero
+    index={2}
+    section="Automations"
+    meta={['Research', 'Data', 'AI workflows']}
+    watermark="FLOW"
+    lines={[{ text: 'Less repetition.' }, { text: 'More room to think.', accent: true }]}
+    chips={[
+      { text: 'Weekly', label: 'BP pipeline · Bloomberg → Excel' },
+      { value: offers.length, label: 'ways I can help' },
+      { value: principles.length, label: 'principles before any build' },
+      { text: 'You', label: 'own the decisions · human checkpoints' },
+    ]}
+  >
     <p class="lede">I’m interested in the work between tools: gathering information, checking it, making a decision and getting the result somewhere useful.</p>
-    <div slot="aside" class="actions"><a class="btn btn--accent" href="/contact.html?topic=Automation">Bring me a workflow <span class="arrow" aria-hidden="true">↗</span></a></div>
-  </PageIntro>
+    <div slot="aside" class="flow-card" aria-hidden="true">
+      <span class="flow-card__label">Pipeline · schematic</span>
+      <ol class="flow-card__nodes">
+        <li><b>Sources</b><span>Bloomberg + others</span></li>
+        <li><b>Analyse</b><span>Weekly</span></li>
+        <li><b>Report</b><span>Excel</span></li>
+      </ol>
+      <span class="flow-card__pulse"></span>
+      <span class="flow-card__check">Human checkpoint</span>
+    </div>
+    <Fragment slot="actions">
+      <a class="btn btn--accent" href="/contact.html?topic=Automation" data-open="Contact" data-magnetic>Bring me a workflow <span class="arrow" aria-hidden="true">↗</span></a>
+      <a class="btn btn--ghost" href="#bp-story">See the BP pipeline <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+    </Fragment>
+  </PageHero>
 
-  <section class="section wrap" aria-labelledby="bp-title">
-    <div class="split">
-      <div class="split__copy">
-        <p class="label"><span class="section-mark">§1</span> From my work · BP, 2024</p>
-        <h2 id="bp-title">A weekly report, <em class="voice">without a weekly rebuild.</em></h2>
-        <p>At BP I built a competitor intelligence engine for the offshore-wind market intelligence team: an automated weekly pipeline that pulls competitor data from Bloomberg and other sources, analyses it and produces Excel reports.</p>
-        <p class="muted">The useful part was connecting the steps into a process the team could run again, in the format people already used.</p>
-        <a class="link-arrow" href="/work.html#bp">Read the case study <span aria-hidden="true">↗</span></a>
+  <section class="stage" id="bp-story" aria-labelledby="bp-title">
+    <div class="wrap">
+      <SectionHead mark="01" label="From my work · BP, 2024" id="bp-title">A weekly report, <em class="voice">without a weekly rebuild.</em>
+        <p slot="aside">At BP I built a competitor intelligence engine for the offshore-wind market intelligence team. The useful part was connecting the steps into a process the team could run again.</p>
+      </SectionHead>
+      <div class="story" data-scrolly>
+        <div class="story__visual" aria-hidden="true">
+          <div class="pipe">
+            <span class="pipe__grid"></span>
+            <div class="pipe__node pipe__node--0"><span class="idx">01</span><b>Gather</b><small>Bloomberg · other sources</small></div>
+            <div class="pipe__node pipe__node--1"><span class="idx">02</span><b>Analyse</b><small>Weekly, repeatable</small></div>
+            <div class="pipe__node pipe__node--2"><span class="idx">03</span><b>Deliver</b><small>Excel report</small></div>
+            <span class="pipe__wire pipe__wire--a"><i></i></span>
+            <span class="pipe__wire pipe__wire--b"><i></i></span>
+            <span class="pipe__cap">Schematic of the process, not data or results</span>
+          </div>
+        </div>
+        <ol class="story__steps">
+          {story.map((item, index) => (
+            <li class="story__step" data-scrolly-step>
+              <span class="idx">{String(index + 1).padStart(2, '0')}<span>/03 · {item.step}</span></span>
+              <h3>{item.title}</h3>
+              <p>{item.copy}</p>
+            </li>
+          ))}
+          <li class="story__step story__step--end" data-scrolly-step>
+            <p class="muted">The same shape fits a lot of repeated work: a clear input, a checkable output and a plan for when something goes wrong.</p>
+            <div class="actions">
+              <a class="btn" href="/inside/bp.html" data-open="BP">Take the BP tour <span class="arrow" aria-hidden="true">↗</span></a>
+              <a class="go" href="/work.html#bp">Read the case study <span aria-hidden="true">↗</span></a>
+            </div>
+          </li>
+        </ol>
       </div>
-      <figure class="plate plate--type split__figure"><Figure kind="pipeline" /></figure>
     </div>
   </section>
 
-  <section class="section section--surface" aria-labelledby="offers-title">
+  <Marquee rows={[['Research', 'Reporting', 'Agents', 'Retrieval', 'Tool use', 'Checkpoints'], ['APIs', 'Python', 'Pipelines', 'Excel', 'Summaries', 'Evidence']]} tone="navy" />
+
+  <section class="stage stage--grey" aria-labelledby="offers-title">
     <div class="wrap">
-      <SectionHead mark="2" label="Where I can help" id="offers-title">Start with <em class="voice">the bottleneck.</em></SectionHead>
-      <ol class="offers">
+      <SectionHead mark="02" label="Where I can help" id="offers-title">Start with <em class="voice">the bottleneck.</em>
+        <p slot="aside">Pick the closest fit and the contact form opens with it already filled in.</p>
+      </SectionHead>
+      <ol class="offers" data-reveal-stagger="scale">
         {offers.map(offer => (
           <li>
-            <p class="label"><span class="num">{offer.num}</span> / {offer.area}</p>
-            <h3>{offer.title}</h3>
-            <p class="muted">{offer.copy}</p>
-            <a class="link-arrow" href={`/contact.html?topic=Automation&brief=${encodeURIComponent(offer.brief)}`}>Discuss {offer.brief} <span aria-hidden="true">↗</span></a>
+            <a class="offer" href={`/contact.html?topic=Automation&brief=${encodeURIComponent(offer.brief)}`} data-open="Contact" data-tilt data-glow>
+              <span class="offer__top"><span class="idx">{offer.num}<span>/03</span></span><span class="offer__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d={offer.glyph} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span></span>
+              <span class="offer__area">{offer.area}</span>
+              <span class="offer__title">{offer.title}</span>
+              <span class="offer__copy">{offer.copy}</span>
+              <span class="offer__cta">Discuss {offer.brief} <span aria-hidden="true">↗</span></span>
+            </a>
           </li>
         ))}
       </ol>
     </div>
   </section>
 
-  <section class="section wrap" aria-labelledby="approach-title">
-    <SectionHead mark="3" label="Approach" id="approach-title">Make the hand-offs <em class="voice">explicit.</em>
-      <p slot="aside">A useful automation has a clear input, a checkable output and a plan for when something goes wrong.</p>
-    </SectionHead>
-    <ol class="principles">
-      {principles.map((item, index) => <li><span class="num">{String(index + 1).padStart(2, '0')}</span><h3>{item.title}</h3><p class="muted">{item.copy}</p></li>)}
-    </ol>
-  </section>
-
-  <section class="section wrap">
-    <div class="cta-band">
-      <h2>What are you doing <em class="voice">over and over?</em></h2>
-      <p class="muted">Tell me the current process, the tools involved and what a useful outcome would look like. Please leave out credentials and confidential records.</p>
-      <div class="actions"><a class="btn btn--accent" href="/contact.html?topic=Automation">Outline your workflow <span class="arrow" aria-hidden="true">↗</span></a></div>
+  <section class="stage" aria-labelledby="approach-title">
+    <div class="wrap">
+      <SectionHead mark="03" label="Approach" id="approach-title">Make the hand-offs <em class="voice">explicit.</em>
+        <p slot="aside">A useful automation has a clear input, a checkable output and a plan for when something goes wrong.</p>
+      </SectionHead>
+      <div class="principles-wrap">
+      <span class="principles__line" aria-hidden="true"><i data-fx="grow-x"></i></span>
+      <ol class="principles">
+        {principles.map((item, index) => (
+          <li data-reveal="right" style={`--reveal-delay:${index * 120}ms`}>
+            <span class="principles__dot" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+            <h3>{item.title}</h3>
+            <p class="muted">{item.copy}</p>
+          </li>
+        ))}
+      </ol>
+      </div>
     </div>
   </section>
+
+  <ContactBand
+    title="What are you doing"
+    accent="over and over?"
+    lede="Tell me the current process, the tools involved and what a useful outcome would look like. Please leave out credentials and confidential records."
+    topic="Automation"
+    primary="Outline your workflow"
+    next={{ href: '/research.html', label: 'Research', note: 'The questions behind the systems: AI and learning, optimisation, modelling.' }}
+  />
 </Base>
 
 <style>
-  .split { display: grid; gap: var(--s-7); }
-  .split__copy { display: grid; gap: var(--s-5); align-content: start; }
-  .split__copy p { max-width: 56ch; }
-  .split__figure { aspect-ratio: 16 / 10; padding: var(--s-5); }
+  /* Hero card: a small live schematic. */
+  .flow-card { position: relative; display: grid; gap: 18px; padding: 26px; border-radius: var(--radius-3); background: var(--navy); color: #fff; box-shadow: var(--shadow-3); overflow: hidden; isolation: isolate; }
+  .flow-card::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(60% 70% at 80% 0%, #1f4bff88, transparent 70%), linear-gradient(#ffffff0a 1px, transparent 1px) 0 0 / 32px 32px, linear-gradient(90deg, #ffffff0a 1px, transparent 1px) 0 0 / 32px 32px; }
+  .flow-card__label, .flow-card__check { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9fb2ff; }
+  .flow-card__nodes { position: relative; display: grid; gap: 12px; }
+  .flow-card__nodes::before { content: ''; position: absolute; left: 21px; top: 22px; bottom: 22px; width: 2px; background: linear-gradient(#8ea6ff, #8ea6ff33); }
+  .flow-card__nodes li { position: relative; display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 2px 14px; padding: 10px 14px 10px 0; }
+  .flow-card__nodes li::before { content: ''; grid-row: span 2; width: 44px; height: 44px; border-radius: 14px; background: #ffffff14; border: 1px solid #ffffff33; box-shadow: inset 0 0 18px #1f4bff55; }
+  .flow-card__nodes b { font-size: 1.35rem; letter-spacing: -.03em; font-weight: 640; }
+  .flow-card__nodes span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--navy-muted); }
+  .flow-card__pulse { position: absolute; left: 47px; top: 76px; width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px #1f4bff66, 0 0 20px 6px #8ea6ff; }
+  .flow-card__check { justify-self: start; padding: 6px 12px; border-radius: 999px; border: 1px dashed #8ea6ff99; }
+
+  /* Sticky storytelling: the pipeline holds still while the steps scroll. */
+  .story { display: grid; gap: clamp(24px, 4vw, 64px); }
+  .story__visual { position: relative; }
+  .pipe { position: relative; display: grid; gap: 14px; padding: clamp(20px, 3vw, 40px); border-radius: var(--radius-3); background: var(--navy); color: #fff; box-shadow: var(--shadow-3); overflow: hidden; isolation: isolate; }
+  .pipe__grid { position: absolute; inset: 0; z-index: -1; background: radial-gradient(70% 60% at 50% 0%, #1f4bff66, transparent 70%), linear-gradient(#ffffff0a 1px, transparent 1px) 0 0 / 40px 40px, linear-gradient(90deg, #ffffff0a 1px, transparent 1px) 0 0 / 40px 40px; }
+  .pipe__node { position: relative; display: grid; gap: 4px; padding: 18px 20px; border-radius: 18px; background: #ffffff0f; border: 1px solid #ffffff26; transition: background-color 600ms var(--ease-out), border-color 600ms, box-shadow 600ms, transform 600ms var(--ease-out), opacity 600ms; }
+  .pipe__node .idx { color: #9fb2ff; }
+  .pipe__node b { font-size: clamp(1.4rem, 1rem + 1.4vw, 2.2rem); letter-spacing: -.04em; font-weight: 660; line-height: 1.05; }
+  .pipe__node small { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--navy-muted); }
+  .pipe__wire { display: none; }
+  .pipe__cap { margin-top: 6px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--navy-muted); }
+  :global(html.js) .story[data-at] .pipe__node { opacity: .8; transform: scale(.97); }
+  .story[data-at='0'] .pipe__node--0, .story[data-at='1'] .pipe__node--1, .story[data-at='2'] .pipe__node--2, .story[data-at='3'] .pipe__node { opacity: 1 !important; }
+  .story[data-at='0'] .pipe__node--0, .story[data-at='1'] .pipe__node--1, .story[data-at='2'] .pipe__node--2 { background: var(--accent); border-color: #8ea6ff; box-shadow: 0 20px 50px -18px #1f4bffcc; transform: scale(1.03) !important; }
+  .story[data-at='0'] .pipe__node--0 :is(.idx, small), .story[data-at='1'] .pipe__node--1 :is(.idx, small), .story[data-at='2'] .pipe__node--2 :is(.idx, small) { color: #fff; }
+  .story__steps { display: grid; gap: 16px; }
+  .story__step { display: grid; gap: 12px; align-content: center; padding: clamp(22px, 3vw, 36px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); transition: box-shadow 500ms, transform 500ms var(--ease-out), opacity 500ms; }
+  .story__step h3 { font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.6rem); letter-spacing: -.045em; line-height: 1.02; }
+  .story__step p { max-width: 50ch; color: var(--ink-2); }
+  .story__step--end { background: transparent; border: 1px dashed var(--line-strong); box-shadow: none; }
+  :global(html.js) .story[data-at] .story__step:not([data-current]) { transform: scale(.97); box-shadow: none; }
+  .story__step[data-current] { box-shadow: var(--shadow-3); border-color: #c9d4ff; }
   @media (min-width: 1024px) {
-    .split { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: center; }
-    .split__copy { grid-column: 1 / span 5; }
-    .split__figure { grid-column: 7 / span 6; }
+    .story { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: start; }
+    .story__visual { position: sticky; top: calc(var(--header) + 40px); }
+    .story__steps { gap: 0; }
+    .story__step { min-height: 62vh; margin-bottom: 24px; }
+    .story__step--end { min-height: 40vh; }
+    .pipe { grid-template-columns: 1fr; gap: 54px; padding: 48px; min-height: 560px; align-content: center; }
+    .pipe__node { width: 66%; }
+    .pipe__node--1 { justify-self: end; }
+    .pipe__wire { display: block; position: absolute; left: 33%; right: 33%; height: 2px; background: #ffffff26; overflow: hidden; }
+    .pipe__wire--a { top: 34%; transform: rotate(9deg); }
+    .pipe__wire--b { top: 66%; transform: rotate(-9deg); }
+    .pipe__wire i { position: absolute; inset: 0; width: 30%; background: linear-gradient(90deg, transparent, #8ea6ff, transparent); }
   }
-  .offers, .principles { display: grid; border-top: 1px solid var(--line-strong); }
-  .offers li, .principles li { display: grid; gap: var(--s-3); align-content: start; padding: var(--s-6) 0; border-bottom: 1px solid var(--line); }
-  .principles .num { font-size: 12px; color: var(--accent); }
+
+  /* Offers: three tall cards that open the form pre-filled. */
+  .offers { display: grid; gap: 16px; }
+  .offers > li { display: grid; }
+  .offer { --gx: 50%; --gy: 50%; position: relative; display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 12px; min-height: 100%; padding: 26px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); text-decoration: none; color: var(--ink); overflow: hidden; isolation: isolate; transition: box-shadow 500ms var(--ease-out); }
+  .offer::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(360px circle at var(--gx) var(--gy), #1f4bff1f, transparent 60%); opacity: 0; transition: opacity 300ms; }
+  .offer:hover { box-shadow: 0 2px 6px #0a0c100d, 0 30px 70px -24px #1f4bff59; }
+  .offer:hover::before { opacity: 1; }
+  .offer__top { display: flex; justify-content: space-between; align-items: center; }
+  .offer__icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--bg); transition: background-color 300ms, color 300ms, rotate 500ms var(--ease-out); }
+  .offer:hover .offer__icon { background: var(--accent); color: #fff; rotate: -10deg; }
+  .offer__area { margin-top: 20px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .offer__title { font-size: clamp(1.8rem, 1.2rem + 1.6vw, 2.6rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; }
+  .offer__copy { color: var(--muted); max-width: 40ch; }
+  .offer__cta { display: inline-flex; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); font-weight: 620; color: var(--accent); }
+  @media (min-width: 900px) { .offers { grid-template-columns: repeat(3, minmax(0, 1fr)); } .offer { min-height: 380px; } }
+
+  /* Principles: a line that draws across three steps. */
+  .principles-wrap { position: relative; }
+  .principles { display: grid; gap: 28px; }
+  .principles__line { display: none; }
+  .principles li { position: relative; display: grid; gap: 12px; align-content: start; padding: 26px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); }
+  .principles__dot { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-mono); font-size: 13px; font-weight: 600; box-shadow: 0 0 0 8px var(--bg), 0 10px 30px -8px var(--accent-glow); }
+  .principles h3 { font-size: clamp(1.3rem, 1.1rem + .6vw, 1.6rem); }
   @media (min-width: 900px) {
-    .offers, .principles { grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
-    .offers li, .principles li { border-bottom: 0; padding: var(--s-6) var(--s-6) var(--s-6) 0; }
-    .offers li + li, .principles li + li { border-left: 1px solid var(--line); padding-left: var(--s-6); }
+    .principles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter); padding-top: 26px; }
+    .principles__line { display: block; position: absolute; left: 26px; right: 26px; top: 52px; height: 2px; background: var(--line); }
+    .principles__line i { position: absolute; inset: 0; background: var(--accent); transform-origin: 0 50%; }
+    .principles li { background: transparent; border: 0; padding: 0 12px 0 0; }
   }
-  .cta-band { display: grid; gap: var(--s-5); padding-top: var(--section); border-top: 1px solid var(--line); }
-  .cta-band h2 { max-width: 16ch; }
-  .cta-band p { max-width: 56ch; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .flow-card__pulse { animation: pulse-run 3.2s var(--ease-io) infinite; }
+    .pipe__wire i { animation: wire-run 2.4s linear infinite; }
+    .pipe__wire--b i { animation-delay: -1.2s; }
+    :global(html[data-motion='off']) :is(.flow-card__pulse, .pipe__wire i) { animation-play-state: paused; }
+  }
+  @keyframes pulse-run { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 45% { transform: translateY(68px); } 90% { opacity: 1; } 100% { transform: translateY(136px); opacity: 0; } }
+  @keyframes wire-run { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
 </style>

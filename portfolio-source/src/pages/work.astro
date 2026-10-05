@@ -1,37 +1,93 @@
 ---
 import Base from '../layouts/Base.astro';
-import PageIntro from '../components/PageIntro.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHead from '../components/SectionHead.astro';
+import Marquee from '../components/Marquee.astro';
 import ProjectIndex from '../components/ProjectIndex.astro';
 import CaseStudy from '../components/CaseStudy.astro';
-import { caseStudies, projects } from '../data/projects';
+import ContactBand from '../components/ContactBand.astro';
+import { areaLabel, caseStudies, projects } from '../data/projects';
+
+const stack = [...new Set(caseStudies.flatMap(project => project.stack))];
+const half = Math.ceil(stack.length / 2);
+const deck = caseStudies.filter(project => project.media).slice(0, 3).reverse();
 ---
 <Base title="Projects" description="Case studies from Omar Aboelella: KATANA network autonomy, NOOKBASE, INOS & OctiMind, Bitget prediction models and BP’s competitor intelligence pipeline.">
-  <PageIntro section="Projects" meta={[`${caseStudies.length} case studies`, '2024 – present']}>
-    <Fragment slot="title">From a hard question <em class="voice">to a working system.</em></Fragment>
+  <PageHero
+    index={1}
+    section="Projects"
+    meta={['2024 – present']}
+    watermark="WORK"
+    lines={[{ text: 'From a hard question' }, { text: 'to a working system.', accent: true }]}
+    chips={[
+      { value: caseStudies.length, label: 'case studies, each with a tour' },
+      { value: projects.length, label: 'projects in the index' },
+      { value: Object.keys(areaLabel).length, label: 'areas · AI, data, networks, research' },
+      { value: 150, prefix: '~', label: 'beta users · NOOKBASE, pre-launch' },
+    ]}
+  >
     <p class="lede">AI product engineering, a learning product, market modelling and the quieter infrastructure that makes good decisions possible.</p>
-    <p slot="aside" class="note">Every case study separates my contribution from the wider team’s work and states its current stage. Concept visuals are labelled as such; they are not product footage.</p>
-  </PageIntro>
+    <p class="note">Every case study separates my contribution from the wider team’s work and states its current stage. Concept visuals are labelled as such; they are not product footage.</p>
+    <div slot="aside" class="deck" aria-hidden="true">
+      {deck.map((project, at) => (
+        <a class="deck__card" style={`--k:${at}`} href={`/inside/${project.id}.html`} tabindex="-1" data-open={project.name}>
+          <span class="plate"><img src={project.media!.image} alt="" width="640" height="400" loading="eager" decoding="async" /></span>
+          <span class="deck__cap"><b>{project.name}</b><span>{project.org === 'Founder' ? 'Founder' : project.org}</span></span>
+        </a>
+      ))}
+      <span class="deck__tag">Concept visuals · not product footage</span>
+    </div>
+    <Fragment slot="actions">
+      <a class="btn" href="#index">Browse the index <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+      <a class="btn btn--accent" href="/inside/katana.html" data-open="KATANA" data-magnetic>Start the tours <span class="arrow" aria-hidden="true">↗</span></a>
+      <a class="btn btn--ghost" href="/contact.html?topic=Project" data-open="Contact">Discuss a project</a>
+    </Fragment>
+  </PageHero>
 
-  <section class="section wrap" aria-labelledby="index-title">
-    <h2 id="index-title" class="sr-only">Project index</h2>
-    <ProjectIndex items={projects} filters label="All projects" />
-  </section>
+  <Marquee rows={[stack.slice(0, half), stack.slice(half)]} size="md" />
 
-  <section class="wrap" aria-label="Case studies">
-    {caseStudies.map((project, index) => <CaseStudy project={project} number={index + 1} />)}
-  </section>
-
-  <section class="section wrap">
-    <div class="closing">
-      <p class="label"><span class="section-mark">§</span> A conversation, not a pitch deck</p>
-      <h2>Interested in the decisions <em class="voice">behind the work?</em></h2>
-      <p class="muted">I’m happy to talk through the parts I can share.</p>
-      <div class="actions"><a class="btn btn--accent" href="/contact.html?topic=Project">Discuss a project <span class="arrow" aria-hidden="true">↗</span></a><a class="btn btn--ghost" href="/cv.html">Experience & CV</a></div>
+  <section class="stage" id="index" aria-labelledby="index-title">
+    <div class="wrap">
+      <SectionHead mark="01" label="Index" id="index-title">Every project, <em class="voice">one list.</em>
+        <p slot="aside">Hover or focus a row to preview it. Filter by area, or switch to a grid of plates.</p>
+      </SectionHead>
+      <ProjectIndex items={projects} filters label="All projects" />
     </div>
   </section>
+
+  <section class="stage stage--grey" aria-labelledby="cases-title">
+    <div class="wrap">
+      <SectionHead mark="02" label="Case studies" id="cases-title">What I did, <em class="voice">what stage it’s at.</em>
+        <p slot="aside">Five projects in depth. Each one opens a short tour: the problem, my part, how it works and where it stands.</p>
+      </SectionHead>
+      <div class="cases">
+        {caseStudies.map((project, index) => <CaseStudy project={project} number={index + 1} total={caseStudies.length} />)}
+      </div>
+    </div>
+  </section>
+
+  <ContactBand
+    title="Interested in the decisions"
+    accent="behind the work?"
+    lede="I’m happy to talk through the parts I can share. Write a line or two; the form prepares an email you check and send yourself."
+    topic="Project"
+    primary="Discuss a project"
+    next={{ href: '/automations.html', label: 'Automations', note: 'The same pipeline thinking, applied to the work you repeat every week.' }}
+  />
 </Base>
 
 <style>
-  .closing { display: grid; gap: var(--s-5); padding-top: var(--section); border-top: 1px solid var(--line); }
-  .closing h2 { max-width: 18ch; }
+  .deck { position: relative; height: clamp(280px, 34vw, 460px); margin-inline: auto; width: min(100%, 520px); }
+  .deck__card { position: absolute; left: 50%; top: 50%; width: 82%; translate: -50% -50%; display: grid; gap: 0; padding: 8px 8px 12px; border-radius: 22px; background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-3); text-decoration: none; color: var(--ink); transform: rotate(calc((var(--k) - 1) * 7deg)) translate(calc((var(--k) - 1) * 26px), calc((1 - var(--k)) * 14px)); transition: transform 700ms var(--ease-out); }
+  .deck__card .plate { display: block; aspect-ratio: 16 / 10; border-radius: 16px; }
+  .deck__cap { display: flex; justify-content: space-between; gap: 10px; padding: 10px 6px 0; font-size: 14px; }
+  .deck__cap span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  .deck:hover .deck__card { transform: rotate(calc((var(--k) - 1) * 11deg)) translate(calc((var(--k) - 1) * 70px), calc((1 - var(--k)) * 6px)); }
+  .deck__tag { position: absolute; left: 50%; bottom: 0; translate: -50% 0; padding: 5px 12px; border-radius: 999px; background: #ffffffd9; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  @media (max-width: 1099px) { .deck { height: clamp(240px, 62vw, 400px); } }
+  @media (prefers-reduced-motion: no-preference) {
+    .deck__card { animation: deck-float 7s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -2.3s); }
+    :global(html[data-motion='off']) .deck__card { animation-play-state: paused; }
+  }
+  @keyframes deck-float { from { translate: -50% -50%; } to { translate: -50% calc(-50% - 12px); } }
 </style>
