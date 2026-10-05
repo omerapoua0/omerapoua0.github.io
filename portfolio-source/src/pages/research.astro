@@ -90,7 +90,7 @@ const legend: Status[] = ['progress', 'incoming', 'exploratory', 'aspiration'];
       </SectionHead>
       <div class="stack">
         {entries.map((entry, index) => (
-          <article class="entry" id={entry.id} aria-labelledby={`${entry.id}-q`} style={`--n:${index}`}>
+          <article class="entry" id={entry.id} aria-labelledby={`${entry.id}-q`} style={`--n:${index}`} data-reveal="scale">
             {entry.aliases?.map(alias => <span id={alias} class="entry__alias"></span>)}
             <div class="entry__side">
               <span class="entry__q" aria-hidden="true">Q{index + 1}</span>
@@ -98,7 +98,7 @@ const legend: Status[] = ['progress', 'incoming', 'exploratory', 'aspiration'];
               <span class:list={['chip', `chip--${entry.status}`]}>{entry.statusText}</span>
               {entry.figure && <figure class="plate plate--type entry__figure"><Figure kind="ai-he" /></figure>}
             </div>
-            <div class="entry__main">
+            <div class="entry__main" data-reveal-stagger="right">
               <p class="idx">Q{index + 1}<span>/{String(entries.length).padStart(2, '0')}</span></p>
               <h2 id={`${entry.id}-q`}>{entry.question}</h2>
               <p class="lede">{entry.lede}</p>
