@@ -4,6 +4,7 @@
    from src/data or the CV. Doors are plain links (no JavaScript needed);
    gate.ts plays the light-gate open on them. */
 import RobotStage from './RobotStage.astro';
+import MotionToggle from './MotionToggle.astro';
 import { caseStudies } from '../data/projects';
 import { capabilities } from '../data/capabilities';
 
@@ -68,10 +69,7 @@ const doors = [
       ))}
     </ul>
 
-    <button class="hero__pause" type="button" data-motion-toggle>
-      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
-      <span data-motion-label>Pause motion</span>
-    </button>
+    <MotionToggle class="hero__pause" />
   </div>
 </section>
 
@@ -98,16 +96,18 @@ const doors = [
 
 <style>
   .hero { position: relative; isolation: isolate; overflow: clip; min-height: min(100svh - var(--header), 980px); margin-top: calc(var(--header) * -1); padding-top: var(--header); background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 70%); }
-  .hero__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .hero__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; contain: paint; }
   .hero__grid { position: absolute; inset: -40px; background:
       linear-gradient(#0a0c100d 1px, transparent 1px) 0 0 / 56px 56px,
       linear-gradient(90deg, #0a0c100d 1px, transparent 1px) 0 0 / 56px 56px;
     -webkit-mask: radial-gradient(75% 70% at 60% 45%, #000 20%, transparent 75%); mask: radial-gradient(75% 70% at 60% 45%, #000 20%, transparent 75%);
     transform: translate3d(calc(var(--mx, 0) * 14px), calc(var(--my, 0) * 12px), 0); transition: transform 900ms var(--ease-out); }
-  .hero__blob { position: absolute; border-radius: 50%; filter: blur(60px); will-change: transform; }
-  .hero__blob--a { width: 46vw; height: 46vw; right: -8vw; top: -6vw; background: radial-gradient(closest-side, #1f4bff38, #1f4bff00); }
-  .hero__blob--b { width: 38vw; height: 38vw; left: -10vw; bottom: -14vw; background: radial-gradient(closest-side, #ffffff, #ffffff00); }
-  .hero__blob--c { width: 26vw; height: 26vw; left: 38%; top: 30%; background: radial-gradient(closest-side, #8fa6ff40, #8fa6ff00); }
+  /* No filter: blur() on these moving layers (it is the single most expensive
+     thing a page can animate); the soft edge comes from the gradient stops. */
+  .hero__blob { position: absolute; border-radius: 50%; will-change: transform; }
+  .hero__blob--a { width: 46vw; height: 46vw; right: -8vw; top: -6vw; background: radial-gradient(closest-side, #1f4bff38, #1f4bff1c 45%, #1f4bff00); }
+  .hero__blob--b { width: 38vw; height: 38vw; left: -10vw; bottom: -14vw; background: radial-gradient(closest-side, #ffffff, #ffffff80 45%, #ffffff00); }
+  .hero__blob--c { width: 26vw; height: 26vw; left: 38%; top: 30%; background: radial-gradient(closest-side, #8fa6ff40, #8fa6ff20 45%, #8fa6ff00); }
   .hero__mark { position: absolute; left: 50%; top: 52%; translate: -50% -50%; font-size: clamp(9rem, 30vw, 34rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #0a0c1012; white-space: nowrap; transform: translate3d(calc(var(--mx, 0) * -22px), 0, 0); transition: transform 1200ms var(--ease-out); user-select: none; }
 
   .hero__inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: clamp(12px, 4vw, 56px); padding-bottom: clamp(36px, 4vw, 56px); }
@@ -126,15 +126,16 @@ const doors = [
   .spec { display: grid; gap: 2px; align-content: start; padding: 14px 16px; border-radius: 16px; background: #ffffffc2; border: 1px solid #ffffff; box-shadow: var(--shadow-1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   .spec__num { font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.2rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
   .spec__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
-  .hero__pause { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: #ffffffb3; color: var(--ink-2); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; }
-  .hero__pause:hover { border-color: var(--accent); color: var(--accent); }
+  /* Pause motion: bottom right of the hero on desktop; top right (first
+     screen) on smaller widths, beside the robot. */
+  .hero__inner > :global(.hero__pause) { position: absolute; z-index: 3; right: var(--margin); top: 8px; }
 
   @media (min-width: 1000px) {
     .hero__inner { grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); grid-template-rows: 1fr auto; column-gap: clamp(24px, 3vw, 56px); row-gap: 28px; align-items: center; }
     .hero__copy { grid-column: 1; grid-row: 1; }
     .hero__robot { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
     .hero__chips { grid-column: 1; grid-row: 2; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .hero__pause { position: absolute; right: var(--margin); bottom: clamp(36px, 4vw, 56px); }
+    .hero__inner > :global(.hero__pause) { top: auto; bottom: clamp(36px, 4vw, 56px); }
     .hero__title { font-size: clamp(3rem, 1rem + 4.4vw, 5.6rem); }
     .hero__lede { max-width: 54ch; }
   }
@@ -177,6 +178,18 @@ const doors = [
   .door--contact:hover .door__go { background: #fff; color: var(--accent); border-color: #fff; }
   .door--contact::before { background: radial-gradient(360px circle at var(--gx) var(--gy), #ffffff33, transparent 60%); }
   .door--contact:focus-visible { outline-color: var(--ink); }
+  /* Phones: a compact 2×2 grid, so all four doors (blue Contact last) sit
+     within about one screen of the hero. The promise is dropped; the proof stays. */
+  @media (max-width: 639px) {
+    .doors__list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .door { grid-template-rows: auto 1fr auto; min-height: 150px; gap: 6px; padding: 16px 14px 14px; border-radius: var(--radius-2); }
+    .door__icon { width: 34px; height: 34px; }
+    .door__icon svg { width: 18px; height: 18px; }
+    .door__label { font-size: 1.9rem; margin-top: 4px; }
+    .door__promise, .door__go { display: none; }
+    .door__foot { margin-top: 2px; padding-top: 10px; }
+    .door__proof { font-size: 10.5px; line-height: 1.35; }
+  }
   @media (min-width: 640px) { .doors__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (min-width: 1100px) { .doors__list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } .door { min-height: 300px; padding: 26px 26px 22px; } }
 

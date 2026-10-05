@@ -1,9 +1,11 @@
 /*
  * The "Pause motion" switch (WCAG 2.2.2): every [data-motion-toggle] on the
- * page flips html[data-motion] and fires `omar:motion`, which Otto, the
- * ticker, the orbit, the columns and the forms listen to. The choice is kept
- * for the session (the head script in Base.astro restores it before paint);
- * reduced-motion visitors start paused and can opt in.
+ * page (one in every hero, plus the footer and the menu sheet) flips
+ * html[data-motion] and fires `omar:motion`, which the previews, the pointer
+ * effects and the count-ups listen to; CSS pauses every loop. The choice is
+ * kept for the session (the head script in Base.astro restores it before
+ * paint). Reduced-motion visitors start paused; nothing loops for them, so
+ * base.css hides the switch rather than offer one with no effect.
  */
 const root = document.documentElement;
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');

@@ -90,6 +90,15 @@ for (const asset of shippedJs) {
   expect(!/WebGLRenderer|THREE\.|three\.module/.test(source), `${asset}: three.js must not ship`);
 }
 const astroFiles = await readdir(path.join(dist, '_astro'));
+// Every emitted script, referenced or not (prepare-pages copies all of dist):
+// no three.js or React, and no JavaScript that no page loads.
+for (const file of astroFiles.filter(name => name.endsWith('.js'))) {
+  const asset = `/_astro/${file}`;
+  const source = await readFile(path.join(dist, '_astro', file), 'utf8');
+  expect(!/WebGLRenderer|THREE\.|three\.module/.test(source), `${asset}: three.js must not ship`);
+  expect(!/react\.(production|development)|__SECRET_INTERNALS|__CLIENT_INTERNALS_DO_NOT_USE|react-dom/i.test(source), `${asset}: React must not ship`);
+  expect(shippedJs.has(asset), `${asset}: emitted but no page loads it`);
+}
 const builtText = (await Promise.all(astroFiles.filter(file => /\.(css|js)$/.test(file)).map(file => readFile(path.join(dist, '_astro', file), 'utf8')))).join(' ') + Object.values(html).join(' ') + Object.values(insideHtml).join(' ');
 expect(!/d9ff3f/i.test(builtText), 'The old lime (#d9ff3f) appears in the build');
 

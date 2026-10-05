@@ -5,16 +5,18 @@
 import SectionHead from './SectionHead.astro';
 import CapabilityMatrix from './CapabilityMatrix.astro';
 import ProjectMedia from './ProjectMedia.astro';
+import Figure from './Figure.astro';
 import { caseStudies, projects } from '../data/projects';
 import { statusLabel, site } from '../data/site';
 
 const pad = (value: number) => String(value).padStart(2, '0');
 const skillsRow = ['LangGraph', 'Bayesian inference', 'MAPE-K', 'Python', 'Time-series forecasting', 'Feature engineering', 'Data pipelines', 'FastAPI', 'PostgreSQL', 'Docker'];
 const learnRow = ['GCSE & A-level maths', 'Physics', 'Linear algebra', 'Calculus', 'Optimisation', 'Probability', 'Qiskit', 'Discrete maths'];
-/* Image strip tiles: concept visuals plus typographic tiles for projects without one. */
-const tiles = projects.map(project => ({ id: project.id, name: project.name, org: project.org, image: project.media?.image }));
-const rowA = [...tiles, ...tiles];
-const rowB = [...tiles.slice().reverse(), ...tiles.slice().reverse()];
+/* The sliding project strip: one row, one tile style. Every tile names the
+   project and its organisation; projects without a concept visual get the
+   same navy schematic plate their cards use. One set is wider than a 1440px
+   screen, so a title never shows twice at once. */
+const tiles = projects.map(project => ({ id: project.id, name: project.name, org: project.org, image: project.media?.image, figure: (project.id === 'bitget' ? 'bitget' : project.id === 'bp' ? 'bp' : 'ai-he') as 'bitget' | 'bp' | 'ai-he' }));
 const now = [
   { label: 'Now', title: 'AI Product Engineer', meta: 'Digis Squared · since Jan 2026' },
   { label: 'Building', title: 'NOOKBASE', meta: 'Pre-launch · around 150 beta users' },
@@ -54,29 +56,29 @@ const levels = [
   </div>
 
   <div class="strip" aria-hidden="true">
-    {[rowA, rowB].map((row, r) => (
-      <div class:list={['strip__row', { 'strip__row--rev': r === 1 }]}>
-        <div class="strip__track">
-          {row.map(tile => (
-            <span class:list={['tile', { 'tile--type': !tile.image }]}>
-              {tile.image ? <img src={tile.image} alt="" width="320" height="200" loading="lazy" decoding="async" /> : <b>{tile.name}</b>}
-              <span class="tile__cap">{tile.org}</span>
-            </span>
-          ))}
-        </div>
+    <div class="strip__row">
+      <div class="strip__track">
+        {[0, 1].map(() => tiles.map(tile => (
+          <span class:list={['tile', { 'tile--type': !tile.image }]}>
+            <span class="tile__media">{tile.image ? <img src={tile.image} alt="" width="380" height="238" loading="lazy" decoding="async" /> : <Figure kind={tile.figure} />}</span>
+            <span class="tile__text"><b>{tile.name}</b><span class="tile__cap">{tile.org}</span></span>
+          </span>
+        )))}
       </div>
-    ))}
+    </div>
   </div>
 
   <div class="wrap">
     <ol class="cards" data-reveal-stagger>
       {caseStudies.map((project, index) => (
         <li class:list={['card', { 'card--wide': index < 2 }]}>
-          <a class="card__link" href={`/inside/${project.id}.html`} data-open={project.name} data-glow>
-            <span class="card__media"><ProjectMedia project={project} video={index < 2} /></span>
+          {/* Named by the project and its status (not the media caption); the
+              concept-visual label is still announced as the description. */}
+          <a class="card__link" href={`/inside/${project.id}.html`} data-open={project.name} data-glow aria-labelledby={`card-${project.id}-name card-${project.id}-status`} aria-describedby={project.media ? `card-${project.id}-cap` : undefined}>
+            <span class="card__media"><ProjectMedia project={project} video={index < 2} captionId={`card-${project.id}-cap`} /></span>
             <span class="card__body">
-              <span class="card__meta"><span class="card__num">{pad(index + 1)}/{pad(caseStudies.length)}</span><span class:list={['chip', `chip--${project.status}`]}>{statusLabel[project.status]}</span></span>
-              <span class="card__name">{project.name}</span>
+              <span class="card__meta"><span class="card__num">{pad(index + 1)}/{pad(caseStudies.length)}</span><span class:list={['chip', `chip--${project.status}`]} id={`card-${project.id}-status`}>{statusLabel[project.status]}</span></span>
+              <span class="card__name" id={`card-${project.id}-name`}>{project.name}</span>
               <span class="card__org">{project.role} · {project.org === 'Founder' ? 'NOOKBASE' : project.org} · {project.period}</span>
               <span class="card__summary">{project.summary}</span>
               <span class="card__note">{project.statusNote}</span>
@@ -104,7 +106,7 @@ const levels = [
 <section class="section lessons" id="lessons" aria-labelledby="lessons-title">
   <div class="wrap lessons__grid">
     <div class="lessons__copy" data-reveal>
-      <p class="label"><span class="section-mark">03</span> Lessons</p>
+      <p class="eyebrow"><b>03</b>Lessons</p>
       <h2 id="lessons-title">Maths &amp; science, <em class="voice">made clear.</em></h2>
       <p class="lede">Personal online lessons for GCSE Foundation, GCSE Higher and A-level. Build a method you understand, not just an answer you remember.</p>
       <ul class="promises">
@@ -124,7 +126,7 @@ const levels = [
         </li>
       ))}
       <li class="level level--note">
-        <span class="level__copy">Taught by Omar, a Maths &amp; Physics Teaching Assistant at Southfields Academy. No payment is taken online; the enquiry form prepares an email you send yourself.</span>
+        <span class="level__copy">I teach every lesson myself, as a Maths &amp; Physics Teaching Assistant at Southfields Academy. No payment is taken online; the enquiry form prepares an email you send yourself.</span>
       </li>
     </ol>
   </div>
@@ -141,7 +143,7 @@ const levels = [
     </figure>
     <div class="about__copy">
       <div data-reveal>
-        <p class="label"><span class="section-mark">04</span> About</p>
+        <p class="eyebrow"><b>04</b>About</p>
         <h2 id="about-title">Understand it. Build it. <em class="voice">Explain it.</em></h2>
         <p class="lede">I build machine-learning and optimisation systems from the mathematics through to production code, and I teach the maths that makes them work.</p>
       </div>
@@ -161,7 +163,7 @@ const levels = [
 <section class="contact-band" id="contact" aria-labelledby="contact-title">
   <div class="contact-band__bg" aria-hidden="true"><span></span><span></span></div>
   <div class="wrap contact-band__inner">
-    <p class="label contact-band__label"><span class="section-mark">05</span> Contact</p>
+    <p class="eyebrow eyebrow--dark"><b>05</b>Contact</p>
     <h2 id="contact-title" class="contact-band__title" data-reveal>Have something in mind? <span>Let’s talk.</span></h2>
     <p class="contact-band__lede" data-reveal>Projects, roles, research or lessons. Write a line or two; the contact form prepares an email you check and send yourself.</p>
     <div class="contact-band__row" data-reveal>
@@ -188,17 +190,22 @@ const levels = [
   .marquee__word--ghost { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
   .marquee__word i { width: .32em; height: .32em; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 .12em var(--accent-soft); }
 
-  .section:is(.work, .skills, .lessons, .about) { padding-block: var(--section); }
+  /* Homepage rhythm: a tighter step than interior pages, and sections that
+     share a background (work → skills → lessons) share one gap. */
+  .section:is(.work, .skills, .lessons, .about) { padding-block: clamp(64px, 7vw, 112px); }
+  .section:is(.skills, .lessons) { padding-top: 0; }
   .work { background: var(--bg); }
-  .strip { display: grid; gap: 14px; margin-bottom: clamp(40px, 5vw, 72px); overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-  .strip__track { display: flex; gap: 14px; width: max-content; }
-  .tile { position: relative; flex: none; width: clamp(180px, 22vw, 300px); aspect-ratio: 16 / 10; border-radius: 18px; overflow: hidden; background: var(--navy); box-shadow: var(--shadow-1); }
-  .tile img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.1); }
-  .tile::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, #4f74ff, #0b1640); mix-blend-mode: color; opacity: .6; }
-  .tile--type { display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); }
-  .tile--type::after { display: none; }
-  .tile--type b { font-size: clamp(1rem, .8rem + .8vw, 1.5rem); letter-spacing: -.04em; padding: 0 16px; text-align: center; line-height: 1.1; }
-  .tile__cap { position: absolute; left: 10px; bottom: 10px; z-index: 2; padding: 3px 9px; border-radius: 999px; background: #ffffffe6; color: var(--ink); font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+  .strip { margin-bottom: clamp(32px, 4vw, 56px); overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+  .strip__track { display: flex; gap: 16px; width: max-content; padding-block: 4px 12px; }
+  .tile { position: relative; flex: none; width: clamp(240px, 26vw, 380px); aspect-ratio: 16 / 10; border-radius: 22px; overflow: hidden; background: var(--navy); color: var(--plate-ink); box-shadow: var(--shadow-2); isolation: isolate; }
+  .tile__media { position: absolute; inset: 0; display: grid; place-items: center; }
+  .tile__media img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.1); }
+  .tile:not(.tile--type) .tile__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, #4f74ff, #0b1640); mix-blend-mode: color; opacity: .6; }
+  .tile--type .tile__media { padding: 6% 8% 26%; }
+  .tile--type .tile__media :global(svg) { width: auto; height: 100%; max-width: 100%; }
+  .tile__text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; align-items: end; justify-content: space-between; gap: 10px; padding: 40px 14px 12px 16px; background: linear-gradient(180deg, #0b164000, #0b1640d9 70%); }
+  .tile__text b { font-size: clamp(1rem, .85rem + .5vw, 1.3rem); font-weight: 650; letter-spacing: -.035em; line-height: 1.1; color: #fff; }
+  .tile__cap { flex: none; padding: 3px 9px; border-radius: 999px; background: #ffffffe6; color: var(--ink); font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
 
   .cards { display: grid; gap: 16px; }
   .card__link { --gx: 50%; --gy: 50%; position: relative; display: grid; height: 100%; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); text-decoration: none; color: var(--ink); overflow: hidden; isolation: isolate; transition: box-shadow 500ms var(--ease-out), translate 500ms var(--ease-out); }
@@ -265,12 +272,10 @@ const levels = [
 
   /* The contact band: the one deep-navy moment on the page. */
   .contact-band { position: relative; isolation: isolate; overflow: hidden; background: var(--navy); color: var(--navy-ink); padding-block: clamp(88px, 11vw, 168px); }
-  .contact-band__bg span { position: absolute; z-index: -1; border-radius: 50%; filter: blur(70px); }
+  .contact-band__bg span { position: absolute; z-index: -1; border-radius: 50%; will-change: transform; }
   .contact-band__bg span:first-child { width: 50vw; height: 50vw; right: -12vw; top: -20vw; background: radial-gradient(closest-side, #1f4bffaa, transparent); }
   .contact-band__bg span:last-child { width: 40vw; height: 40vw; left: -14vw; bottom: -24vw; background: radial-gradient(closest-side, #5d7bff66, transparent); }
   .contact-band__inner { display: grid; gap: var(--s-6); }
-  .contact-band__label { color: var(--navy-muted); }
-  .contact-band__label .section-mark { color: #9fb2ff; }
   .contact-band__title { font-size: clamp(2.8rem, 1rem + 7vw, 8.4rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; max-width: 13ch; color: #fff; }
   .contact-band__title span { color: #8ea6ff; }
   .contact-band__lede { max-width: 52ch; color: var(--navy-muted); font-size: var(--step-lede); line-height: 1.45; }
@@ -292,13 +297,12 @@ const levels = [
   @media (prefers-reduced-motion: no-preference) {
     .marquee__track { animation: slide 42s linear infinite; }
     .marquee__row--rev .marquee__track { animation-direction: reverse; animation-duration: 50s; }
-    .strip__track { animation: slide 60s linear infinite; }
-    .strip__row--rev .strip__track { animation-direction: reverse; animation-duration: 70s; }
+    .strip__track { animation: slide 70s linear infinite; }
     .contact-band__bg span { animation: band-drift 16s ease-in-out infinite alternate; }
     .contact-band__bg span:last-child { animation-duration: 20s; animation-direction: alternate-reverse; }
     :global(html[data-motion='off']) :is(.marquee__track, .strip__track, .contact-band__bg span) { animation-play-state: paused; }
-    :global(html.js) .cards > li:not(.is-in) { transform: translateY(60px) scale(.97); }
-    :global(html.js) .levels > li:not(.is-in) { transform: translateX(60px); }
+    :global(html.reveal-ready) .cards > li:not(.is-in) { transform: translateY(60px) scale(.97); }
+    :global(html.reveal-ready) .levels > li:not(.is-in) { transform: translateX(60px); }
     @supports (animation-timeline: view()) {
       :global(html:not([data-motion='off'])) .about__photo img { animation: photo-pan linear both; animation-timeline: view(); animation-range: cover; }
       :global(html:not([data-motion='off'])) .contact-band__title { animation: band-wipe linear both; animation-timeline: view(); animation-range: entry 10% cover 40%; }

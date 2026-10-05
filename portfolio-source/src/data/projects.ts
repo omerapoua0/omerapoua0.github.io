@@ -22,7 +22,8 @@ export interface Project {
   areas: Area[];
   summary: string;
   href: string;
-  media?: { image: string; video?: string; logo?: string; alt: string };
+  /** logoOnDark: the logo is a white mark, so its chip is navy, not white. */
+  media?: { image: string; video?: string; logo?: string; logoOnDark?: boolean; alt: string };
   context: string;
   contribution: string[];
   stage: string;
@@ -44,7 +45,7 @@ export const projects: Project[] = [
     areas: ['ai', 'systems'],
     summary: 'Technical strategy and closed-loop MAPE-K reasoning for a network-autonomy programme.',
     href: '/work.html#katana',
-    media: { image: '/project-katana-v14.jpg', video: '/project-katana-v14.webm', logo: '/logo-katana.png', alt: 'KATANA closed-loop reasoning concept visual' },
+    media: { image: '/project-katana-v14.jpg', video: '/project-katana-v14.webm', logo: '/logo-katana.png', logoOnDark: true, alt: 'KATANA closed-loop reasoning concept visual' },
     context:
       'KATANA is an autonomy programme for telecom networks, working towards Level 4 autonomy against TM Forum standards. The hard question is when a network should observe, reason and act on its own.',
     contribution: [
@@ -95,7 +96,7 @@ export const projects: Project[] = [
     areas: ['systems'],
     summary: 'Network testing and optimisation products deployed to O2. My R&D work on hardware and software integration.',
     href: '/work.html#inos',
-    media: { image: '/project-inos.jpg', video: '/project-inos.webm', logo: '/logo-inos.png', alt: 'INOS network testing concept visual' },
+    media: { image: '/project-inos.jpg', video: '/project-inos.webm', logo: '/logo-inos.png', logoOnDark: true, alt: 'INOS network testing concept visual' },
     context:
       'INOS and OctiMind are Digis Squared’s network testing and optimisation products, deployed to O2.',
     contribution: [

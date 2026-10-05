@@ -1,8 +1,9 @@
 ---
 import Figure from './Figure.astro';
 import type { Project } from '../data/projects';
-interface Props { project: Project; video?: boolean; eager?: boolean; class?: string; }
-const { project, video = true, eager = false, class: className } = Astro.props;
+/** captionId: lets a whole-card link describe itself with the honesty label (aria-describedby). */
+interface Props { project: Project; video?: boolean; eager?: boolean; class?: string; captionId?: string; }
+const { project, video = true, eager = false, class: className, captionId } = Astro.props;
 const media = project.media;
 const figureKind = project.id === 'bitget' ? 'bitget' : project.id === 'bp' ? 'bp' : 'ai-he';
 ---
@@ -10,8 +11,8 @@ const figureKind = project.id === 'bitget' ? 'bitget' : project.id === 'bp' ? 'b
   <figure class:list={['plate', className]} data-fx="zoom">
     <img src={media.image} alt={media.alt} width="1600" height="900" loading={eager ? 'eager' : 'lazy'} decoding="async" />
     {video && media.video && <video data-preview data-src={media.video} muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>}
-    {media.logo && <img class="plate__logo" src={media.logo} alt="" width="40" height="40" loading="lazy" />}
-    <figcaption class="plate__caption">Concept visual, not product footage</figcaption>
+    {media.logo && <img class:list={['plate__logo', { 'plate__logo--dark': media.logoOnDark }]} src={media.logo} alt="" width="40" height="40" loading="lazy" />}
+    <figcaption class="plate__caption" id={captionId}>Concept visual, not product footage</figcaption>
   </figure>
 ) : (
   <figure class:list={['plate', 'plate--type', className]}>

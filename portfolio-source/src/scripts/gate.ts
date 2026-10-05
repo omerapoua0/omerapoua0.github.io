@@ -9,6 +9,12 @@
  * Only once the overlay is opaque does the browser navigate. The arriving
  * page paints the identical white at first paint (Base.astro head script
  * reads sessionStorage omar-gate {t, path, label}) and dissolves it.
+ * The open starts where the visitor chose: the click point (or the centre of
+ * the link, from the keyboard) becomes --gx/--gy for the hands, flare and
+ * burst, and the robot in the hero (when on screen) snaps its rings shut and
+ * flares (RobotStage [data-opening]).
+ * Timing (full motion): leave ≈ 650 ms (hands 0–300, flare 260–460, burst
+ * 300–600, then navigate); arrive: white dissolves 60–480 ms after first paint.
  * Reduced motion / Pause motion: a 160 ms fade out, a 200 ms fade in.
  * Links still work normally without JavaScript.
  */
@@ -63,17 +69,32 @@ async function playOpen(): Promise<void> {
       return;
     } catch { clip.pause(); gate.removeAttribute('data-clip-on'); }
   }
-  await whiteDone(840, 1500);
+  await whiteDone(600, 900);
 }
 
-async function go(href: string, mode: Mode = 'quick', link?: Element | null) {
+const robot = () => document.querySelector<HTMLElement>('[data-robot-stage]');
+
+/** Where the light starts: the pointer, else the link's centre, else the screen's. */
+function origin(link?: Element | null, point?: { x: number; y: number }) {
+  if (point && (point.x || point.y)) return point;
+  const box = link?.getBoundingClientRect();
+  if (box && box.width && box.bottom > 0 && box.top < innerHeight) return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+  return { x: innerWidth / 2, y: innerHeight / 2 };
+}
+
+async function go(href: string, mode: Mode = 'quick', link?: Element | null, point?: { x: number; y: number }) {
   const url = new URL(href, location.href);
-  if (!gate || busy) { location.assign(url.href); return; }
+  if (!gate) { location.assign(url.href); return; }
+  if (busy) return; // a double click or tap: the first navigation is already under way
   busy = true;
   const label = labelFor(url, link);
+  const at = origin(link, point);
   gate.style.setProperty('--gate-label', JSON.stringify(label));
+  gate.style.setProperty('--gx', `${Math.round(at.x)}px`);
+  gate.style.setProperty('--gy', `${Math.round(at.y)}px`);
   gate.removeAttribute('data-clip-on');
   root.removeAttribute('data-gate');
+  if (mode === 'open' && !still()) robot()?.setAttribute('data-opening', '');
   gate.dataset.state = mode;
   if (still()) await whiteDone(160, 600);
   else if (mode === 'open') await playOpen();
@@ -86,8 +107,9 @@ async function go(href: string, mode: Mode = 'quick', link?: Element | null) {
     target?.scrollIntoView({ behavior: 'instant' as ScrollBehavior, block: 'start' });
     if (target) { target.setAttribute('tabindex', target.getAttribute('tabindex') ?? '-1'); target.focus({ preventScroll: true }); }
     await frames();
+    robot()?.removeAttribute('data-opening');
     gate.dataset.state = 'reveal';
-    await sleep(still() ? 280 : 780);
+    await sleep(still() ? 280 : 520);
     gate.removeAttribute('data-state');
     busy = false;
     return;
@@ -97,7 +119,7 @@ async function go(href: string, mode: Mode = 'quick', link?: Element | null) {
   await frames(); // the opaque white is on screen before the page changes
   location.assign(url.href);
   // A download or a cancelled navigation must not leave the page white.
-  window.setTimeout(() => { if (document.visibilityState === 'visible') { gate.removeAttribute('data-state'); busy = false; } }, 4000);
+  window.setTimeout(() => { if (document.visibilityState === 'visible') { gate.removeAttribute('data-state'); robot()?.removeAttribute('data-opening'); busy = false; } }, 4000);
 }
 
 if (gate) {
@@ -114,19 +136,20 @@ if (gate) {
     const open = link.hasAttribute('data-open');
     if (same && (!url.hash || !open)) return; // in-page anchors scroll as usual
     event.preventDefault();
-    void go(url.href, open ? 'open' : 'quick', link);
+    void go(url.href, open ? 'open' : 'quick', link, event.detail ? { x: event.clientX, y: event.clientY } : undefined);
   });
 
   // Arrived through the gate: tidy up once the light has gone.
-  if (root.dataset.gate === 'in') window.setTimeout(() => root.removeAttribute('data-gate'), 1100);
+  if (root.dataset.gate === 'in') window.setTimeout(() => root.removeAttribute('data-gate'), 700);
 
   // Back/forward from the bfcache: never come back to a white page.
   addEventListener('pageshow', event => {
     if (!event.persisted) return;
     busy = false;
+    robot()?.removeAttribute('data-opening');
     if (gate.dataset.state) {
       gate.dataset.state = 'reveal';
-      window.setTimeout(() => gate.removeAttribute('data-state'), 800);
+      window.setTimeout(() => gate.removeAttribute('data-state'), 520);
     }
   });
 }

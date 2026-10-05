@@ -26,8 +26,15 @@ const media = !!(poster || greet);
   {media ? (
     <div class="robot-stage__media">
       {greet ? (
-        <video data-preview data-src={greetWebm ? '/robot/greet.webm' : '/robot/greet.mp4'} poster={poster} muted loop playsinline preload="none" aria-label="Omar’s robot, waving hello" disablepictureinpicture>
-        </video>
+        <>
+          {/* The poster sits behind the video, so a browser that cannot play
+              either source (previews.ts removes the video) still shows it. */}
+          {poster && <img src={poster} alt="Omar’s robot" width="1200" height="1400" loading="eager" decoding="async" fetchpriority="high" />}
+          <video data-preview poster={poster} muted loop playsinline preload="none" aria-hidden={poster ? 'true' : undefined} aria-label={poster ? undefined : 'Omar’s robot, waving hello'} tabindex="-1" disablepictureinpicture>
+            {greetWebm && <source data-src="/robot/greet.webm" type="video/webm" />}
+            <source data-src="/robot/greet.mp4" type="video/mp4" />
+          </video>
+        </>
       ) : (
         <img src={poster} alt="Omar’s robot" width="1200" height="1400" loading="eager" decoding="async" fetchpriority="high" />
       )}
@@ -51,10 +58,11 @@ const media = !!(poster || greet);
 
 <style>
   .robot-stage { --size: min(100%, 560px); position: relative; width: var(--size); aspect-ratio: 1 / 1.04; margin-inline: auto; display: grid; place-items: center; isolation: isolate; }
-  .robot-stage__halo { position: absolute; inset: 6% 4% 10%; z-index: -2; border-radius: 50%; background: radial-gradient(closest-side, #ffffff 0 35%, #ffffffb3 55%, transparent 72%), radial-gradient(closest-side at 62% 58%, #1f4bff38, transparent 70%); filter: blur(6px); }
+  .robot-stage__halo { position: absolute; inset: 6% 4% 10%; z-index: -2; border-radius: 50%; background: radial-gradient(closest-side, #ffffff 0 35%, #ffffffb3 55%, transparent 72%), radial-gradient(closest-side at 62% 58%, #1f4bff38, transparent 70%); } /* no blur: it breathes */
   .robot-stage__floor { position: absolute; left: 18%; right: 18%; bottom: 5%; height: 9%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, #0a0c1040, #0a0c1014 55%, transparent); filter: blur(4px); }
   .robot-stage__media { position: relative; width: 100%; height: 100%; }
   .robot-stage__media :is(img, video) { width: 100%; height: 100%; object-fit: contain; }
+  .robot-stage__media img + video { position: absolute; inset: 0; }
   .robot-stage__tag { position: absolute; right: 2%; bottom: 14%; display: grid; gap: 2px; padding: 10px 14px; border-radius: 14px; background: #ffffffcc; border: 1px solid #ffffff; box-shadow: var(--shadow-2); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .robot-stage__tag b { color: var(--accent); font-weight: 600; font-size: 12px; }
 
@@ -82,6 +90,17 @@ const media = !!(poster || greet);
     -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
             mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); }
   .orb__ring--b i { border-color: #1f4bff73; background: conic-gradient(from 180deg, transparent 0 70%, #ffffff 82%, #1f4bff 86%, transparent 92%); }
+
+  /* "The robot opens it": when a door is chosen (gate.ts sets data-opening),
+     the rings snap shut onto the sphere and the sensor slit flares white,
+     in step with the light gate's hands (≈ 300 ms). */
+  .orb__ring { transition: transform 300ms cubic-bezier(.7, 0, .3, 1), opacity 300ms; }
+  .orb__slit { transition: background-color 200ms, box-shadow 300ms ease-out; }
+  .robot-stage[data-opening] .orb__ring--a { transform: rotateX(90deg) rotateY(0deg) scale(.62); }
+  .robot-stage[data-opening] .orb__ring--b { transform: rotateX(90deg) rotateY(0deg) scale(.7); }
+  .robot-stage[data-opening] .orb__ring i { border-color: #ffffff; box-shadow: 0 0 30px 6px #ffffff, 0 0 60px 12px #1f4bff99; }
+  .robot-stage[data-opening] .orb__slit { background: #ffffff; box-shadow: 0 0 18px 6px #ffffff, 0 0 60px 22px #ffffffd9, 0 0 120px 40px #1f4bff80; }
+  .robot-stage[data-opening] .robot-stage__halo { opacity: 1; scale: 1.08; transition: scale 300ms ease-out; }
 
   @media (prefers-reduced-motion: no-preference) {
     .orb__sphere { animation: orb-float 7s ease-in-out infinite; }

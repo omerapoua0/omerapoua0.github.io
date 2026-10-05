@@ -12,7 +12,7 @@ const items: Item[] = [
   { group: 'Quick', label: 'Write to Omar', hint: 'Prepare an email', href: '/contact.html', keywords: 'email message contact hire' },
   { group: 'Quick', label: 'Skills & evidence', hint: 'Capability matrix', href: '/index.html#skills', keywords: 'python stack matrix skills' },
   { group: 'Pages', label: 'Home', hint: 'index.html', href: '/index.html', keywords: 'start' },
-  ...navigation.map(item => ({ group: 'Pages', label: item.label, hint: item.href.replace('/', ''), href: item.href })),
+  ...navigation.filter(item => !item.href.includes('#')).map(item => ({ group: 'Pages', label: item.label, hint: item.href.replace('/', ''), href: item.href })),
   { group: 'Pages', label: 'Contact', hint: 'contact.html', href: '/contact.html', keywords: 'email message' },
   ...projects.map(project => ({ group: 'Work', label: project.name, hint: project.org, href: project.href, keywords: `${project.stack.join(' ')} ${project.role}` })),
   ...['katana', 'nookbase', 'inos', 'bitget', 'bp'].map(id => projects.find(project => project.id === id)!).filter(Boolean).map(project => ({ group: 'Tours', label: `${project.name} tour`, hint: 'Project tour', href: `/inside/${project.id}.html`, keywords: `tour inside ${project.org}` })),

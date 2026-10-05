@@ -79,7 +79,11 @@ button { cursor: pointer; }
   color: var(--muted); white-space: nowrap;
 }
 .chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.chip--current, .chip--progress { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+/* Current / in progress: ink text, a filled blue dot with a soft ring (live).
+   Completed: an outlined dot. No colour beyond the one accent. */
+.chip--current, .chip--progress { color: var(--ink); border-color: var(--line-strong); }
+.chip--current::before, .chip--progress::before { background: var(--ok); box-shadow: 0 0 0 3px var(--accent-soft); }
+.chip--completed::before { background: transparent; border: 1px solid currentColor; }
 .chip--development, .chip--incoming { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .chip--exploratory, .chip--aspiration { color: var(--signal); border-color: color-mix(in srgb, var(--signal) 45%, transparent); }
 .chip--aspiration::before { background: transparent; border: 1px solid currentColor; }
@@ -94,9 +98,10 @@ button { cursor: pointer; }
 /* Motion: everything below is opt-in for visitors without a reduced-motion preference. */
 @media (prefers-reduced-motion: no-preference) {
   /* Scroll reveals (IntersectionObserver in site.ts adds .is-in). The hidden
-     start state only applies with JavaScript, so content never depends on it. */
-  html.js [data-reveal] { transition: opacity 900ms var(--ease-out), transform 900ms var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
-  html.js [data-reveal]:not(.is-in) { opacity: 0; transform: translateY(40px); }
+     start state only applies once site.ts is running and has added
+     html.reveal-ready, so a blocked or failed script never hides content. */
+  html.reveal-ready [data-reveal] { transition: opacity 900ms var(--ease-out), transform 900ms var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
+  html.reveal-ready [data-reveal]:not(.is-in) { opacity: 0; transform: translateY(40px); }
 
   /* 3D tilt toward the pointer (fx.ts sets the angles on fine pointers). */
   [data-tilt] { position: relative; transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); transition: transform 600ms var(--ease-out); }
@@ -120,6 +125,10 @@ button { cursor: pointer; }
 @keyframes fx-wipe { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
 @keyframes fx-drift { from { transform: translateY(48px); } to { transform: translateY(-48px); } }
 @media (prefers-reduced-motion: reduce) {
+  /* Nothing loops for these visitors (every loop sits behind
+     prefers-reduced-motion: no-preference), so a Play/Pause switch would do
+     nothing: hide it rather than offer a control without an effect. */
+  [data-motion-toggle] { display: none !important; }
   /* Zero (not near-zero) durations: a tiny forced duration would make inherited
      properties such as visibility animate on every element. */
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; transition-delay: 0s !important; animation-duration: 0s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }

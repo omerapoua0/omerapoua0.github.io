@@ -53,6 +53,78 @@ function watch(page) {
   return errors;
 }
 
+/* Pixel contrast for text axe could not decide (gradients, images,
+ * translucent layers). Screenshot the element's box twice, with its text
+ * shown and with its own text colour made transparent: the pixels that change
+ * are the glyphs, and the second shot gives the real background under each
+ * of them. The 10th-percentile glyph pixel must reach 4.5:1 (3:1 large text). */
+async function pixelContrast(page, selectors) {
+  const low = [];
+  const shoot = async box => {
+    const clip = { x: Math.floor(box.x), y: Math.floor(box.y), width: Math.ceil(box.width), height: Math.ceil(box.height) };
+    try { return (await page.screenshot({ clip })).toString('base64'); } catch { return null; }
+  };
+  for (const selector of [...new Set(selectors)]) {
+    const info = await page.evaluate(sel => {
+      const el = document.querySelector(sel);
+      if (!el || el.closest('[aria-hidden="true"]')) return null;
+      el.scrollIntoView({ block: 'center', behavior: 'instant' });
+      // Never measure text while the sticky header sits over it.
+      const header = document.querySelector('[data-header]')?.getBoundingClientRect().bottom ?? 0;
+      if (el.getBoundingClientRect().top < header + 8) scrollBy({ top: el.getBoundingClientRect().top - header - 24, behavior: 'instant' });
+      const style = getComputedStyle(el);
+      const box = el.getBoundingClientRect();
+      if (box.width < 2 || box.height < 2 || style.visibility === 'hidden') return null;
+      const size = parseFloat(style.fontSize), weight = Number(style.fontWeight) || 400;
+      const canvas = document.createElement('canvas').getContext('2d');
+      canvas.fillStyle = style.color; canvas.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = canvas.getImageData(0, 0, 1, 1).data;
+      return { fg: [r, g, b, a / 255], large: size >= 24 || (size >= 18.66 && weight >= 700), box: { x: Math.max(0, box.left), y: Math.max(0, box.top), width: Math.min(box.width, innerWidth - Math.max(0, box.left)), height: Math.min(box.height, innerHeight - Math.max(0, box.top)) } };
+    }, selector);
+    if (!info || info.box.width < 2 || info.box.height < 2) continue;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    // Child elements' text is measured as its own node: hide it in both shots.
+    const hide = el => { el.dataset.qaStyle = el.getAttribute('style') ?? ''; el.style.setProperty('color', 'transparent', 'important'); el.style.setProperty('-webkit-text-stroke-color', 'transparent', 'important'); el.style.setProperty('text-shadow', 'none', 'important'); };
+    await page.evaluate(({ sel, hideSource }) => { const hide = eval(hideSource); document.querySelector(sel).querySelectorAll('*').forEach(hide); }, { sel: selector, hideSource: hide.toString() });
+    await page.waitForTimeout(60);
+    const shown = await shoot(info.box);
+    await page.evaluate(({ sel, hideSource }) => eval(hideSource)(document.querySelector(sel)), { sel: selector, hideSource: hide.toString() });
+    await page.waitForTimeout(60);
+    const hidden = await shoot(info.box);
+    const ratio = await page.evaluate(async ({ shown, hidden, fg, sel }) => {
+      document.querySelectorAll('[data-qa-style]').forEach(el => {
+        if (el.dataset.qaStyle) el.setAttribute('style', el.dataset.qaStyle); else el.removeAttribute('style');
+        delete el.dataset.qaStyle;
+      });
+      if (!shown || !hidden) return 21;
+      const read = async data => {
+        const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${data}`)).blob());
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
+        canvas.drawImage(bitmap, 0, 0);
+        return canvas.getImageData(0, 0, bitmap.width, bitmap.height).data;
+      };
+      const [a, b] = [await read(shown), await read(hidden)];
+      const lum = rgb => { const c = rgb.map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+      const ratios = [];
+      for (let i = 0; i < Math.min(a.length, b.length); i += 4) {
+        // A glyph pixel moved towards the text colour when the text was drawn;
+        // anything else that differs between the shots is rendering noise.
+        const toFg = (px, k) => Math.abs(px[k] - fg[0]) + Math.abs(px[k + 1] - fg[1]) + Math.abs(px[k + 2] - fg[2]);
+        if (toFg(a, i) > toFg(b, i) - 24) continue;
+        const bg = [b[i], b[i + 1], b[i + 2]];
+        const text = bg.map((v, k) => fg[k] * fg[3] + v * (1 - fg[3]));
+        const [l1, l2] = [lum(text), lum(bg)].sort((x, y) => y - x);
+        ratios.push((l1 + .05) / (l2 + .05));
+      }
+      if (ratios.length < 8) return 21; // no own text drawn (e.g. only child elements)
+      ratios.sort((x, y) => x - y);
+      return ratios[Math.floor(ratios.length * .1)]; // tolerate a few edge pixels that re-rasterise between shots
+    }, { shown, hidden, fg: info.fg, sel: selector });
+    if (ratio < (info.large ? 3 : 4.5)) low.push(`${selector} ${ratio.toFixed(2)}:1`);
+  }
+  return low;
+}
+
 (async () => {
   await fs.mkdir(path.join(output, 'screens'), { recursive: true });
   const browser = await chromium.launch({ executablePath });
@@ -98,8 +170,18 @@ function watch(page) {
           const page = await context.newPage();
           await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
           await page.addScriptTag({ content: axeSource });
-          const violations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })).violations.map(v => `${v.id}: ${v.nodes.slice(0, 3).map(n => n.target.join(' ')).join(', ')}`));
+          const { violations, incomplete } = await page.evaluate(async () => {
+            const result = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } });
+            return {
+              violations: result.violations.map(v => `${v.id}: ${v.nodes.slice(0, 3).map(n => n.target.join(' ')).join(', ')}`),
+              incomplete: (result.incomplete.find(r => r.id === 'color-contrast')?.nodes ?? []).map(n => n.target[0]).filter(sel => typeof sel === 'string'),
+            };
+          });
           assert.deepEqual(violations, []);
+          // axe cannot decide contrast over gradients, images and translucent
+          // layers ("incomplete"). Measure those from pixels instead.
+          const low = await pixelContrast(page, incomplete);
+          assert.ok(low.length === 0, `text below AA contrast (pixel check, ${incomplete.length} nodes): ${low.slice(0, 6).join(' ; ')}`);
           await page.close();
         });
       }
@@ -118,7 +200,9 @@ function watch(page) {
       ids[`/${route}.html`] = await page.evaluate(() => [...document.querySelectorAll('[id]')].map(el => el.id));
       (await page.evaluate(() => [...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href')))).forEach(href => links.add(`${route}|${href}`));
     }
-    const legacy = ['/work.html#katana', '/work.html#nookbase', '/work.html#inos', '/work.html#project-1', '/work.html#project-2', '/work.html#project-3', '/work.html#project-4', '/work.html#project-5', '/research.html#optimisation', '/research.html#quant', '/research.html#quantum', '/research.html#education', '/cv.html#experience', '/cv.html#skills', '/tutoring.html#lesson-enquiry'];
+    const legacy = ['/work.html#katana', '/work.html#nookbase', '/work.html#inos', '/work.html#project-1', '/work.html#project-2', '/work.html#project-3', '/work.html#project-4', '/work.html#project-5', '/research.html#optimisation', '/research.html#quant', '/research.html#quantum', '/research.html#education', '/cv.html#experience', '/cv.html#skills', '/tutoring.html#lesson-enquiry',
+      // Chapter anchors of the previous tour pages.
+      ...tours.flatMap(tour => [0, 1, 2, 3, 4, 5].map(n => `/${tour}.html#ch-${n}`))];
     const problems = [];
     const resolve = (from, href) => {
       if (/^(mailto:|https?:)/.test(href)) return;
@@ -170,6 +254,18 @@ function watch(page) {
     // On every document: record the gate's state at first paint, and whether a
     // native view transition ever ran.
     await context.addInitScript(() => {
+      // Leaving: when the page is hidden. Arriving: when the white has gone, measured from the first frame.
+      addEventListener('pagehide', () => { try { sessionStorage.setItem('qa-pagehide', String(Date.now())); } catch {} });
+      requestAnimationFrame(function first(t0) {
+        const white = document.querySelector('.gate__white');
+        if (!white || document.documentElement.dataset.gate !== 'in') return;
+        const poll = t => {
+          const gate = white.parentElement;
+          if (Number(getComputedStyle(white).opacity) < .01 || getComputedStyle(gate).visibility === 'hidden') window.__whiteGone = t - t0;
+          else requestAnimationFrame(poll);
+        };
+        requestAnimationFrame(poll);
+      });
       window.__vt = 0;
       addEventListener('pagereveal', event => { if (event.viewTransition) window.__vt++; });
       requestAnimationFrame(() => {
@@ -196,9 +292,9 @@ function watch(page) {
       };
     });
     // Click via the DOM so Playwright's wait for the doors' entrance animation is not timed.
-    const started = Date.now();
+    const started = await page.evaluate(() => Date.now());
     await Promise.all([page.waitForURL(/work\.html$/), page.evaluate(() => document.querySelector('.doors a[href="/work.html"]').click())]);
-    const leaveMs = Date.now() - started;
+    const leaveMs = Number(await page.evaluate(() => sessionStorage.getItem('qa-pagehide'))) - started;
     const leave = JSON.parse(await page.evaluate(() => sessionStorage.getItem('qa-leave')) || 'null');
     assert.ok(leave, 'the door wrote the gate token');
     assert.equal(leave.state, 'open', 'doors play the open gate');
@@ -210,7 +306,11 @@ function watch(page) {
     assert.ok(first.white >= .99, `arriving page white at first paint (${first.white})`);
     await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-gate]')).visibility === 'hidden' || getComputedStyle(document.querySelector('[data-gate]')).display === 'none', null, { timeout: 1500 });
     assert.equal(await page.evaluate(() => window.__vt), 0, 'no native view transition alongside the gate');
-    if (reducedMotion === 'reduce' || motionOff) assert.ok(leaveMs < 1500, `reduced/paused leave is quick (${leaveMs}ms)`);
+    assert.ok(leaveMs > 0 && leaveMs <= 900, `click → pagehide within 900ms (${leaveMs}ms)`);
+    if (reducedMotion === 'reduce' || motionOff) assert.ok(leaveMs < 600, `reduced/paused leave is quick (${leaveMs}ms)`);
+    await page.waitForFunction(() => window.__whiteGone !== undefined, null, { timeout: 3000 });
+    const whiteGone = await page.evaluate(() => window.__whiteGone);
+    assert.ok(whiteGone <= 700, `arrival white gone within 700ms of first paint (${Math.round(whiteGone)}ms)`);
     // A same-page door: Skills on the homepage opens, jumps, reveals.
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await page.click('.doors a[href="/index.html#skills"]');
@@ -218,7 +318,7 @@ function watch(page) {
     const top = await page.locator('#skills').evaluate(el => el.getBoundingClientRect().top);
     assert.ok(Math.abs(top) < 120, `jumped to skills (${top})`);
     assert.deepEqual(errors, []);
-    results.push({ name: `gate ${label} leave duration`, status: 'info', message: `${leaveMs}ms click → next URL` });
+    results.push({ name: `gate ${label} timing`, status: 'info', message: `${leaveMs}ms click → pagehide; arrival white gone after ${Math.round(whiteGone)}ms` });
     await context.close();
   };
   for (const scenario of [
@@ -229,28 +329,41 @@ function watch(page) {
   ]) await check(`light gate ${scenario.label}: opaque white leaving, white at first paint, revealed ≤ 1.5 s`, () => gateScenario(scenario));
 
   await check('light gate: ordinary links use the quick gate; PDFs, mail and new tabs are untouched; back from bfcache is never white', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    // Playwright disables the back/forward cache by default; this browser keeps
+    // it, so Back really restores the page that left through the gate.
+    const bfBrowser = await chromium.launch({ executablePath, ignoreDefaultArgs: ['--disable-back-forward-cache'] });
+    const context = await bfBrowser.newContext({ reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    await context.addInitScript(() => addEventListener('pageshow', event => { window.__persisted = event.persisted; }));
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await Promise.all([page.waitForURL(/research\.html$/), page.click('#site-nav a[href="/research.html"]')]);
     assert.equal(await page.evaluate(() => document.documentElement.dataset.gate), 'in');
-    await page.goBack({ waitUntil: 'networkidle' });
-    await page.waitForTimeout(900);
-    assert.ok(!(await page.locator('[data-gate]').evaluate(el => el.dataset.state === 'open' || el.dataset.state === 'quick')), 'not left white after Back');
+    await page.waitForTimeout(300);
+    await page.goBack({ waitUntil: 'commit' });
+    await page.waitForFunction(() => window.__persisted !== undefined, null, { timeout: 3000 });
+    assert.equal(await page.evaluate(() => window.__persisted), true, 'Back restored the page from the bfcache');
+    await page.waitForFunction(() => { const gate = document.querySelector('[data-gate]'); return !gate.dataset.state && (getComputedStyle(gate).display === 'none' || Number(getComputedStyle(gate.querySelector('.gate__white')).opacity) === 0); }, null, { timeout: 1000 });
     const untouched = await page.evaluate(() => {
       const gate = document.querySelector('[data-gate]');
       const tried = [];
+      // Registered after gate.ts's own document listener, so the gate sees each
+      // click first; this only stops the browser actually leaving.
+      let gatePrevented = false;
+      const stop = event => { gatePrevented = event.defaultPrevented; event.preventDefault(); };
+      document.addEventListener('click', stop);
       for (const sel of ['a[href$=".pdf"]', 'a[href^="mailto:"]', 'a[target="_blank"]']) {
         const link = document.querySelector(sel);
         if (!link) continue;
-        link.addEventListener('click', event => event.preventDefault(), { once: true });
+        gatePrevented = false;
         link.click();
-        tried.push(gate.dataset.state || '');
+        tried.push({ sel, state: gate.dataset.state || '', gatePrevented });
       }
+      document.removeEventListener('click', stop);
       return tried;
     });
-    assert.ok(untouched.every(state => state === ''), `gate ignored ${JSON.stringify(untouched)}`);
-    await context.close();
+    assert.equal(untouched.length, 3, 'all three link kinds tried');
+    assert.ok(untouched.every(t => t.state === '' && !t.gatePrevented), `gate ignored ${JSON.stringify(untouched)}`);
+    await bfBrowser.close();
   });
 
   /* 6. Pause motion stops every loop; contact is one tap away everywhere. */
@@ -392,6 +505,42 @@ function watch(page) {
       await page.waitForTimeout(1300);
       const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.closest('[hidden]') && (!el.classList.contains('is-in') || Number(getComputedStyle(el).opacity) < .99 || !/^(none|inset\(0(px)?( round [^)]*)?\))$/.test(getComputedStyle(el).clipPath))).map(el => el.className || el.tagName));
       if (hidden.length) problems.push(`${route}: ${hidden.slice(0, 3).join(' | ')}`);
+    }
+    assert.deepEqual(problems, []);
+    await context.close();
+  });
+
+  for (const [label, viewport, mobile] of [['phone', { width: 390, height: 844 }, true], ['desktop', { width: 1280, height: 900 }, false]]) {
+    await check(`Pause motion visible in the first screen of every page (${label})`, async () => {
+      const context = await isolated(browser, { viewport, isMobile: mobile, hasTouch: mobile, reducedMotion: 'no-preference' });
+      const page = await context.newPage();
+      const missing = [];
+      for (const route of [...routes, ...tours]) {
+        await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(1600); // hero entrance
+        const seen = await page.evaluate(() => [...document.querySelectorAll('[data-motion-toggle]')].some(el => {
+          const box = el.getBoundingClientRect();
+          return el.checkVisibility({ opacityProperty: true, visibilityProperty: true }) && box.width >= 24 && box.top >= 0 && box.bottom <= innerHeight && box.left >= 0 && box.right <= innerWidth;
+        }));
+        if (!seen) missing.push(route);
+      }
+      assert.deepEqual(missing, []);
+      await context.close();
+    });
+  }
+
+  await check('scroll reveals never hide content when the site script fails to load', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    await context.route(/\/_astro\/Base\.astro_astro_type_script[^/]*\.js$/, route => route.abort());
+    const page = await context.newPage();
+    const problems = [];
+    for (const route of [...routes, ...tours]) {
+      await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+      const total = await page.evaluate(() => document.body.scrollHeight);
+      for (let y = 0; y < total; y += 600) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(30); }
+      await page.waitForTimeout(1200);
+      const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.closest('[hidden]') && Number(getComputedStyle(el).opacity) < .99).map(el => el.className || el.tagName));
+      if (hidden.length) problems.push(`${route}: ${hidden.length} hidden (${hidden.slice(0, 2).join(' | ')})`);
     }
     assert.deepEqual(problems, []);
     await context.close();

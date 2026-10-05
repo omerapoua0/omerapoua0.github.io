@@ -11,7 +11,7 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
       <span class="brand__mark" aria-hidden="true"><i></i></span>
       <span class="brand__text">
         <span class="brand__name">Omar Aboelella</span>
-        <span class="brand__meta">AI · Maths · Tutoring</span>
+        <span class="brand__meta">AI · Maths · Lessons</span>
       </span>
     </a>
     <nav class="nav" id="site-nav" aria-label="Main" data-nav>
@@ -19,7 +19,7 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
         {navigation.map((item, index) => (
           <li><a href={item.href} aria-current={path === item.href ? 'page' : undefined}><span class="nav__num" aria-hidden="true">0{index + 1}</span>{item.label}</a></li>
         ))}
-        <li class="nav__sheet-only"><a href="/contact.html" aria-current={path === '/contact.html' ? 'page' : undefined}><span class="nav__num" aria-hidden="true">06</span>Contact</a></li>
+        <li class="nav__sheet-only"><a href="/contact.html" aria-current={path === '/contact.html' ? 'page' : undefined}><span class="nav__num" aria-hidden="true">0{navigation.length + 1}</span>Contact</a></li>
       </ol>
       <div class="nav__sheet-foot nav__sheet-only">
         <a href={`mailto:${site.email}`}>{site.email}</a>
@@ -55,7 +55,16 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
   .nav__list a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 520; text-decoration: none; position: relative; transition: background-color var(--d-2), color var(--d-2); }
   .nav__list a:hover { background: var(--bg); color: var(--accent); }
   .nav__list a[aria-current='page'] { background: var(--ink); color: #fff; }
+  .nav__list a, .brand__name { white-space: nowrap; }
   .nav__num { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  /* Six sections plus Contact: on narrower desktops, drop the numbers, the
+     brand tagline and the shortcut hint so everything stays on one line. */
+  @media (min-width: 1100px) and (max-width: 1299px) {
+    .nav__num, .brand__meta { display: none; }
+    .kbd-btn kbd { display: none; }
+    .kbd-btn { padding: 0; }
+    .nav__list a { padding: 0 12px; }
+  }
   .nav__list a[aria-current='page'] .nav__num { color: #c9ced8; }
   .nav__sheet-only { display: none; }
   .header__actions { display: flex; align-items: center; gap: var(--s-2); }

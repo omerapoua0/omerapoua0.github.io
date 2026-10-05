@@ -67,18 +67,32 @@ if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
   });
 }
 
-let lastY = window.scrollY, vel = 0, frame = 0;
-const settle = () => {
-  vel *= .88;
-  root.style.setProperty('--scroll-vel', vel.toFixed(3));
-  frame = Math.abs(vel) > .01 ? requestAnimationFrame(settle) : 0;
-  if (!frame) root.style.setProperty('--scroll-vel', '0');
-};
-addEventListener('scroll', () => {
-  const y = window.scrollY;
-  if (!still()) vel = Math.max(-1, Math.min(1, vel + (y - lastY) / 600));
-  lastY = y;
-  if (!frame) frame = requestAnimationFrame(settle);
-}, { passive: true });
+/* Scroll velocity, written only on the marquee bands that read it (never on
+   :root, which would restyle the whole document every frame) and only while
+   one of them is on screen. */
+const leaners = [...document.querySelectorAll<HTMLElement>('.mq, .marquee')];
+if (leaners.length && 'IntersectionObserver' in window) {
+  const inView = new Set<HTMLElement>();
+  let lastY = window.scrollY, vel = 0, frame = 0;
+  const write = (value: string) => inView.forEach(band => band.style.setProperty('--scroll-vel', value));
+  const settle = () => {
+    vel *= .88;
+    frame = Math.abs(vel) > .01 && inView.size ? requestAnimationFrame(settle) : 0;
+    write(frame ? vel.toFixed(3) : '0');
+    if (!frame) vel = 0;
+  };
+  const watcher = new IntersectionObserver(entries => entries.forEach(entry => {
+    const band = entry.target as HTMLElement;
+    if (entry.isIntersecting) inView.add(band);
+    else { inView.delete(band); band.style.setProperty('--scroll-vel', '0'); }
+  }));
+  leaners.forEach(band => watcher.observe(band));
+  addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (!still() && inView.size) vel = Math.max(-1, Math.min(1, vel + (y - lastY) / 600));
+    lastY = y;
+    if (!frame && inView.size && vel) frame = requestAnimationFrame(settle);
+  }, { passive: true });
+}
 
 export {};

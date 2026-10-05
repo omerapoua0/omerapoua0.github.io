@@ -4,7 +4,9 @@
    (portrait, contact card) and spec chips that count up. Behind it: drifting
    blue/white light, a grid that follows the pointer and an outlined watermark
    word. Facts in chips come from src/data or the CV. Everything is readable
-   without JavaScript; the entrance waits for the light gate (--enter-delay). */
+   without JavaScript; the entrance waits for the light gate (--enter-delay).
+   The Pause motion switch sits beside the eyebrow, in the first screen. */
+import MotionToggle from './MotionToggle.astro';
 interface Line { text: string; accent?: boolean }
 interface Chip { value?: number; prefix?: string; text?: string; label: string }
 interface Props { index: number; section: string; lines: Line[]; watermark: string; meta?: string[]; chips?: Chip[]; compact?: boolean }
@@ -21,7 +23,10 @@ const pad = (value: number) => String(value).padStart(2, '0');
   </div>
   <div class="wrap phero__inner">
     <div class="phero__copy">
-      <p class="phero__eyebrow"><span class="phero__idx">{pad(index)}<span>/07</span></span><span class="phero__section">{section}</span>{meta.map(item => <span class="phero__meta">{item}</span>)}</p>
+      <div class="phero__top">
+        <p class="phero__eyebrow"><span class="phero__idx">{pad(index)}<span>/07</span></span><span class="phero__section">{section}</span>{meta.map(item => <span class="phero__meta">{item}</span>)}</p>
+        <MotionToggle class="phero__pause" />
+      </div>
       <h1 id="page-title" class="phero__title">
         {lines.map(line => (
           <span class:list={['phero__line', { 'phero__line--accent': line.accent }]}>
@@ -48,15 +53,15 @@ const pad = (value: number) => String(value).padStart(2, '0');
 
 <style>
   .phero { position: relative; isolation: isolate; overflow: clip; margin-top: calc(var(--header) * -1); padding-top: var(--header); background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 85%); border-bottom: 1px solid var(--line); }
-  .phero__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .phero__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; contain: paint; }
   .phero__grid { position: absolute; inset: -40px; background:
       linear-gradient(#0a0c100c 1px, transparent 1px) 0 0 / 56px 56px,
       linear-gradient(90deg, #0a0c100c 1px, transparent 1px) 0 0 / 56px 56px;
     -webkit-mask: radial-gradient(70% 80% at 70% 40%, #000 15%, transparent 72%); mask: radial-gradient(70% 80% at 70% 40%, #000 15%, transparent 72%);
     transform: translate3d(calc(var(--mx, 0) * 14px), calc(var(--my, 0) * 12px), 0); transition: transform 900ms var(--ease-out); }
-  .phero__blob { position: absolute; border-radius: 50%; filter: blur(60px); will-change: transform; }
-  .phero__blob--a { width: 48vw; height: 48vw; right: -12vw; top: -14vw; background: radial-gradient(closest-side, #1f4bff33, #1f4bff00); }
-  .phero__blob--b { width: 34vw; height: 34vw; left: -8vw; bottom: -16vw; background: radial-gradient(closest-side, #ffffff, #ffffff00); }
+  .phero__blob { position: absolute; border-radius: 50%; will-change: transform; } /* no blur on moving layers */
+  .phero__blob--a { width: 48vw; height: 48vw; right: -12vw; top: -14vw; background: radial-gradient(closest-side, #1f4bff33, #1f4bff19 45%, #1f4bff00); }
+  .phero__blob--b { width: 34vw; height: 34vw; left: -8vw; bottom: -16vw; background: radial-gradient(closest-side, #ffffff, #ffffff80 45%, #ffffff00); }
   .phero__mark { position: absolute; right: -2vw; bottom: -.12em; font-size: clamp(7rem, 24vw, 26rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #0a0c1010; white-space: nowrap; transform: translate3d(calc(var(--mx, 0) * -22px), 0, 0); transition: transform 1200ms var(--ease-out); user-select: none; }
 
   .phero__inner { position: relative; display: grid; gap: clamp(28px, 4vw, 48px); padding-top: clamp(36px, 7vw, 104px); padding-bottom: clamp(44px, 6vw, 88px); }
@@ -64,6 +69,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
   .phero__eyebrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; width: fit-content; max-width: 100%; padding: 6px 14px 6px 6px; border-radius: 999px; background: #ffffffb3; border: 1px solid #ffffff; box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
   .phero__idx { display: inline-flex; align-items: baseline; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; }
   .phero__idx span { color: #e3e9ff; font-weight: 400; }
+  .phero__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .phero__meta { color: var(--muted); }
   .phero__meta::before { content: '·'; margin-right: 12px; color: var(--line-strong); }
   .phero__title { margin-top: 26px; font-size: clamp(2.35rem, .9rem + 5.6vw, 6.6rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; text-transform: uppercase; max-width: 16ch; }
@@ -90,6 +96,10 @@ const pad = (value: number) => String(value).padStart(2, '0');
   }
   @media (max-width: 520px) {
     .phero__actions .btn { flex: 1 1 auto; }
+    /* Keep the eyebrow a one-line pill beside Pause motion: the meta items
+       (also said in the page itself) give way on phones. */
+    .phero__meta { display: none; }
+    .phero__eyebrow { flex-wrap: nowrap; white-space: nowrap; font-size: 10.5px; gap: 10px; }
   }
 
   @media (prefers-reduced-motion: no-preference) {

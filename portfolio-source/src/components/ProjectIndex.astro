@@ -71,7 +71,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
   .fchip > span { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-1); font-size: 14px; font-weight: 540; transition: background-color var(--d-2), color var(--d-2), border-color var(--d-2), box-shadow var(--d-3), transform var(--d-3) var(--ease-spring); }
   .fchip .num { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--bg); font-size: 11px; color: var(--muted); }
   .fchip input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 10px 24px -10px var(--accent-glow); }
-  .fchip input:checked + span .num { background: #ffffff2e; color: #fff; }
+  .fchip input:checked + span .num { background: var(--navy); color: #fff; }
   .fchip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
   .fchip:hover > span { border-color: var(--accent); transform: translateY(-2px); }
 

@@ -272,7 +272,7 @@ const faqs = [
 <style>
   .creds { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 30px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-3); }
   .creds__kicker { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-  .creds__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px #1d6b4a22; }
+  .creds__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px var(--accent-soft); }
   .creds__who { display: flex; align-items: center; gap: 14px; }
   .creds__who img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--line); }
   .creds__who p { display: grid; gap: 2px; }
@@ -298,8 +298,11 @@ const faqs = [
   .level__step .idx { font-size: 15px; }
   .level h3 { font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.6rem); letter-spacing: -.05em; }
   .level:last-of-type { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .level:last-of-type :is(.muted, .go, .idx) { color: #e3e9ff; }
-  .level:last-of-type .level__step { background: #ffffff26; }
+  .level:last-of-type :is(.muted, .go) { color: #e3e9ff; }
+  /* An opaque step badge (no translucent white over the blue) keeps the
+     index at AA contrast. */
+  .level:last-of-type :is(.idx, .idx span) { color: #ffffff; }
+  .level:last-of-type .level__step { background: var(--accent-hover); }
   @media (min-width: 900px) {
     .levels { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter); }
     .levels__path { display: block; position: absolute; left: 10%; right: 10%; top: 56px; height: 2px; background: var(--line); }

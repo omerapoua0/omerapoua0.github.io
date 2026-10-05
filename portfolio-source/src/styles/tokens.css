@@ -34,7 +34,9 @@
   --navy-muted: #a9b4dd;
   --navy-line: #24305f;
   --signal: #9a4708;
-  --ok: #1d6b4a;
+  /* "Current" is told apart by a filled, ringed dot, not by a green: the
+     palette is one blue accent only. */
+  --ok: var(--accent);
   /* Media plates: deep navy behind duotone concept visuals. */
   --plate: #0b1640;
   --plate-ink: #eef1ff;

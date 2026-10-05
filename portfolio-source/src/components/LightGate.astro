@@ -4,10 +4,12 @@
    cross-document view transition.
 
    Leaving (gate.ts sets data-state):
-   - "open" (doors, project cards, primary CTAs): two light seams close in
-     from the sides like hands coming together, meet at the centre, a white
-     light bursts out and fills the screen while a thin blue line runs; the
-     page is fully white before the browser navigates. If the robot's open
+   - "open" (doors, project cards, primary CTAs): two wide panels of light
+     with bright blue-rimmed inner edges slide in from the sides like hands
+     coming together and meet where the visitor clicked (--gx/--gy, set by
+     gate.ts); a white light bursts from that point and fills the screen
+     while a thin blue line runs; the page is fully white before the browser
+     navigates (≈ 650 ms). The hero robot flares at the same moment. If the robot's open
      clip exists (public/robot/open.mp4) it plays instead of the seams.
    - "quick" (menus and ordinary links): the white simply rises.
    Arriving: the inline head script in Base.astro reads the sessionStorage
@@ -41,17 +43,23 @@ const openWebm = existsSync(path.join(process.cwd(), 'public/robot/open.webm'));
 </div>
 
 <style is:global>
-  .gate { display: none; position: fixed; inset: 0; z-index: 300; pointer-events: none; contain: strict; overflow: hidden; -webkit-user-select: none; user-select: none; }
+  .gate { --gx: 50vw; --gy: 50vh; display: none; position: fixed; inset: 0; z-index: 300; pointer-events: none; contain: strict; overflow: hidden; -webkit-user-select: none; user-select: none; }
   .gate[data-state], html[data-gate='in'] .gate { display: block; }
   .gate > * { position: absolute; }
   .gate__veil { inset: 0; background: #f5f6f8; opacity: 0; }
   .gate__white { inset: 0; background: radial-gradient(60% 60% at 50% 50%, #ffffff, #f6f7fa 70%, #eef0f3); opacity: 0; }
   .gate__clip { inset: 0; width: 100%; height: 100%; object-fit: cover; background: #fff; opacity: 0; }
-  /* The two "hands": tall slivers of light with a blue rim. */
-  .gate__seam { top: -10%; bottom: -10%; width: 2px; left: 50%; margin-left: -1px; border-radius: 2px; background: linear-gradient(180deg, transparent, #fff 18%, #fff 82%, transparent); box-shadow: 0 0 18px 5px #ffffffe6, 0 0 60px 16px #1f4bff66, 0 0 180px 50px #1f4bff2e; opacity: 0; }
-  .gate__flare { left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: radial-gradient(circle, #fff 0 30%, #ffffffcc 45%, #c9d5ff66 62%, transparent 72%); box-shadow: 0 0 80px 30px #ffffffd9, 0 0 160px 60px #1f4bff33; opacity: 0; }
+  /* The two "hands": wide soft panels of light whose inner edges are a
+     bright white line with blue rim light. They meet at --gx. */
+  .gate__seam { top: 0; bottom: 0; width: 18vw; min-width: 120px; opacity: 0; }
+  .gate__seam--l { right: calc(100% - var(--gx)); background: linear-gradient(90deg, #ffffff00, #e9eeffa6 55%, #ffffffee); }
+  .gate__seam--r { left: var(--gx); background: linear-gradient(270deg, #ffffff00, #e9eeffa6 55%, #ffffffee); }
+  .gate__seam::after { content: ''; position: absolute; top: 0; bottom: 0; width: 3px; background: #fff; box-shadow: 0 0 14px 4px #ffffff, 0 0 44px 12px #1f4bff8c, 0 0 140px 40px #1f4bff38; }
+  .gate__seam--l::after { right: -1px; }
+  .gate__seam--r::after { left: -1px; }
+  .gate__flare { left: var(--gx); top: var(--gy); width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: radial-gradient(circle, #fff 0 30%, #ffffffcc 45%, #c9d5ff66 62%, transparent 72%); box-shadow: 0 0 80px 30px #ffffffd9, 0 0 160px 60px #1f4bff33; opacity: 0; }
   /* The rim of the burst: a thin white edge with blue light, riding the opening circle. */
-  .gate__ring { left: 50%; top: 50%; width: 0; height: 0; border-radius: 50%; translate: -50% -50%; box-shadow: 0 0 0 2px #ffffff, 0 0 30px 8px #1f4bff66, 0 0 90px 30px #1f4bff26, inset 0 0 40px 10px #1f4bff33; opacity: 0; }
+  .gate__ring { left: var(--gx); top: var(--gy); width: 0; height: 0; border-radius: 50%; translate: -50% -50%; box-shadow: 0 0 0 2px #ffffff, 0 0 30px 8px #1f4bff66, 0 0 90px 30px #1f4bff26, inset 0 0 40px 10px #1f4bff33; opacity: 0; }
   .gate__hud { left: 50%; top: 50%; display: grid; justify-items: center; gap: 18px; width: min(86vw, 520px); transform: translate(-50%, -50%); opacity: 0; color: var(--ink); text-align: center; }
   .gate__label { display: grid; justify-items: center; gap: 2px; font-size: clamp(30px, 1rem + 3.2vw, 64px); font-weight: 640; letter-spacing: -.045em; line-height: 1; }
   .gate__label b { font-weight: inherit; }
@@ -60,16 +68,17 @@ const openWebm = existsSync(path.join(process.cwd(), 'public/robot/open.webm'));
   .gate__line { position: relative; width: min(260px, 60vw); height: 2px; border-radius: 2px; background: #1f4bff1f; overflow: hidden; }
   .gate__line i { position: absolute; inset: 0; background: var(--accent); box-shadow: 0 0 12px #1f4bffaa; transform-origin: 0 50%; transform: scaleX(0); }
 
-  /* Leave, "open": seams close (0–440), flare (380–620), white bursts (420–820). */
-  .gate[data-state='open'] .gate__veil { animation: g-fade-to 440ms ease-out both; }
-  .gate[data-state='open'] .gate__seam { animation: g-seam-in 440ms cubic-bezier(.7, 0, .3, 1) both; }
-  .gate[data-state='open'] .gate__seam--l { --from: -46vw; }
-  .gate[data-state='open'] .gate__seam--r { --from: 46vw; }
-  .gate[data-state='open'] .gate__flare { animation: g-flare 520ms cubic-bezier(.3, 0, .2, 1) 360ms both; }
-  .gate[data-state='open'] .gate__white { animation: g-burst 420ms cubic-bezier(.55, 0, .25, 1) 420ms both; }
-  .gate[data-state='open'] .gate__ring { animation: g-ring 420ms cubic-bezier(.55, 0, .25, 1) 420ms both; }
-  .gate[data-state='open'] .gate__hud { animation: g-fade-to 220ms ease-out 640ms both; }
-  .gate[data-state='open'] .gate__line i { animation: g-line 900ms cubic-bezier(.3, .6, .3, 1) 120ms both; }
+  /* Leave, "open": hands close (0–300), flare (250–470), white bursts from
+     the click point (300–600), then gate.ts navigates. */
+  .gate[data-state='open'] .gate__veil { animation: g-fade-to 300ms ease-out both; }
+  .gate[data-state='open'] .gate__seam { animation: g-seam-in 300ms cubic-bezier(.7, 0, .3, 1) both; }
+  .gate[data-state='open'] .gate__seam--l { --from: -70vw; }
+  .gate[data-state='open'] .gate__seam--r { --from: 70vw; }
+  .gate[data-state='open'] .gate__flare { animation: g-flare 220ms cubic-bezier(.3, 0, .2, 1) 250ms both; }
+  .gate[data-state='open'] .gate__white { animation: g-burst 300ms cubic-bezier(.55, 0, .25, 1) 300ms both; }
+  .gate[data-state='open'] .gate__ring { animation: g-ring 300ms cubic-bezier(.55, 0, .25, 1) 300ms both; }
+  .gate[data-state='open'] .gate__hud { animation: g-fade-to 160ms ease-out 400ms both; }
+  .gate[data-state='open'] .gate__line i { animation: g-line 600ms cubic-bezier(.3, .6, .3, 1) both; }
   /* Leave with the robot's own clip. gate.ts sets data-clip-on when it plays. */
   .gate[data-state='open'][data-clip-on] :is(.gate__seam, .gate__flare, .gate__veil, .gate__ring) { animation: none; opacity: 0; }
   .gate[data-state='open'][data-clip-on] .gate__clip { opacity: 1; }
@@ -82,25 +91,26 @@ const openWebm = existsSync(path.join(process.cwd(), 'public/robot/open.webm'));
   .gate[data-state='quick'] .gate__line i { animation: g-line 520ms cubic-bezier(.3, .6, .3, 1) both; }
 
   /* Arrive (first paint), or "reveal" for a same-page door: opaque white,
-     the line completes (0–220), the light dissolves (180–700). */
-  html[data-gate='in'] .gate, .gate[data-state='reveal'] { animation: g-gone 760ms linear both; }
-  html[data-gate='in'] .gate__white, .gate[data-state='reveal'] .gate__white { opacity: 1; animation: g-dissolve 520ms cubic-bezier(.4, 0, .2, 1) 180ms both; }
-  html[data-gate='in'] .gate__hud, .gate[data-state='reveal'] .gate__hud { opacity: 1; animation: g-hud-out 260ms ease-in 120ms both; }
-  html[data-gate='in'] .gate__line i, .gate[data-state='reveal'] .gate__line i { transform: scaleX(.9); animation: g-line-done 200ms ease-out both; }
+     the line completes (0–160), the light dissolves (60–480). */
+  html[data-gate='in'] .gate, .gate[data-state='reveal'] { animation: g-gone 500ms linear both; }
+  html[data-gate='in'] .gate__white, .gate[data-state='reveal'] .gate__white { opacity: 1; animation: g-dissolve 420ms cubic-bezier(.4, 0, .2, 1) 60ms both; }
+  html[data-gate='in'] .gate__hud, .gate[data-state='reveal'] .gate__hud { opacity: 1; animation: g-hud-out 200ms ease-in both; }
+  html[data-gate='in'] .gate__line i, .gate[data-state='reveal'] .gate__line i { transform: scaleX(.9); animation: g-line-done 160ms ease-out both; }
   /* The page itself rises out of the light (the hero has its own entrance). */
-  html[data-gate='in'] { --enter-delay: 260ms; }
+  html[data-gate='in'] { --enter-delay: 120ms; }
   @media (prefers-reduced-motion: no-preference) {
-    html[data-gate='in']:not([data-motion='off']) main > :is(:nth-child(1), :nth-child(2), :nth-child(3)):not([data-own-entrance]):not(.intro) { animation: g-rise 760ms var(--ease-out) both; animation-delay: calc(240ms + var(--i, 0) * 90ms); }
+    html[data-gate='in']:not([data-motion='off']) main > :is(:nth-child(1), :nth-child(2), :nth-child(3)):not([data-own-entrance]):not(.intro) { animation: g-rise 700ms var(--ease-out) both; animation-delay: calc(100ms + var(--i, 0) * 90ms); }
     html[data-gate='in'] main > :nth-child(2) { --i: 1; }
     html[data-gate='in'] main > :nth-child(3) { --i: 2; }
   }
 
   @keyframes g-fade-to { from { opacity: 0; } to { opacity: var(--to, 1); } }
   .gate__veil { --to: .55; }
-  @keyframes g-seam-in { 0% { opacity: 0; transform: translateX(var(--from, 0)) scaleY(.6); } 25% { opacity: 1; } 100% { opacity: 1; transform: translateX(0) scaleY(1); } }
+  @keyframes g-seam-in { 0% { opacity: 0; transform: translateX(var(--from, 0)); } 30% { opacity: 1; } 100% { opacity: 1; transform: translateX(0); } }
   @keyframes g-flare { 0% { opacity: 0; transform: scale(.2); } 35% { opacity: 1; transform: scale(2.2); } 100% { opacity: 1; transform: scale(9); } }
-  @keyframes g-burst { from { opacity: 1; clip-path: circle(0 at 50% 50%); } to { opacity: 1; clip-path: circle(75vmax at 50% 50%); } }
-  @keyframes g-ring { 0% { width: 0; height: 0; opacity: 1; } 85% { opacity: 1; } 100% { width: 150vmax; height: 150vmax; opacity: 0; } }
+  /* 150vmax reaches every corner even from a click at the screen's edge. */
+  @keyframes g-burst { from { opacity: 1; clip-path: circle(0 at var(--gx) var(--gy)); } to { opacity: 1; clip-path: circle(150vmax at var(--gx) var(--gy)); } }
+  @keyframes g-ring { 0% { width: 0; height: 0; opacity: 1; } 85% { opacity: 1; } 100% { width: 300vmax; height: 300vmax; opacity: 0; } }
   @keyframes g-line { from { transform: scaleX(0); } to { transform: scaleX(.9); } }
   @keyframes g-line-done { from { transform: scaleX(.9); } to { transform: scaleX(1); } }
   @keyframes g-dissolve { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(1.04); } }

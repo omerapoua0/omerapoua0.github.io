@@ -12,12 +12,15 @@ export const site = {
     'Omar Aboelella: London-based AI product engineer, Computer Science & Mathematics student at Birkbeck, and online maths & science tutor.',
 } as const;
 
+/** One vocabulary everywhere: the homepage doors, the header, the menu, the
+ *  footer and the light gate's label all say Work · Skills · Lessons. */
 export const navigation = [
-  { label: 'Projects', href: '/work.html' },
+  { label: 'Work', href: '/work.html' },
+  { label: 'Skills', href: '/index.html#skills' },
+  { label: 'Lessons', href: '/tutoring.html' },
   { label: 'Automations', href: '/automations.html' },
   { label: 'Research', href: '/research.html' },
   { label: 'About & CV', href: '/cv.html' },
-  { label: 'Tutoring', href: '/tutoring.html' },
 ] as const;
 
 /** Count-up numbers. Each one is a CV fact. */

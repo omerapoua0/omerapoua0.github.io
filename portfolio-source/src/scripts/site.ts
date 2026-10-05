@@ -50,6 +50,9 @@ document.querySelectorAll<HTMLElement>('[data-reveal-stagger]').forEach(group =>
 });
 const revealables = [...document.querySelectorAll<HTMLElement>('[data-reveal]')];
 if ('IntersectionObserver' in window) {
+  // Only now may CSS hide unrevealed blocks (html.reveal-ready): if this
+  // script never runs, everything simply stays visible.
+  root.classList.add('reveal-ready');
   const revealer = new IntersectionObserver(entries => entries.forEach(entry => {
     if (!entry.isIntersecting) return;
     entry.target.classList.add('is-in');
@@ -59,18 +62,29 @@ if ('IntersectionObserver' in window) {
 } else revealables.forEach(element => element.classList.add('is-in'));
 
 /* Count-up numbers: final values are in the HTML; animate once when seen. */
+/* While a number counts, it is aria-hidden and a visually hidden copy holds
+   the final value, so assistive technology never reads the in-between. Not
+   with reduced motion or Pause motion. */
 const counters = [...document.querySelectorAll<HTMLElement>('[data-count-to]')];
-if (counters.length && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+const countStill = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.motion === 'off';
+if (counters.length && 'IntersectionObserver' in window && !countStill()) {
   const counter = new IntersectionObserver(entries => entries.forEach(entry => {
     if (!entry.isIntersecting) return;
     counter.unobserve(entry.target);
     const element = entry.target as HTMLElement;
+    if (countStill()) return;
     const target = Number(element.dataset.countTo) || 0;
+    const spoken = document.createElement('span');
+    spoken.className = 'sr-only';
+    spoken.textContent = String(target);
+    element.after(spoken);
+    element.setAttribute('aria-hidden', 'true');
     const started = performance.now();
     const tick = (time: number) => {
       const progress = Math.min(1, (time - started) / 1400);
       element.textContent = String(Math.round(target * (1 - (1 - progress) ** 3)));
-      if (progress < 1) requestAnimationFrame(tick);
+      if (progress < 1 && !countStill()) requestAnimationFrame(tick);
+      else { element.textContent = String(target); element.removeAttribute('aria-hidden'); spoken.remove(); }
     };
     element.textContent = '0';
     requestAnimationFrame(tick);
