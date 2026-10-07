@@ -28,10 +28,6 @@ const year = new Date().getFullYear();
       <div class="footer__note">
         <p class="label">How enquiries work</p>
         <p>Forms on this site prepare an email for you to review and send yourself. Nothing is sent, stored or booked by the website.</p>
-        <button class="footer__motion" type="button" data-motion-toggle>
-          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
-          <span data-motion-label>Pause motion</span>
-        </button>
       </div>
     </div>
     <div class="footer__base">
@@ -57,8 +53,6 @@ const year = new Date().getFullYear();
   .footer__grid ul { display: grid; margin-top: var(--s-3); }
   .footer__grid li a { display: inline-flex; min-height: 40px; align-items: center; font-size: var(--step-small); }
   .footer__note > p:nth-child(2) { margin-top: var(--s-3); color: var(--muted); font-size: var(--step-small); max-width: 40ch; }
-  .footer__motion { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: var(--s-5); padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--bg-2); font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
-  .footer__motion:hover { border-color: var(--accent); color: var(--accent); }
   .footer__base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2) var(--s-6); padding-block: var(--s-5) calc(var(--s-5) + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
   /* Pages that close with the navy contact band don't repeat the big CTA. */
   :global(body:is(.is-home, :has(main .band))) .footer__top { display: none; }

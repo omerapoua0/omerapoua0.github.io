@@ -5,17 +5,16 @@
    Scroll scrub: an element with [data-scrub] exposes --p (0 → 1) to its
    subtree as it crosses the screen. Where the browser has scroll-driven
    animations, CSS drives --p (no JavaScript); elsewhere scrub.ts writes it
-   from an IntersectionObserver + rAF. It only runs with JavaScript on, motion
-   on and no reduced-motion preference; otherwise --p rests at 0 and every
+   from an IntersectionObserver + rAF. It only runs with JavaScript on and no reduced-motion preference; otherwise --p rests at 0 and every
    rule below leaves the page in its static, readable state. */
 @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
 @keyframes scrub-p { from { --p: 0; } to { --p: 1; } }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    html.js:not([data-motion='off']) [data-scrub] { animation-name: scrub-p; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(block 0px); animation-range: cover; }
-    html.js:not([data-motion='off']) [data-scrub='contain'] { animation-range: contain 0% contain 100%; }
-    html.js:not([data-motion='off']) [data-scrub='exit'] { animation-range: exit 0% exit 100%; }
-    html.js:not([data-motion='off']) [data-scrub='entry'] { animation-range: entry 0% cover 50%; }
+    html.js [data-scrub] { animation-name: scrub-p; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(block 0px); animation-range: cover; }
+    html.js [data-scrub='contain'] { animation-range: contain 0% contain 100%; }
+    html.js [data-scrub='exit'] { animation-range: exit 0% exit 100%; }
+    html.js [data-scrub='entry'] { animation-range: entry 0% cover 50%; }
   }
 }
 
@@ -59,24 +58,23 @@
 .neon-line path:first-child { stroke: var(--blue); filter: drop-shadow(0 0 4px #2f6bffcc); }
 .neon-line path:last-child { stroke: var(--red); opacity: .8; filter: drop-shadow(0 0 4px #ff2d46aa); }
 @media (prefers-reduced-motion: no-preference) {
-  html.js:not([data-motion='off']) .neon-line path:first-child { stroke-dashoffset: calc(1 - min(1, var(--p) * 2.4)); }
-  html.js:not([data-motion='off']) .neon-line path:last-child { stroke-dashoffset: calc(1 - min(1, max(0, var(--p) * 2.4 - .25))); }
+  html.js .neon-line path:first-child { stroke-dashoffset: calc(1 - min(1, var(--p) * 2.4)); }
+  html.js .neon-line path:last-child { stroke-dashoffset: calc(1 - min(1, max(0, var(--p) * 2.4 - .25))); }
 }
 
 /* Big outlined display word that fills with light as you scroll past
    (mask reveal). At rest it is filled. */
 .fill-text { color: var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
-  html.js:not([data-motion='off']) .fill-text { color: transparent; background: linear-gradient(90deg, var(--ink) 0 calc(var(--p) * 180% - 40%), #ffffff2e calc(var(--p) * 180% - 20%)) 0 0 / 100% 100%; -webkit-background-clip: text; background-clip: text; }
+  html.js .fill-text { color: transparent; background: linear-gradient(90deg, var(--ink) 0 calc(var(--p) * 180% - 40%), #ffffff2e calc(var(--p) * 180% - 20%)) 0 0 / 100% 100%; -webkit-background-clip: text; background-clip: text; }
 }
 
-/* Ambient loops pause with Pause motion (WCAG 2.2.2). */
+/* Ambient loops: only without a reduced-motion preference. */
 @media (prefers-reduced-motion: no-preference) {
   .beams > i { animation: beam-sweep 14s ease-in-out infinite alternate; }
   .beams > i:nth-child(2) { animation-duration: 19s; animation-direction: alternate-reverse; }
   .beams > i:nth-child(3) { animation-duration: 23s; }
   .spec-label { animation: label-float 9s ease-in-out infinite alternate; animation-delay: var(--ld, 0s); }
-  html[data-motion='off'] :is(.beams > i, .spec-label) { animation-play-state: paused; }
 }
 @keyframes beam-sweep { from { transform: translateX(-9vw) scaleX(.85); opacity: .7; } to { transform: translateX(9vw) scaleX(1.15); opacity: 1; } }
 @keyframes label-float { from { transform: translateY(-5px); } to { transform: translateY(5px); } }
@@ -92,6 +90,6 @@
 .copy-btn[data-copied] .copy-btn__tick path { stroke-dashoffset: 0; }
 .copy-btn::after { content: ''; position: absolute; inset: -1px; border-radius: inherit; border: 1px solid var(--accent); opacity: 0; pointer-events: none; }
 @media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion='off']) .copy-btn[data-copied]::after { animation: copy-ring 700ms var(--ease-out); }
+  html .copy-btn[data-copied]::after { animation: copy-ring 700ms var(--ease-out); }
 }
 @keyframes copy-ring { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.5, 1.9); } }

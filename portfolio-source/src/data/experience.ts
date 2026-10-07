@@ -15,7 +15,7 @@ export const technicalExperience: Role[] = [
     period: 'Jan 2026 – present',
     org: 'Digis Squared Ltd',
     title: 'AI Product Engineer',
-    text: 'Technical strategy for the KATANA autonomy programme, closed-loop MAPE-K reasoning with Bayesian inference, TCO models, security auditing, sprint planning and cross-team LangGraph workflows.',
+    text: 'Working on KATANA, INOS and OctiMind: technology selection, technical and security audits, and business and product strategy. Technical strategy for the KATANA autonomy programme, closed-loop MAPE-K reasoning with Bayesian inference, TCO models, sprint planning and cross-team LangGraph workflows.',
     status: 'current',
     href: '/work.html#katana',
   },

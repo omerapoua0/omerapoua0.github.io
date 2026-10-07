@@ -90,7 +90,6 @@ const deck = caseStudies.filter(project => project.media).slice(0, 3).reverse();
   @media (max-width: 1099px) { .deck { height: clamp(240px, 62vw, 400px); } }
   @media (prefers-reduced-motion: no-preference) {
     .deck__card { animation: deck-float 7s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -2.3s); }
-    :global(html[data-motion='off']) .deck__card { animation-play-state: paused; }
   }
   @keyframes deck-float { from { translate: -50% -50%; } to { translate: -50% calc(-50% - 12px); } }
 </style>

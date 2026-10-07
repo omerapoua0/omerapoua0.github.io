@@ -24,10 +24,6 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
       <div class="nav__sheet-foot nav__sheet-only">
         <a href={`mailto:${site.email}`}>{site.email}</a>
         <a href="/Omar-Aboelella-CV.pdf" target="_blank" rel="noopener">CV (PDF) ↗</a>
-        <button class="motion-pill" type="button" data-motion-toggle>
-          <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path data-motion-icon d="M4 3h3v10H4zm5 0h3v10H9z" fill="currentColor" /></svg>
-          <span data-motion-label>Pause motion</span>
-        </button>
       </div>
     </nav>
     <div class="header__actions">
@@ -83,7 +79,6 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
   .menu-btn__bars::after { bottom: 0; }
   .menu-btn[aria-expanded='true'] .menu-btn__bars::before { transform: translateY(3.25px) rotate(45deg); }
   .menu-btn[aria-expanded='true'] .menu-btn__bars::after { transform: translateY(-3.25px) rotate(-45deg); }
-  .motion-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; width: fit-content; }
 
   @media (max-width: 1099px) {
     :global(html.js) .menu-btn { display: inline-flex; }

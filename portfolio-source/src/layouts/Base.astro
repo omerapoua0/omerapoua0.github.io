@@ -26,7 +26,7 @@ const person = {
   url: site.url,
   email: `mailto:${site.email}`,
   sameAs: [site.github, site.linkedin],
-  knowsAbout: ['AI product engineering', 'Agentic systems', 'LangGraph', 'Bayesian inference', 'Time-series forecasting', 'Mathematics', 'Maths and science tutoring'],
+  knowsAbout: ['AI product engineering', 'Technology selection', 'Technical audits', 'Product strategy', 'Agentic systems', 'LangGraph', 'Bayesian inference', 'Time-series forecasting', 'Mathematics', 'Maths and science tutoring'],
   homeLocation: { '@type': 'City', name: 'London' },
 };
 ---
@@ -40,6 +40,7 @@ const person = {
     <meta name="theme-color" content="#07080b" />
     <meta name="color-scheme" content="dark" />
     <link rel="preload" href={onestLatin} as="font" type="font/woff2" crossorigin />
+    <slot name="head" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/site.webmanifest" />
     {noindex && <meta name="robots" content="noindex" />}
@@ -53,7 +54,7 @@ const person = {
     <meta property="og:image:alt" content="Portrait of Omar Aboelella" />
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
-    <!-- Before first paint: Pause motion, and arrival through the light gate.
+    <!-- Before first paint: arrival through the light gate.
          sessionStorage omar-gate {t, path, label, m}: written by gate.ts just before
          it navigates; fresh (< 8 s) and for this path, it marks html[data-gate="in"]
          (plus data-gate-mode="quick" for ordinary links) so LightGate paints its
@@ -61,7 +62,6 @@ const person = {
          change) and then dissolves it. -->
     <script is:inline>
       (function(){var d=document.documentElement;d.classList.add('js');
-      try{var m=sessionStorage.getItem('omar-motion');if(m==='on'||m==='off')d.dataset.motion=m}catch(e){}
       try{var g=JSON.parse(sessionStorage.getItem('omar-gate')||'null'),p=location.pathname==='/'?'/index.html':location.pathname,n=Date.now();sessionStorage.removeItem('omar-gate');
       if(g&&n-g.t>=0&&n-g.t<8000&&g.path===p){d.dataset.gate='in';if(g.m==='quick')d.dataset.gateMode='quick';d.style.setProperty('--gate-label',JSON.stringify(String(g.label||'').slice(0,40)))}}catch(e){}})();
     </script>
@@ -79,7 +79,6 @@ const person = {
     <script>import '../scripts/previews';</script>
     <script>import '../scripts/cursor';</script>
     <script>import '../scripts/fx';</script>
-    <script>import '../scripts/hero-motion';</script>
     <script>import '../scripts/scrub';</script>
   </body>
 </html>

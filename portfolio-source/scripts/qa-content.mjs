@@ -123,7 +123,30 @@ for (const [name, source] of everyPage.filter(([name]) => !['index', 'contact'].
   expect(/<section class="band"/.test(source), `${name}: contact band missing`);
   expect(/class="btn band__primary"[^>]*href="\/contact\.html|href="\/contact\.html[^"]*"[^>]*class="btn band__primary"/.test(source), `${name}: band Write to Omar missing`);
 }
-for (const [name, source] of everyPage) expect(/data-motion-toggle/.test(source), `${name}: Pause motion control missing`);
+// No Pause motion control (removed at the user's request, Oct 2026): no
+// toggle, no html[data-motion] mechanism, no "Pause motion" wording anywhere.
+// prefers-reduced-motion is the motion opt-out (qa.cjs checks it stops every loop).
+for (const [name, source] of everyPage) expect(!/data-motion-toggle|data-motion-label|\b(Pause|Play|Resume) motion\b/i.test(source), `${name}: a Pause/Play motion control remains`);
+expect(!/data-motion|omar-motion|omar:motion|dataset\.motion/.test(builtText), 'The removed html[data-motion] / omar-motion mechanism remains in the build');
+
+// The hero robot (src/data/robot.ts): poster with intrinsic size, a real
+// "Say hi" button, the greet clip, a preconnect to the CDN on the homepage,
+// the open clip in the gate, the orb fallback, and the credit.
+const media = await readdir(dist);
+const ROBOT_CDN = 'https://d8j0ntlcm91z4.cloudfront.net';
+expect(html.index.includes(`<link rel="preconnect" href="${ROBOT_CDN}"`), 'index: preconnect to the robot CDN missing');
+expect(/<img class="robot__poster[^"]*" src="https:\/\/d8j0ntlcm91z4\.cloudfront\.net\/[^"]+\.webp"[^>]*width="1344" height="752"/.test(html.index), 'index: robot poster with width/height missing');
+expect(/<button class="robot-stage__hit[^"]*" type="button" aria-label="Say hi to the robot"/.test(html.index), 'index: "Say hi to the robot" button missing');
+expect(/<video class="robot__video[^"]*"[^>]*muted[^>]*playsinline[^>]*preload="metadata"/.test(html.index) && /data-src="https:\/\/d8j0ntlcm91z4\.cloudfront\.net\/[^"]+\.mp4"/.test(html.index), 'index: greet clip (muted, playsinline, preload=metadata) missing');
+expect(/data-orb/.test(html.index), 'index: the orb fallback missing');
+for (const [name, source] of everyPage) expect(/data-gate-clip[^>]*data-seek="3\.2"[^>]*data-play="1400"/.test(source) && source.includes(`${ROBOT_CDN}/`), `${name}: gate open clip missing`);
+expect(!media.includes('robot'), 'public/robot/ must not ship stand-in media');
+const notices = await readFile(path.join(dist, 'THIRD-PARTY-NOTICES.txt'), 'utf8');
+expect(/generated for Omar with Higgsfield/.test(notices) && /depicts no real person/.test(notices), 'THIRD-PARTY-NOTICES: robot credit missing');
+// Current Digis Squared work (user-stated, Oct 2026).
+expect(/INOS/.test(text.index) && /OctiMind/.test(text.index), 'index: current INOS & OctiMind work missing');
+expect(/technology selection/i.test(text.cv) && /business and product strategy/i.test(text.cv), 'cv: current Digis role (technology selection, strategy) missing');
+expect(/technology selection/i.test(insideHtml.inos) && /audits/i.test(insideHtml.inos), 'inside/inos: current work missing');
 expect(/class="direct"/.test(html.contact) && /class="quick__list"/.test(html.contact), 'contact: direct card or topic shortcuts missing');
 expect(!/class="intro[\s"]|section-mark">§/.test(Object.values(html).join(' ') + Object.values(insideHtml).join(' ')), 'An old v3 page intro remains');
 expect(!/preview-(otto|3d)/.test(Object.values(html).join(' ')), 'A link to a retired preview page remains');
@@ -137,7 +160,6 @@ for (const id of inside) {
   if (id === 'nookbase') expect(/pre-launch/i.test(source), 'inside/nookbase: pre-launch status missing');
 }
 
-const media = await readdir(dist);
 for (const [file, limit] of [['portrait-hero.webp', 60e3], ['portrait-avatar.webp', 12e3]]) {
   expect(media.includes(file), `${file} missing from dist`);
   if (media.includes(file)) { const size = (await readFile(path.join(dist, file))).length; info.push(`${file}: ${(size / 1e3).toFixed(0)}KB`); expect(size <= limit, `${file} over budget`); }

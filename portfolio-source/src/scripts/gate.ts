@@ -12,11 +12,11 @@
  * reads sessionStorage omar-gate {t, path, label, m}) and dissolves it.
  * The open starts where the visitor chose: the click point (or the centre of
  * the link, from the keyboard) becomes --gx/--gy for the hands, flare and
- * burst, and the robot in the hero (when on screen) snaps its rings shut and
- * flares (RobotStage [data-opening]).
+ * burst, and the robot in the hero (when on screen) flares (RobotStage
+ * [data-opening]; the fallback orb snaps its rings shut).
  * Timing (full motion): leave ≈ 600 ms (hands 0–270, flare 220–440, burst
  * 260–550, then navigate); arrive: white dissolves 60–480 ms after first paint.
- * Reduced motion / Pause motion: a 160 ms fade out, a 200 ms fade in.
+ * Reduced motion: a 160 ms fade out, a 200 ms fade in.
  * The robot's clip is fetched early, when a [data-open] link is hovered or
  * focused, so it can seek to the hands-together moment without a stall.
  * Links still work normally without JavaScript.
@@ -25,7 +25,7 @@ type Mode = 'open' | 'quick';
 const root = document.documentElement;
 const gate = document.querySelector<HTMLElement>('[data-gate]');
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-const still = () => reduce.matches || root.dataset.motion === 'off';
+const still = () => reduce.matches;
 const sleep = (ms: number) => new Promise(resolve => window.setTimeout(resolve, ms));
 const frames = () => Promise.race([sleep(120), new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))]);
 
@@ -65,7 +65,8 @@ const clip = () => gate?.querySelector<HTMLVideoElement>('[data-gate-clip]') ?? 
 const saveData = () => !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
 const coarse = window.matchMedia('(pointer: coarse)');
 const clipAllowed = () => !saveData() && !coarse.matches;
-const seekOf = (video: HTMLVideoElement) => Math.min(Number(video.dataset.seek) || 0, Math.max(0, (video.duration || 0) - 1.3));
+const playOf = (video: HTMLVideoElement) => Number(video.dataset.play) || 1400;
+const seekOf = (video: HTMLVideoElement) => Math.min(Number(video.dataset.seek) || 0, Math.max(0, (video.duration || 0) - playOf(video) / 1000 - .1));
 /** Attach the clip's sources, load it and park it on the hands-together
  *  frame (once), so a door can play it the moment it is chosen. A source
  *  error (no codec) or a host that cannot seek marks it unusable. */
@@ -74,8 +75,12 @@ function warm() {
   if (!video || video.dataset.warm || !clipAllowed()) return;
   video.dataset.warm = '1';
   const sources = [...video.querySelectorAll<HTMLSourceElement>('source[data-src]')];
-  sources.at(-1)?.addEventListener('error', () => { video.dataset.failed = ''; }, { once: true });
-  video.addEventListener('error', () => { video.dataset.failed = ''; }, { once: true });
+  // A <source> error can be a stale one from before the sources had a src
+  // (resource selection reports a missing src as an error): only a video
+  // left with no usable source at all has failed.
+  const fail = () => window.setTimeout(() => { if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) video.dataset.failed = ''; }, 0);
+  sources.at(-1)?.addEventListener('error', fail);
+  video.addEventListener('error', fail);
   video.addEventListener('loadedmetadata', () => {
     const seek = seekOf(video);
     if (seek <= 0) return;
@@ -96,13 +101,13 @@ function clipReady(video: HTMLVideoElement | null): video is HTMLVideoElement {
 }
 
 /** Wait for the open animation, or the robot's clip, to reach full white.
- *  The clip plays from the hands-together moment for ~1.2 s, then the white
+ *  The clip plays from the palms-pressed moment for data-play ms, then the white
  *  takes over (and must be opaque before this returns); a failed play()
  *  falls back to the CSS seams. `start` is when data-state='open' was set. */
 async function playOpen(start: number): Promise<void> {
   const video = clip();
   if (gate && clipReady(video)) {
-    const length = 1200;
+    const length = playOf(video);
     gate.style.setProperty('--clip-white', `${length - 260}ms`);
     gate.dataset.clipOn = '';
     try {
@@ -186,8 +191,22 @@ if (gate) {
   // Arrived through the gate: tidy up once the light has gone.
   if (root.dataset.gate === 'in') window.setTimeout(() => { root.removeAttribute('data-gate'); root.removeAttribute('data-gate-mode'); }, 700);
 
-  // Fetch the robot's clip early, when a full open is likely.
-  if (clip()) {
+  // Fetch the robot's clip early, when a full open is likely. The first
+  // pointer movement opens a connection to the clip's host (a preconnect),
+  // so the hover that follows can start fetching at once.
+  const video = clip();
+  if (video && clipAllowed() && !still()) {
+    const host = new URL(video.querySelector<HTMLSourceElement>('source:last-of-type')?.dataset.src ?? '/', location.href).origin;
+    if (host !== location.origin && !document.querySelector(`link[rel="preconnect"][href^="${host}"]`)) {
+      addEventListener('pointermove', () => {
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = host;
+        document.head.append(link);
+      }, { once: true, passive: true });
+    }
+  }
+  if (video) {
     const early = (event: Event) => { if ((event.target as Element | null)?.closest?.('a[data-open]') && !still()) warm(); };
     document.addEventListener('pointerover', early, { passive: true });
     document.addEventListener('focusin', early);

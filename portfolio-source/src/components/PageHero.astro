@@ -5,9 +5,7 @@
    blue/white light, a grid that follows the pointer and an outlined watermark
    word. Facts in chips come from src/data or the CV. Everything is readable
    without JavaScript; the entrance waits for the light gate (--enter-delay).
-   The Pause motion switch sits beside the eyebrow on phones and docks in the
-   hero's top-right corner on desktop, always in the first screen. */
-import MotionToggle from './MotionToggle.astro';
+   With prefers-reduced-motion the hero is still (no entrance, no drift). */
 interface Line { text: string; accent?: boolean }
 interface Chip { value?: number; prefix?: string; text?: string; label: string }
 interface Props { index: number; section: string; lines: Line[]; watermark: string; meta?: string[]; chips?: Chip[]; compact?: boolean }
@@ -32,7 +30,6 @@ const pad = (value: number) => String(value).padStart(2, '0');
     <div class="phero__copy">
       <div class="phero__top">
         <p class="phero__eyebrow"><span class="phero__idx">{pad(index)}<span>/07</span></span><span class="phero__section">{section}</span>{meta.map(item => <span class="phero__meta">{item}</span>)}</p>
-        <MotionToggle class="phero__pause" />
       </div>
       <h1 id="page-title" class="phero__title">
         {lines.map(line => (
@@ -103,11 +100,6 @@ const pad = (value: number) => String(value).padStart(2, '0');
   .phero--compact .phero__title { font-size: clamp(2.35rem, .9rem + 5vw, 5.6rem); }
 
   @media (min-width: 900px) { .phero__chips { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-  /* Desktop: Pause motion docks in the hero's top-right corner, inside the
-     HUD frame, clear of the headline and the visual (as on the homepage). */
-  @media (min-width: 900px) {
-    .phero__inner > .phero__copy :global(.phero__pause) { position: absolute; z-index: 3; top: 18px; right: var(--margin); }
-  }
   @media (min-width: 1100px) {
     .phero--aside .phero__inner { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); column-gap: clamp(32px, 4vw, 72px); align-items: center; }
     .phero--aside .phero__title { font-size: clamp(3rem, 1rem + 4.2vw, 5.6rem); max-width: none; }
@@ -115,8 +107,8 @@ const pad = (value: number) => String(value).padStart(2, '0');
   }
   @media (max-width: 520px) {
     .phero__actions .btn { flex: 1 1 auto; }
-    /* Keep the eyebrow a one-line pill beside Pause motion: the meta items
-       (also said in the page itself) give way on phones. */
+    /* Keep the eyebrow a one-line pill: the meta items (also said in the
+       page itself) give way on phones. */
     .phero__meta { display: none; }
     .phero__eyebrow { flex-wrap: nowrap; white-space: nowrap; font-size: 10.5px; gap: 10px; }
   }
@@ -124,7 +116,6 @@ const pad = (value: number) => String(value).padStart(2, '0');
   @media (prefers-reduced-motion: no-preference) {
     .phero__blob--a { animation: ph-blob-a 22s ease-in-out infinite alternate; }
     .phero__blob--b { animation: ph-blob-b 26s ease-in-out infinite alternate; }
-    :global(html[data-motion='off']) .phero__blob { animation-play-state: paused; }
     :global(html.js) .phero__word > span { animation: ph-word 900ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 100ms + var(--w) * 55ms); }
     :global(html.js) .phero__eyebrow { animation: ph-up 800ms var(--ease-out) both; animation-delay: var(--enter-delay, 0ms); }
     :global(html.js) :is(.phero__body, .phero__actions) { animation: ph-up 900ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 520ms); }

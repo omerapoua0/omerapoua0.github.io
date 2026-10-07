@@ -3,9 +3,8 @@
    grows over links, becomes a labelled pill ("Open") only over large targets
    (doors, gallery cards, [data-cursor-label]), shrinks to a dot over buttons
    (their own fill-wipe is the hover effect), steps aside over text fields and
-   squeezes on press. Off for touch, reduced motion and when
-   motion is paused. */
-const root = document.documentElement;
+   squeezes on press. Off for touch and reduced motion
+   (also if the preference changes while the page is open). */
 const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -33,7 +32,7 @@ if (fine.matches && !reduce.matches) {
     ring.toggleAttribute('data-hot', !text && !big && !button && !!target?.closest?.('a, button, label, summary, [data-graph]'));
   };
   addEventListener('pointermove', event => {
-    if (event.pointerType !== 'mouse' || root.dataset.motion === 'off') { ring.hidden = true; return; }
+    if (event.pointerType !== 'mouse' || reduce.matches) { ring.hidden = true; return; }
     ring.hidden = false;
     x = event.clientX; y = event.clientY;
     morph(event.target as Element);
@@ -42,7 +41,7 @@ if (fine.matches && !reduce.matches) {
   addEventListener('pointerdown', () => ring.setAttribute('data-down', ''), { passive: true });
   addEventListener('pointerup', () => ring.removeAttribute('data-down'), { passive: true });
   document.addEventListener('pointerleave', () => { ring.hidden = true; });
-  addEventListener('omar:motion', () => { if (root.dataset.motion === 'off') ring.hidden = true; });
+  reduce.addEventListener('change', () => { if (reduce.matches) ring.hidden = true; });
 }
 
 export {};

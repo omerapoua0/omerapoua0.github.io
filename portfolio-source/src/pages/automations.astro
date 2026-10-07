@@ -227,7 +227,6 @@ const story = [
     .flow-card__pulse { animation: pulse-run 3.2s var(--ease-io) infinite; }
     .pipe__wire i { animation: wire-run 2.4s linear infinite; }
     .pipe__wire--b i { animation-delay: -1.2s; }
-    :global(html[data-motion='off']) :is(.flow-card__pulse, .pipe__wire i) { animation-play-state: paused; }
   }
   @keyframes pulse-run { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 45% { transform: translateY(68px); } 90% { opacity: 1; } 100% { transform: translateY(136px); opacity: 0; } }
   @keyframes wire-run { from { transform: translateX(-100%); } to { transform: translateX(340%); } }

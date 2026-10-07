@@ -15,12 +15,12 @@ const pad = (value: number) => String(value).padStart(2, '0');
 const skillsRow = ['LangGraph', 'Bayesian inference', 'MAPE-K', 'Python', 'Time-series forecasting', 'Feature engineering', 'Data pipelines', 'FastAPI', 'PostgreSQL', 'Docker'];
 const learnRow = ['GCSE & A-level maths', 'Physics', 'Linear algebra', 'Calculus', 'Optimisation', 'Probability', 'Qiskit', 'Discrete maths'];
 const chapters = [
-  { id: 'build', title: 'Build', head: 'AI products, from the maths to production.', copy: 'As AI Product Engineer at Digis Squared I design the closed-loop MAPE-K reasoning for the KATANA network-autonomy programme. As founder of NOOKBASE I’m building an agentic study platform, pre-launch with around 150 beta users.', facts: ['LangGraph workflows', 'MAPE-K reasoning', 'iOS · Android · Web'], href: '/work.html', go: 'See the work' },
+  { id: 'build', title: 'Build', head: 'AI products, from the maths to production.', copy: 'As AI Product Engineer at Digis Squared I work on KATANA, INOS and OctiMind: I choose technologies, run audits and help shape business and product strategy, and I design the closed-loop MAPE-K reasoning for KATANA’s network autonomy. As founder of NOOKBASE I’m building an agentic study platform, pre-launch with around 150 beta users.', facts: ['Technology selection', 'Audits & product strategy', 'MAPE-K reasoning'], href: '/work.html', go: 'See the work' },
   { id: 'reason', title: 'Reason', head: 'Decisions you can explain.', copy: 'Bayesian inference to automate network decisions. Predictive models on historical and live market data at Bitget. Next, optimisation and machine learning for credit scoring at a Santander research placement (Summer 2027, upcoming).', facts: ['Bayesian inference', 'Time-series forecasting', 'Optimisation'], href: '/research.html', go: 'Research' },
   { id: 'teach', title: 'Teach', head: 'Maths and science, made clear.', copy: 'Mathematics & Physics Teaching Assistant at Southfields Academy, and one-to-one online lessons for GCSE and A-level. Enhanced DBS checked, with a free 15-minute intro call.', facts: ['GCSE & A-level', 'Maths & physics', 'Online, one-to-one'], href: '/tutoring.html', go: 'Lessons' },
 ];
 const now = [
-  { label: 'Now', title: 'AI Product Engineer', meta: 'Digis Squared · since Jan 2026' },
+  { label: 'Now', title: 'AI Product Engineer', meta: 'Digis Squared · KATANA, INOS & OctiMind' },
   { label: 'Building', title: 'NOOKBASE', meta: 'Pre-launch · around 150 beta users' },
   { label: 'Teaching', title: 'Maths & Physics TA', meta: 'Southfields Academy · since Mar 2026' },
   { label: 'Studying', title: 'BSc Computer Science & Maths', meta: 'Birkbeck · expected 2028' },
@@ -274,7 +274,7 @@ const levels = [
 
   /* Selected work: a horizontal gallery. On desktop with motion it pins and
      the track moves sideways as you scroll down (--p); elsewhere it is a
-     native horizontal scroller with snap points (touch, keyboard, Pause). */
+     native horizontal scroller with snap points (touch, keyboard, reduced motion). */
   .work { position: relative; background: radial-gradient(70% 50% at 80% 50%, #2f6bff12, transparent 70%), var(--bg); }
   .hgal { --cw: min(84vw, 520px); --gap: 16px; --n: 6; }
   .hgal__sticky { padding-block: clamp(64px, 7vw, 104px) clamp(40px, 5vw, 72px); }
@@ -314,11 +314,11 @@ const levels = [
   @media (min-width: 760px) { .hgal { --cw: min(60vw, 540px); --gap: 20px; } }
   /* Pinned only where the heading, cards and progress bar fit one screen. */
   @media (prefers-reduced-motion: no-preference) and (min-width: 1000px) and (min-height: 820px) and (hover: hover) {
-    :global(html.js:not([data-motion='off'])) .hgal { --pinned: 1; --cw: min(38vw, 560px); --travel: calc((var(--n) - 1) * var(--cw) + min(60vw, 300px) + (var(--n) - 1) * var(--gap) + 2 * var(--margin) - 100vw); height: calc(100vh + var(--travel)); }
-    :global(html.js:not([data-motion='off'])) .hgal__sticky { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; padding-block: calc(var(--header) + 8px) 24px; overflow: clip; }
-    :global(html.js:not([data-motion='off'])) .hgal__track { overflow: visible; scroll-snap-type: none; width: max-content; translate: calc(var(--p) * var(--travel) * -1) 0; will-change: translate; }
-    :global(html.js:not([data-motion='off'])) .hgal__foot { display: flex; }
-    :global(html.js:not([data-motion='off'])) .hcard__summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    :global(html.js) .hgal { --pinned: 1; --cw: min(38vw, 560px); --travel: calc((var(--n) - 1) * var(--cw) + min(60vw, 300px) + (var(--n) - 1) * var(--gap) + 2 * var(--margin) - 100vw); height: calc(100vh + var(--travel)); }
+    :global(html.js) .hgal__sticky { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; padding-block: calc(var(--header) + 8px) 24px; overflow: clip; }
+    :global(html.js) .hgal__track { overflow: visible; scroll-snap-type: none; width: max-content; translate: calc(var(--p) * var(--travel) * -1) 0; will-change: translate; }
+    :global(html.js) .hgal__foot { display: flex; }
+    :global(html.js) .hcard__summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   }
 
   /* Skills, lessons, about: colour washes from section to section. */
@@ -389,12 +389,11 @@ const levels = [
     .marquee__row--rev .marquee__track { animation-direction: reverse; animation-duration: 50s; }
     .contact-band__bg span:not(.hud) { animation: band-drift 16s ease-in-out infinite alternate; }
     .contact-band__bg span:nth-child(2) { animation-duration: 20s; animation-direction: alternate-reverse; }
-    :global(html[data-motion='off']) .marquee__track, :global(html[data-motion='off']) .contact-band__bg span:not(.hud) { animation-play-state: paused; }
-    :global(html.js:not([data-motion='off'])) .story__rail-fill { transform: scaleX(var(--p)); }
+    :global(html.js) .story__rail-fill { transform: scaleX(var(--p)); }
     :global(html.reveal-ready) .levels > li:not(.is-in) { transform: translateX(60px); }
     @supports (animation-timeline: view()) {
-      :global(html:not([data-motion='off'])) .about__photo img { animation-name: photo-pan; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
-      :global(html:not([data-motion='off'])) .contact-band__title { animation-name: band-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+      :global(html) .about__photo img { animation-name: photo-pan; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
+      :global(html) .contact-band__title { animation-name: band-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     }
   }
   @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }

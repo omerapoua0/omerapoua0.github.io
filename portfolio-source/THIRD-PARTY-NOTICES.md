@@ -244,6 +244,18 @@ Project concept images and videos must not be described as screenshots of a live
 - Robot media slot: if Omar adds his own robot images or clips to `public/robot/` (for example generated with Higgsfield), they are Omar's supplied content, used under the terms of the service that generated them. They depict a robot, not Omar. Until such files exist, only the placeholder above is shipped.
 - Omar's portrait on About & CV and the lessons page is his real photograph, cropped only; it is not generated or altered.
 
+## v7: the hero robot (October 2026)
+
+- The robot mascot on the homepage hero (a still and two short clips: "greet",
+  the head turn and wave, and "open", hands together and a burst of light,
+  used by the light gate) was generated for Omar with Higgsfield. It is
+  AI-generated, depicts no real person and is not Omar; it is Omar's supplied
+  content, used under the terms of the service that generated it. The files
+  are served from Higgsfield's CDN (d8j0ntlcm91z4.cloudfront.net); this
+  repository does not redistribute them.
+- The abstract CSS orb kept as its loading/fallback state, the pointer light,
+  the neon pulse and the blend into the page are original CSS.
+
 ## Previously used: Otto, the robot host
 
 - Otto was an original character made for this portfolio: an original SVG drawing (`Robot.astro`) and a 3D version built in code from primitive shapes (`src/scripts/otto3d/`). Otto, its chat and both renderers were removed in the v4 redesign (October 2026) and are no longer shipped.

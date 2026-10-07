@@ -73,9 +73,8 @@ const href = topic ? `/contact.html?topic=${encodeURIComponent(topic)}` : '/cont
   @media (prefers-reduced-motion: no-preference) {
     .band__bg span { animation: band-drift 16s ease-in-out infinite alternate; }
     .band__bg span:nth-child(2) { animation-duration: 20s; animation-direction: alternate-reverse; }
-    :global(html[data-motion='off']) .band__bg span { animation-play-state: paused; }
     @supports (animation-timeline: view()) {
-      :global(html:not([data-motion='off'])) .band__title { animation-name: band-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+      :global(html) .band__title { animation-name: band-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     }
   }
   @keyframes band-drift { to { transform: translate(-8vw, 6vw) scale(1.15); } }

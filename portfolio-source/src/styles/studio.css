@@ -43,13 +43,13 @@
 
   @supports (animation-timeline: view()) {
     /* Parallax: an element drifts against the scroll while it crosses the screen. */
-    html:not([data-motion='off']) [data-fx~='parallax'] { animation-name: fx-parallax; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
-    html:not([data-motion='off']) [data-fx~='parallax-slow'] { animation-name: fx-parallax-slow; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
+    html [data-fx~='parallax'] { animation-name: fx-parallax; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
+    html [data-fx~='parallax-slow'] { animation-name: fx-parallax-slow; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
     /* Progress lines that draw as their section scrolls through. */
-    html:not([data-motion='off']) [data-fx~='grow-y'] { animation-name: fx-grow-y; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 30% exit 40%; }
-    html:not([data-motion='off']) [data-fx~='grow-x'] { animation-name: fx-grow-x; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 40% cover 55%; }
+    html [data-fx~='grow-y'] { animation-name: fx-grow-y; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 30% exit 40%; }
+    html [data-fx~='grow-x'] { animation-name: fx-grow-x; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 40% cover 55%; }
     /* Big outlined numerals slide sideways as you pass. */
-    html:not([data-motion='off']) [data-fx~='slide-x'] { animation-name: fx-slide-x; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
+    html [data-fx~='slide-x'] { animation-name: fx-slide-x; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
   }
 }
 @keyframes fx-parallax { from { transform: translateY(9%); } to { transform: translateY(-9%); } }
