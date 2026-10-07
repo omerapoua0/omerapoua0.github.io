@@ -10,9 +10,10 @@
      (--gx/--gy); a cool-white burst blooms from that point and fills the
      screen with a red/blue rim, while the label and a line run. The page is
      fully white before the browser navigates (≈ 650 ms). The hero robot
-     flares at the same moment. If the robot's open clip exists
-     (public/robot/open.mp4) it plays full-bleed instead of the seams: it
-     seeks to the hands-together moment (data-seek, seconds), plays ~1.2 s,
+     flares at the same moment. When the robot's open clip (src/data/robot.ts:
+     Higgsfield's CDN, or public/robot/open.* if present) is buffered and
+     parked, it plays full-bleed instead of the seams: from the palms-pressed
+     moment (data-seek, seconds) through the burst of light (data-play, ms),
      then the white takes over.
    - "quick" (menus and ordinary links): a near-black veil rises with a thin
      cool-white scan line (≈ 300 ms).
@@ -22,24 +23,22 @@
    overlay is opaque on the first frame: white for an open (the dark page
    emerges from the light), near-black for a quick change. CSS then dissolves
    it while the page's content staggers in.
-   Reduced motion / Pause motion: a short fade on each side, nothing moves.
+   Reduced motion: a short fade on each side, nothing moves.
    Decorative only: aria-hidden, never takes pointer events. */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-const openClip = existsSync(path.join(process.cwd(), 'public/robot/open.mp4'));
-const openWebm = existsSync(path.join(process.cwd(), 'public/robot/open.webm'));
-/* Where the hands meet in open.mp4 (seconds). Adjust once the clip exists. */
-const OPEN_SEEK = 2.4;
+import { robot, OPEN_SEEK, OPEN_PLAY_MS } from '../data/robot';
+const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
+const openMp4 = local('open.mp4') ? '/robot/open.mp4' : robot.open.mp4;
+const openWebm = local('open.webm') ? '/robot/open.webm' : undefined;
 ---
-<div class="gate" data-gate aria-hidden="true" data-clip={openClip ? '' : undefined}>
+<div class="gate" data-gate aria-hidden="true" data-clip>
   <span class="gate__veil"></span>
   <span class="gate__dark"></span>
-  {openClip && (
-    <video class="gate__clip" data-gate-clip data-seek={OPEN_SEEK} muted playsinline preload="none" tabindex="-1" disablepictureinpicture>
-      {openWebm && <source data-src="/robot/open.webm" type="video/webm" />}
-      <source data-src="/robot/open.mp4" type="video/mp4" />
-    </video>
-  )}
+  <video class="gate__clip" data-gate-clip data-seek={OPEN_SEEK} data-play={OPEN_PLAY_MS} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
+    {openWebm && <source data-src={openWebm} type="video/webm" />}
+    <source data-src={openMp4} type="video/mp4" />
+  </video>
   <span class="gate__seam gate__seam--l"></span>
   <span class="gate__seam gate__seam--r"></span>
   <span class="gate__flare"></span>
@@ -124,7 +123,7 @@ const OPEN_SEEK = 2.4;
      header stays put. */
   html[data-gate='in'] { --enter-delay: 140ms; }
   @media (prefers-reduced-motion: no-preference) {
-    html[data-gate='in']:not([data-motion='off']) main > :is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4)):not([data-own-entrance]) { animation: g-rise 800ms var(--ease-out) both; animation-delay: calc(120ms + var(--i, 0) * 110ms); }
+    html[data-gate='in'] main > :is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4)):not([data-own-entrance]) { animation: g-rise 800ms var(--ease-out) both; animation-delay: calc(120ms + var(--i, 0) * 110ms); }
     html[data-gate='in'] main > :nth-child(2) { --i: 1; }
     html[data-gate='in'] main > :nth-child(3) { --i: 2; }
     html[data-gate='in'] main > :nth-child(4) { --i: 3; }
@@ -145,14 +144,8 @@ const OPEN_SEEK = 2.4;
   @keyframes g-gone { 0%, 99.9% { visibility: visible; } 100% { visibility: hidden; } }
   @keyframes g-rise { from { opacity: 0; transform: translateY(56px); } }
 
-  /* Reduced motion or Pause: a fade out, then a fade in. The !important
-     durations beat the global reduced-motion reset. */
-  html[data-motion='off'] .gate :is(.gate__seam, .gate__flare, .gate__veil, .gate__clip, .gate__ring, .gate__scan) { display: none; }
-  html[data-motion='off'] .gate[data-state='open'] .gate__white, html[data-motion='off'] .gate[data-state='quick'] .gate__dark { animation: g-fade-to 160ms ease-out both !important; }
-  html[data-motion='off'] .gate:is([data-state='open'], [data-state='quick']) .gate__hud { animation: none !important; opacity: 0; }
-  html[data-motion='off'][data-gate='in'] .gate, html[data-motion='off'] .gate[data-state='reveal'] { animation: g-gone 260ms linear both !important; }
-  html[data-motion='off'][data-gate='in']:not([data-gate-mode='quick']) .gate__white, html[data-motion='off'] .gate[data-state='reveal'] .gate__white, html[data-motion='off'][data-gate='in'][data-gate-mode='quick'] .gate__dark { animation: g-dissolve-flat 200ms ease-out 40ms both !important; }
-  html[data-motion='off'][data-gate='in'] .gate__hud, html[data-motion='off'] .gate[data-state='reveal'] .gate__hud { opacity: 0; animation: none !important; }
+  /* Reduced motion: a fade out, then a fade in. The !important durations
+     beat the global reduced-motion reset. */
   @keyframes g-dissolve-flat { from { opacity: 1; } to { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) {
     .gate :is(.gate__seam, .gate__flare, .gate__veil, .gate__clip, .gate__ring, .gate__scan) { display: none; }

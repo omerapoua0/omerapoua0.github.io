@@ -80,11 +80,11 @@
 
 /* Each step slides in when it becomes current (forms.ts toggles hidden). */
 @media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion='off']) .form-step:not([hidden]), html:not([data-motion='off']) .review:not([hidden]) { animation: step-in 520ms var(--ease-out) both; }
-  html:not([data-motion='off']) .choices > .choice { animation: step-in 520ms var(--ease-out) both; }
-  html:not([data-motion='off']) .choices > .choice:nth-child(2) { animation-delay: 60ms; }
-  html:not([data-motion='off']) .choices > .choice:nth-child(3) { animation-delay: 120ms; }
-  html:not([data-motion='off']) .choices > .choice:nth-child(4) { animation-delay: 180ms; }
-  html:not([data-motion='off']) .choices > .choice:nth-child(5) { animation-delay: 240ms; }
+  html .form-step:not([hidden]), html .review:not([hidden]) { animation: step-in 520ms var(--ease-out) both; }
+  html .choices > .choice { animation: step-in 520ms var(--ease-out) both; }
+  html .choices > .choice:nth-child(2) { animation-delay: 60ms; }
+  html .choices > .choice:nth-child(3) { animation-delay: 120ms; }
+  html .choices > .choice:nth-child(4) { animation-delay: 180ms; }
+  html .choices > .choice:nth-child(5) { animation-delay: 240ms; }
 }
 @keyframes step-in { from { opacity: 0; transform: translateX(28px); } }

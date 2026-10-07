@@ -4,11 +4,10 @@
  * highlight ([data-glow] reads --gx/--gy), pointer parallax on heroes
  * ([data-pointer-parallax] sets --mx/--my), and scroll velocity fed to the
  * marquee bands so they lean and speed up as you scroll. All of it stops
- * with reduced motion or when motion is paused.
+ * with reduced motion.
  */
-const root = document.documentElement;
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-const still = () => reduce.matches || root.dataset.motion === 'off';
+const still = () => reduce.matches;
 
 if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
   document.querySelectorAll<HTMLElement>('[data-tilt]').forEach(card => {
@@ -63,7 +62,7 @@ if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       if (!raf) raf = requestAnimationFrame(apply);
     });
     hero.addEventListener('pointerleave', () => { x = 0; y = 0; if (!raf) raf = requestAnimationFrame(apply); });
-    window.addEventListener('omar:motion', () => { if (still()) { x = 0; y = 0; apply(); } });
+    reduce.addEventListener('change', () => { if (still()) { x = 0; y = 0; apply(); } });
   });
 }
 

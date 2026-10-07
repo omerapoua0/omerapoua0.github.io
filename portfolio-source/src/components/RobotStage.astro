@@ -1,98 +1,136 @@
 ---
-/* The robot media slot. Omar's robot (a glossy black humanoid with red and
-   blue neon lines, on a near-black background) is being generated in
-   Higgsfield; drop the files into public/robot/ and rebuild:
-     hero.webp  poster (16:9 still, near-black background)
-     greet.mp4  greeting loop (+ optional greet.webm)
-     open.mp4   "hands together, white light" clip, used by LightGate
-   At build time this checks which files exist. With the poster or greeting,
-   it renders them, their edges dissolved into the page by a radial mask (the
-   video plays via previews.ts only while visible, with motion on and no
-   Save-Data; otherwise the poster stays). The stage tilts with the pointer
-   (--mx/--my from fx.ts) and the hero scales it with the scroll (--p).
-   With none, it renders the PLACEHOLDER below: an abstract glossy black
-   sphere with red and blue rim light, two neon orbit rings, a visor slit and
-   a sweeping light beam, CSS only. It is deliberately not a cartoon robot. */
+/* The hero robot: Omar's mascot (a glossy black humanoid with red and blue
+   neon seams, generated for Omar with Higgsfield; not Omar). Media and
+   timings live in src/data/robot.ts (remote on Higgsfield's CDN; files in
+   public/robot/ override them at build time).
+
+   Layers, back to front:
+   - the PLACEHOLDER orb (an abstract glossy black sphere with red/blue rim
+     light and neon orbit rings, CSS only). It is the fallback: it shows
+     while the poster loads and stays if the poster fails (CDN down, URL
+     gone); the poster's inline onload/onerror set data-poster on the stage;
+   - the robot (aria-hidden): poster <img> (the first frame of greet) with
+     the greet <video> over it, edges dissolved into the page by a soft
+     mask, plus three light layers: a pointer-following light, the neon
+     rims pulsing, and the top-left beam breathing;
+   - a real <button> over the figure, "Say hi to the robot": replays the
+     wave (robot.ts). Its focus ring is a HUD frame around the head.
+   robot.ts plays greet once from 0 on every load, on a bfcache restore and
+   when the hero comes back into view, then holds the last frame (facing
+   you) with a breathing idle; fine pointers turn it toward the pointer
+   (spring-smoothed 3D tilt), touch gets a slow ambient sway. Reduced motion
+   or Save-Data: the poster only, and the wave plays on an explicit click.
+   No H.264 or a failed/stalled video: the poster stays and every
+   interaction still works on the still. */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { robot, ROBOT_LABEL } from '../data/robot';
 interface Props { class?: string }
 const { class: className } = Astro.props;
-const has = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
-const poster = has('hero.webp') ? '/robot/hero.webp' : undefined;
-const greet = has('greet.mp4');
-const greetWebm = has('greet.webm');
-const media = !!(poster || greet);
+const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
+const poster = local('hero.webp') ? '/robot/hero.webp' : robot.poster.src;
+const greetMp4 = local('greet.mp4') ? '/robot/greet.mp4' : robot.greet.mp4;
+const greetWebm = local('greet.webm') ? '/robot/greet.webm' : undefined;
+const stage = "this.closest('[data-robot-stage]')";
 ---
-<div class:list={['robot-stage', className, media ? 'robot-stage--media' : 'robot-stage--placeholder']} data-robot-stage aria-hidden={media ? undefined : 'true'}>
-  <span class="robot-stage__halo" aria-hidden="true"></span>
-  <span class="robot-stage__floor" aria-hidden="true"></span>
-  {media ? (
-    <div class="robot-stage__media">
-      {greet ? (
-        <>
-          {/* The poster sits behind the video, so a browser that cannot play
-              either source (previews.ts removes the video) still shows it. */}
-          {poster && <img src={poster} alt="Omar’s robot: a glossy black humanoid outlined in red and blue neon" width="1600" height="900" loading="eager" decoding="async" fetchpriority="high" />}
-          <video data-preview poster={poster} muted loop playsinline preload="none" aria-hidden={poster ? 'true' : undefined} aria-label={poster ? undefined : 'Omar’s robot, waving hello'} tabindex="-1" disablepictureinpicture>
-            {greetWebm && <source data-src="/robot/greet.webm" type="video/webm" />}
-            <source data-src="/robot/greet.mp4" type="video/mp4" />
-          </video>
-        </>
-      ) : (
-        <img src={poster} alt="Omar’s robot: a glossy black humanoid outlined in red and blue neon" width="1600" height="900" loading="eager" decoding="async" fetchpriority="high" />
-      )}
-      <span class="robot-stage__sweep" aria-hidden="true"></span>
+<div class:list={['robot-stage', className]} data-robot-stage data-poster="loading">
+  {/* PLACEHOLDER and fallback: shown only until the poster has loaded. */}
+  <div class="orb" data-orb aria-hidden="true">
+    <div class="orb__tilt">
+      <span class="orb__ring orb__ring--a"><i></i></span>
+      <span class="orb__ring orb__ring--b"><i></i></span>
+      <span class="orb__sphere">
+        <span class="orb__shade"></span>
+        <span class="orb__sweep"></span>
+        <span class="orb__slit"></span>
+        <span class="orb__spec"></span>
+      </span>
     </div>
-  ) : (
-    /* PLACEHOLDER until public/robot/ has the Higgsfield robot. */
-    <div class="orb" data-orb>
-      <div class="orb__tilt">
-        <span class="orb__ring orb__ring--a"><i></i></span>
-        <span class="orb__ring orb__ring--b"><i></i></span>
-        <span class="orb__sphere">
-          <span class="orb__shade"></span>
-          <span class="orb__sweep"></span>
-          <span class="orb__slit"></span>
-          <span class="orb__spec"></span>
-        </span>
+  </div>
+  <div class="robot-stage__media" aria-hidden="true">
+    <div class="robot__tilt" data-robot-tilt>
+      <div class="robot__breath">
+        <div class="robot__frame"><div class="robot__canvas">
+          <img class="robot__poster" src={poster} alt="" width={robot.poster.width} height={robot.poster.height} loading="eager" decoding="async" fetchpriority="low" onload={`${stage}.dataset.poster='ok'`} onerror={`${stage}.dataset.poster='failed'`} />
+          <video class="robot__video" data-robot-video muted playsinline preload="metadata" tabindex="-1" disablepictureinpicture disableremoteplayback>
+            {greetWebm && <source data-src={greetWebm} type="video/webm" />}
+            <source data-src={greetMp4} type="video/mp4" />
+          </video>
+          <span class="robot__beam"></span>
+          <span class="robot__neon"></span>
+          <span class="robot__light"></span>
+        </div></div>
       </div>
     </div>
-  )}
-  <span class="robot-stage__beam" aria-hidden="true"></span>
-  <span class="robot-stage__tag" aria-hidden="true"><b>OA-01</b><span>Build · Reason · Teach</span></span>
+  </div>
+  <button class="robot-stage__hit" type="button" aria-label={ROBOT_LABEL} data-robot-hi data-cursor-label="Say hi"><span class="robot-stage__focus" aria-hidden="true"></span></button>
+  <span class="robot-stage__tag" aria-hidden="true"><b>OA-01</b><span>Mascot · say hi</span></span>
 </div>
 
+<script>import '../scripts/robot';</script>
+
 <style>
-  .robot-stage { --size: min(100%, 620px); position: relative; width: var(--size); aspect-ratio: 1 / 1.02; margin-inline: auto; display: grid; place-items: center; isolation: isolate; }
-  .robot-stage__halo { position: absolute; inset: 2% 0 8%; z-index: -2; border-radius: 50%; background: radial-gradient(closest-side at 58% 46%, #2f6bff40, #2f6bff14 55%, transparent 78%), radial-gradient(closest-side at 34% 58%, #ff2d4626, transparent 70%); }
-  .robot-stage__floor { position: absolute; left: 14%; right: 14%; bottom: 4%; height: 10%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, #e6eeff1f, #2f6bff14 45%, transparent), radial-gradient(closest-side at 30% 50%, #ff2d4614, transparent); }
-  .robot-stage__floor::after { content: ''; position: absolute; inset: 38% 18%; border-radius: 50%; border-top: 1px solid #4d84ff66; border-bottom: 1px solid #ff4d6240; }
-  /* A cool-white light beam crossing the stage. */
-  .robot-stage__beam { position: absolute; z-index: 2; inset: -20% 30% -10% 34%; pointer-events: none; rotate: 28deg; background: linear-gradient(90deg, transparent, #e6eeff0d 30%, #e6eeff26 50%, #e6eeff0d 70%, transparent); -webkit-mask: linear-gradient(transparent, #000 30%, #000 60%, transparent); mask: linear-gradient(transparent, #000 30%, #000 60%, transparent); }
+  /* The stage has the media's own aspect (1344 × 752), so the overlays'
+     percentages land on the robot. HomeHero sizes and places it. */
+  .robot-stage { --size: 100%; position: relative; width: var(--size); aspect-ratio: 1344 / 752; isolation: isolate; }
+  .robot-stage__media { position: absolute; inset: 0; pointer-events: none; transition: opacity 600ms var(--ease-out); }
+  .robot__tilt, .robot__breath, .robot__frame { position: absolute; inset: 0; }
+  /* Turned toward the pointer by robot.ts (--rx/--ry in degrees, spring
+     smoothed), around the robot's chest. */
+  .robot__tilt { transform-origin: 66% 60%; transform: perspective(1600px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg)) translate3d(calc(var(--ry, 0) * -2px), calc(var(--rx, 0) * 1.5px), 0); }
+  .robot__breath { transform-origin: 66% 100%; }
+  /* Edges dissolve into the near-black page: a soft fade on every side
+     (deepest at the bottom, where the figure is cut), intersected with a
+     wide ellipse around the figure, so no rectangle edge ever shows. */
+  .robot__frame { overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 92%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 9%, #000 62%, transparent 97%), radial-gradient(ellipse 72% 92% at 62% 40%, #000 52%, transparent 100%);
+    -webkit-mask-composite: source-in, source-in;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 92%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 9%, #000 62%, transparent 97%), radial-gradient(ellipse 72% 92% at 62% 40%, #000 52%, transparent 100%);
+    mask-composite: intersect; }
+  /* The canvas keeps the media's aspect, so the light layers stay on the
+     robot when a narrower stage crops it (phones): it is anchored right, and
+     --canvas-right shifts the crop. */
+  .robot__canvas { position: absolute; top: 0; right: var(--canvas-right, 0%); height: 100%; aspect-ratio: 1344 / 752; }
+  .robot__canvas :is(img, video) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .robot__poster { opacity: 0; transition: opacity 700ms var(--ease-out); }
+  .robot-stage[data-poster='ok'] .robot__poster, :global(html:not(.js)) .robot__poster { opacity: 1; }
+  /* The video is shown only while it really has frames: robot.ts sets
+     data-video="on" on 'playing' (its first frame is the poster, so the cut
+     is invisible) and back to "off" to cross-fade to the poster for a replay. */
+  .robot__video { opacity: 0; transition: opacity 220ms linear; }
+  .robot-stage[data-video='on'] .robot__video { opacity: 1; }
+  /* Light layers, screen-blended over the robot. */
+  .robot__canvas > span { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
+  /* A soft cool light that follows the pointer across the robot. */
+  .robot__light { background: radial-gradient(circle 22vmax at var(--lx, 66%) var(--ly, 30%), #8fb0ff2e, #2f6bff14 40%, transparent 70%); opacity: 0; transition: opacity 600ms; }
+  .robot-stage[data-pointer] .robot__light { opacity: 1; }
+  /* Its neon seams (red on its left, blue on its right) and the beam from the
+     top left, breathing gently. */
+  .robot__neon { background: radial-gradient(ellipse 9% 30% at 52% 80%, #ff2d4659, transparent 70%), radial-gradient(ellipse 12% 34% at 77% 72%, #2f6bff66, transparent 70%), radial-gradient(ellipse 5% 8% at 76% 22%, #4d84ff4d, transparent 70%); opacity: .5; }
+  .robot__beam { background: linear-gradient(118deg, transparent 18%, #e6eeff1a 30%, #e6eeff0d 40%, transparent 52%); opacity: .4; }
 
-  /* Real media: large, edges dissolved into the near-black page. */
-  .robot-stage--media { --size: min(100%, 880px); aspect-ratio: 16 / 10; }
-  .robot-stage__media { position: relative; width: 100%; height: 100%; transform: perspective(1400px) rotateY(calc(var(--mx, 0) * 5deg)) rotateX(calc(var(--my, 0) * -4deg)) translate3d(calc(var(--mx, 0) * -10px), calc(var(--my, 0) * -8px), 0); transition: transform 900ms var(--ease-out);
-    -webkit-mask: radial-gradient(ellipse closest-side at 55% 50%, #000 48%, #0009 74%, transparent 100%); mask: radial-gradient(ellipse closest-side at 55% 50%, #000 48%, #0009 74%, transparent 100%); }
-  .robot-stage__media :is(img, video) { width: 100%; height: 100%; object-fit: cover; background: var(--bg); }
-  .robot-stage__media img + video { position: absolute; inset: 0; }
-  .robot-stage__sweep { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, #e6eeff14 48%, #e6eeff26 50%, #e6eeff14 52%, transparent 65%) 0 0 / 260% 100%; mix-blend-mode: screen; pointer-events: none; }
-  .robot-stage--media :is(.robot-stage__floor, .robot-stage__beam, .robot-stage__halo) { display: none; }
-  .robot-stage--media .robot-stage__tag { right: 24%; bottom: 10%; }
-  @media (max-width: 999px) {
-    .robot-stage--media { --size: 100%; aspect-ratio: 4 / 3; }
-    .robot-stage--media .robot-stage__media :is(img, video) { object-position: 60% 40%; }
-    /* A tighter ellipse that has fully faded before any clipped edge. */
-    .robot-stage--media .robot-stage__media { -webkit-mask: radial-gradient(ellipse closest-side at 55% 50%, #000 40%, #0008 68%, transparent 94%); mask: radial-gradient(ellipse closest-side at 55% 50%, #000 40%, #0008 68%, transparent 94%); }
-  }
+  /* The hit area covers the figure, not the copy beside it. */
+  .robot-stage__hit { position: absolute; z-index: 2; pointer-events: auto; left: var(--hit-left, 44%); right: 4%; top: 2%; bottom: 8%; padding: 0; border: 0; border-radius: 28px; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .robot-stage__hit:focus-visible { outline: none; }
+  .robot-stage__focus { position: absolute; left: 20%; right: 22%; top: 0; height: 62%; background: var(--hud); --hl: 16px; --hc: var(--accent); background-repeat: no-repeat; opacity: 0; transition: opacity 200ms; filter: drop-shadow(0 0 6px #2f6bffcc); }
+  .robot-stage__hit:focus-visible .robot-stage__focus { opacity: 1; }
 
-  .robot-stage__tag { position: absolute; right: 2%; bottom: 14%; z-index: 3; display: grid; gap: 2px; padding: 10px 14px; border-radius: 4px; background: #0b0d12cc; border: 1px solid var(--line-strong); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .robot-stage__tag { position: absolute; right: 8%; bottom: 16%; z-index: 3; display: grid; gap: 2px; padding: 10px 14px; border-radius: 4px; background: #0b0d12cc; border: 1px solid var(--line-strong); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); pointer-events: none; }
   .robot-stage__tag::after { content: ''; position: absolute; inset: -5px; background: var(--hud); --hc: #ff4d62b3; --hl: 8px; background-repeat: no-repeat; pointer-events: none; }
   .robot-stage__tag b { color: var(--accent); font-weight: 600; font-size: 12px; }
 
+  /* The fallback orb sits where the robot's head and chest are. */
+  .orb { position: absolute; left: 50%; top: 4%; width: 36%; transition: opacity 600ms var(--ease-out); }
+  .robot-stage[data-poster='ok'] .orb, :global(html:not(.js)) .orb { opacity: 0; visibility: hidden; transition: opacity 600ms var(--ease-out), visibility 0s 600ms; }
+  .robot-stage[data-poster='failed'] .robot-stage__media { opacity: 0; }
+
+  /* "The robot opens it": when a door is chosen (gate.ts sets data-opening)
+     the robot flares, in step with the gate's light (≈ 300 ms). */
+  .robot-stage[data-opening] .robot__breath { filter: brightness(1.7); transition: filter 300ms ease-in; }
+
   /* PLACEHOLDER: a glossy black sphere. Preserve-3D lets the neon rings pass
      in front of and behind it. */
-  .orb { position: relative; width: 80%; aspect-ratio: 1; perspective: 1400px; transform: translate3d(calc(var(--mx, 0) * -12px), calc(var(--my, 0) * -9px), 0); transition: transform 700ms var(--ease-out); }
+  .orb { aspect-ratio: 1; perspective: 1400px; transform: translate3d(calc(var(--mx, 0) * -12px), calc(var(--my, 0) * -9px), 0); transition: transform 700ms var(--ease-out), opacity 600ms var(--ease-out); }
   .orb__tilt { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(calc(var(--my, 0) * -9deg)) rotateY(calc(var(--mx, 0) * 13deg)); transition: transform 800ms var(--ease-out); }
   .orb__sphere { position: absolute; inset: 17%; border-radius: 50%; overflow: hidden; transform: translateZ(0);
     background: radial-gradient(circle at 36% 26%, #4a5263 0, #1d222c 14%, #0d1016 34%, #050608 62%, #000 100%);
@@ -135,23 +173,41 @@ const media = !!(poster || greet);
   .robot-stage[data-opening] .orb__slit { background: #e6eeff; box-shadow: 0 0 18px 6px #e6eeff, 0 0 60px 22px #e6eeffd9, 0 0 120px 40px #2f6bff80; }
   .robot-stage[data-opening] .robot-stage__media { filter: brightness(1.8); transition: filter 300ms ease-in; }
 
+  /* The opening flare on the fallback orb: the rings snap shut and the
+     visor flares cool white. */
+  .orb__ring { transition: transform 300ms cubic-bezier(.7, 0, .3, 1), opacity 300ms; }
+  .orb__slit { transition: background-color 200ms, box-shadow 300ms ease-out; }
+  .robot-stage[data-opening] .orb__ring--a { transform: rotateX(90deg) rotateY(0deg) scale(.62); }
+  .robot-stage[data-opening] .orb__ring--b { transform: rotateX(90deg) rotateY(0deg) scale(.7); }
+  .robot-stage[data-opening] .orb__ring i { border-color: #e6eeff; box-shadow: 0 0 30px 6px #e6eeffcc, 0 0 60px 12px #2f6bff99; }
+  .robot-stage[data-opening] .orb__slit { background: #e6eeff; box-shadow: 0 0 18px 6px #e6eeff, 0 0 60px 22px #e6eeffd9, 0 0 120px 40px #2f6bff80; }
+
+  /* The living idle: only without a reduced-motion preference. */
   @media (prefers-reduced-motion: no-preference) {
+    .robot__breath { animation: robot-breathe 6.4s ease-in-out infinite; }
+    .robot__neon { animation: robot-neon 4.8s ease-in-out infinite alternate; }
+    .robot__beam { animation: robot-beam 9s ease-in-out infinite alternate; }
+    .robot-stage[data-hi] .robot__neon { animation: robot-hi 900ms ease-out; }
+    /* Touch (no hovering pointer): a slow ambient sway instead of the tilt. */
+    @media (hover: none), (pointer: coarse) {
+      .robot__tilt { animation: robot-sway 11s ease-in-out infinite alternate; }
+    }
     .orb__sphere { animation: orb-float 7s ease-in-out infinite; }
     .orb__ring--a i { animation: orb-spin 9s linear infinite; }
     .orb__ring--b i { animation: orb-spin 13s linear infinite reverse; }
     .orb__slit::after { animation: orb-scan 4.6s cubic-bezier(.65, 0, .35, 1) infinite alternate; }
     .orb__sweep { animation: orb-sweep 8s cubic-bezier(.45, 0, .25, 1) infinite; }
-    .robot-stage__halo { animation: orb-breathe 6s ease-in-out infinite; }
-    .robot-stage__beam { animation: stage-beam 11s ease-in-out infinite alternate; }
-    .robot-stage__sweep { animation: media-sweep 9s cubic-bezier(.45, 0, .25, 1) infinite; }
-    :global(html[data-motion='off']) :is(.orb__sphere, .orb__ring i, .robot-stage__halo, .orb__sweep, .robot-stage__beam, .robot-stage__sweep) { animation-play-state: paused; }
-    :global(html[data-motion='off']) .orb__slit::after { animation-play-state: paused; }
+    /* No loops behind a loaded poster. */
+    .robot-stage[data-poster='ok'] .orb :is(.orb__sphere, .orb__ring i, .orb__sweep), .robot-stage[data-poster='ok'] .orb__slit::after { animation: none; }
+    .robot-stage[data-poster='failed'] :is(.robot__breath, .robot__neon, .robot__beam, .robot__tilt) { animation: none; }
   }
+  @keyframes robot-hi { 0% { opacity: .5; } 25% { opacity: 1; filter: brightness(1.8); } 100% { opacity: .5; } }
+  @keyframes robot-breathe { 0%, 100% { scale: 1; translate: 0 0; } 50% { scale: 1.014; translate: 0 -.5%; } }
+  @keyframes robot-neon { from { opacity: .25; } to { opacity: .8; } }
+  @keyframes robot-beam { from { opacity: .15; } to { opacity: .6; } }
+  @keyframes robot-sway { from { transform: perspective(1600px) rotateY(-3deg) rotateX(.6deg); } to { transform: perspective(1600px) rotateY(3deg) rotateX(-.6deg); } }
   @keyframes orb-float { 0%, 100% { translate: 0 -7px; } 50% { translate: 0 9px; } }
   @keyframes orb-spin { to { transform: rotate(360deg); } }
   @keyframes orb-scan { from { transform: translateX(-10%); } to { transform: translateX(290%); } }
   @keyframes orb-sweep { 0%, 15% { transform: translateX(-45%); } 70%, 100% { transform: translateX(45%); } }
-  @keyframes orb-breathe { 0%, 100% { opacity: .8; scale: .97; } 50% { opacity: 1; scale: 1.03; } }
-  @keyframes stage-beam { from { transform: translateX(-14%); opacity: .6; } to { transform: translateX(16%); opacity: 1; } }
-  @keyframes media-sweep { 0%, 20% { background-position: 100% 0; } 75%, 100% { background-position: 0 0; } }
 </style>

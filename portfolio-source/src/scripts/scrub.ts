@@ -3,7 +3,7 @@
  * (0 → 1) as they cross the screen. Browsers with scroll-driven animations
  * do this in CSS; here is the IntersectionObserver + rAF fallback for the
  * rest. Reads happen in one pass, writes in the next, only for elements on
- * screen, and nothing runs with reduced motion or Pause motion.
+ * screen, and nothing runs with reduced motion.
  *
  * The range comes from CSS where a layout changes it: an element's
  * --scrub-mode custom property (e.g. the hero is 'exit' on phones, where it
@@ -17,9 +17,8 @@
  * card also focuses it, and scrolling then would slide the card out from
  * under the pointer and swallow the click.
  */
-const root = document.documentElement;
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-const still = () => reduce.matches || root.dataset.motion === 'off';
+const still = () => reduce.matches;
 const nativeScrub = typeof CSS !== 'undefined' && CSS.supports?.('animation-timeline: view()');
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
@@ -53,7 +52,7 @@ if (!nativeScrub && 'IntersectionObserver' in window) {
   items.forEach(el => observer.observe(el));
   addEventListener('scroll', queue, { passive: true });
   addEventListener('resize', () => { readModes(); queue(); });
-  addEventListener('omar:motion', queue);
+  reduce.addEventListener('change', queue);
 }
 
 /* Horizontal gallery: keyboard parity while pinned. */

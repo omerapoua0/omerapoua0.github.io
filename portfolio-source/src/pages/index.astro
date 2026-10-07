@@ -2,8 +2,12 @@
 import Base from '../layouts/Base.astro';
 import HomeHero from '../components/HomeHero.astro';
 import HomeSections from '../components/HomeSections.astro';
+import { ROBOT_ORIGIN } from '../data/robot';
 ---
 <Base title="AI product engineer, mathematician & tutor" home description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
+  {/* The hero robot's poster and greeting come from Higgsfield's CDN (plain
+      media requests, so no crossorigin on the preconnect). */}
+  <link slot="head" rel="preconnect" href={ROBOT_ORIGIN} />
   <HomeHero />
   <HomeSections />
 </Base>

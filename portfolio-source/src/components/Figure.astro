@@ -58,7 +58,6 @@ const id = `fig-${kind}-${Math.random().toString(36).slice(2, 7)}`;
   @media (prefers-reduced-motion: no-preference) {
     .draw { stroke-dasharray: 520; stroke-dashoffset: 520; animation: draw 2.4s var(--ease-out) .3s forwards; }
     .flow path { stroke-dasharray: 4 6; animation: flow 1.6s linear infinite; }
-    :global(html[data-motion='off']) .flow path { animation-play-state: paused; }
     @keyframes draw { to { stroke-dashoffset: 0; } }
     @keyframes flow { to { stroke-dashoffset: -20; } }
   }

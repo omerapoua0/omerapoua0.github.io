@@ -61,9 +61,9 @@ if ('IntersectionObserver' in window) {
 /* Count-up numbers: final values are in the HTML; animate once when seen. */
 /* While a number counts, it is aria-hidden and a visually hidden copy holds
    the final value, so assistive technology never reads the in-between. Not
-   with reduced motion or Pause motion. */
+   with reduced motion. */
 const counters = [...document.querySelectorAll<HTMLElement>('[data-count-to]')];
-const countStill = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.motion === 'off';
+const countStill = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (counters.length && 'IntersectionObserver' in window && !countStill()) {
   const counter = new IntersectionObserver(entries => entries.forEach(entry => {
     if (!entry.isIntersecting) return;

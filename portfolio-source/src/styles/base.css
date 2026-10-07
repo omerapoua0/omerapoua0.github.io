@@ -122,14 +122,13 @@ button { cursor: pointer; }
   [data-tilt][data-tilting] { transition-duration: 140ms; }
   [data-tilt]::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(420px circle at var(--glare-x, 50%) var(--glare-y, 50%), #2f6bff14, transparent 45%); opacity: 0; transition: opacity 300ms; }
   [data-tilt][data-tilting]::after { opacity: 1; }
-  html[data-motion='off'] [data-tilt] { transform: none; }
 
   /* Scroll-driven effects where supported: images settle in from a zoom,
      panels wipe open, things drift at their own pace. */
   @supports (animation-timeline: view()) {
-    html:not([data-motion='off']) [data-fx~='zoom'] img:not(.plate__logo) { animation-name: fx-zoom; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% cover 45%; }
-    html:not([data-motion='off']) [data-fx~='wipe'] { animation-name: fx-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 90%; }
-    html:not([data-motion='off']) [data-fx~='drift'] { animation-name: fx-drift; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
+    html [data-fx~='zoom'] img:not(.plate__logo) { animation-name: fx-zoom; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% cover 45%; }
+    html [data-fx~='wipe'] { animation-name: fx-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 90%; }
+    html [data-fx~='drift'] { animation-name: fx-drift; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
   }
 }
 /* Page changes are carried by the light gate (LightGate.astro + gate.ts) in
@@ -139,10 +138,9 @@ button { cursor: pointer; }
 @keyframes fx-wipe { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
 @keyframes fx-drift { from { transform: translateY(48px); } to { transform: translateY(-48px); } }
 @media (prefers-reduced-motion: reduce) {
-  /* Nothing loops for these visitors (every loop sits behind
-     prefers-reduced-motion: no-preference), so a Play/Pause switch would do
-     nothing: hide it rather than offer a control without an effect. */
-  [data-motion-toggle] { display: none !important; }
+  /* Nothing loops for these visitors: every loop sits behind
+     prefers-reduced-motion: no-preference. This is the site's motion opt-out
+     (there is no Pause control, at the user's request). */
   /* Zero (not near-zero) durations: a tiny forced duration would make inherited
      properties such as visibility animate on every element. */
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; transition-delay: 0s !important; animation-duration: 0s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }

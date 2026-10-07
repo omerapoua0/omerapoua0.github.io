@@ -9,10 +9,10 @@
    On desktop the hero pins for half a screen while you scroll (--p from the
    scroll scrub, neon.css): the title lines split and slide apart, the copy
    fades, the robot scales up and drifts to the centre, then the page
-   releases. Phones get the same split without the pin. Pause motion and
-   reduced motion leave it static. */
+   releases. Phones get the same split without the pin. Reduced motion
+   leaves it static (the visitor's motion opt-out; there is deliberately no
+   Pause control, at the user's request, Oct 2026). */
 import RobotStage from './RobotStage.astro';
-import MotionToggle from './MotionToggle.astro';
 import { caseStudies } from '../data/projects';
 import { capabilities } from '../data/capabilities';
 
@@ -88,8 +88,6 @@ const labels = [
         </li>
       ))}
     </ul>
-
-    <MotionToggle class="hero__pause" />
   </div>
 </section>
 </div>
@@ -152,18 +150,17 @@ const labels = [
   .spec:nth-child(even)::after { --hc: #ff4d62a6; }
   .spec__num { font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.2rem); font-weight: 700; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
   .spec__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
-  .hero__inner > :global(.hero__pause) { position: absolute; z-index: 3; right: var(--margin); top: 8px; }
 
   @media (min-width: 1000px) {
     .hero__inner { min-height: calc(min(100svh, 1000px) - var(--header)); grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); grid-template-rows: 1fr auto; column-gap: clamp(24px, 3vw, 56px); row-gap: 28px; align-items: center; }
     .hero__copy { grid-column: 1; grid-row: 1; position: relative; z-index: 2; }
-    .hero__robot { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-right: calc(var(--margin) * -.6); }
-    .hero__robot :global(.robot-stage) { --size: min(100%, 680px); }
-    /* The real robot media is wider (16:10) and bleeds behind the copy; its
-       radial mask dissolves the edges into the stage. */
-    .hero__robot :global(.robot-stage--media) { --size: 150%; margin-left: -34%; }
-    .hero__chips { grid-column: 1; grid-row: 2; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .hero__inner > :global(.hero__pause) { top: auto; bottom: clamp(48px, 5vw, 72px); }
+    /* The robot is big: it fills the right of the hero to the screen edge,
+       its frame bleeding behind the copy (the mask dissolves it into the
+       page), vertically centred under the header. */
+    .hero__inner { position: static; }
+    .hero__robot { position: absolute; z-index: 0; inset: var(--header) 0 0; pointer-events: none; }
+    .hero__robot-scrub { --w: min(92vw, 1320px, calc((min(100svh, 1000px) - var(--header)) * 1.62)); position: absolute; right: 0; top: 50%; width: var(--w); margin-top: calc(var(--w) / -3.574); }
+    .hero__chips { position: relative; z-index: 2; grid-column: 1; grid-row: 2; grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .hero__title { font-size: clamp(3rem, .6rem + 4.3vw, 5.6rem); }
     .hero__lede { font-size: clamp(1.05rem, .9rem + .4vw, 1.25rem); margin-top: 20px; }
     .hero__ctas { margin-top: 24px; }
@@ -175,16 +172,18 @@ const labels = [
   @media (min-width: 1000px) and (max-width: 1199px) {
     .hero__eyebrow-more, .hero__label { display: none; }
     .hero__chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .hero__robot :global(.robot-stage__tag) { right: -2%; bottom: 4%; }
   }
   @media (max-width: 999px) {
-    .hero__robot { order: -1; width: min(70vw, 360px); margin: -40px auto -44px; }
-    /* The real robot media (wider than the square placeholder) runs the full
-       width of the phone, 4:3, clear of the header, with Pause motion above it. */
-    :global(.hero__robot:has(.robot-stage--media)) { width: calc(100% + 2 * var(--margin)); margin: 0 calc(var(--margin) * -1) -24px; padding-top: 40px; }
+    /* Phones and tablets: the robot runs the full width above the copy, a
+       taller crop of the frame (head, chest and the waving hand). */
+    .hero__robot { order: -1; width: calc(100% + 2 * var(--margin)); margin: 0 calc(var(--margin) * -1) -28px; }
+    .hero__robot :global(.robot-stage) { aspect-ratio: 3 / 2; --canvas-right: -4%; --hit-left: 26%; }
     .hero__robot :global(.robot-stage__tag), .hero__label { display: none; }
     .hero__copy { order: 0; }
     .hero__hud { --hl: 14px; }
+  }
+  @media (max-width: 599px) {
+    .hero__robot :global(.robot-stage) { aspect-ratio: 6 / 5; --canvas-right: -7%; }
   }
   @media (max-width: 520px) {
     .hero__eyebrow { font-size: 10.5px; }
@@ -256,8 +255,6 @@ const labels = [
     .hero__glow--a { animation: glow-a 22s ease-in-out infinite alternate; }
     .hero__glow--b { animation: glow-b 26s ease-in-out infinite alternate; }
       .door:is(:hover, :focus-visible) .door__preview > span { animation-play-state: running; }
-    :global(html[data-motion='off']) .hero__glow { animation-play-state: paused; }
-    :global(html[data-motion='off']) .door .door__preview > span { animation-play-state: paused; }
     :global(html.js) .hero__word > span { animation: word-up 1000ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 120ms + var(--w) * 60ms); }
     :global(html.js) :is(.hero__eyebrow, .hero__lede, .hero__ctas) { animation: fade-up 900ms var(--ease-out) both; }
     :global(html.js) .hero__eyebrow { animation-delay: calc(var(--enter-delay, 0ms) + 40ms); }
@@ -273,24 +270,24 @@ const labels = [
     /* Clear lanes: every title line exits left at its own speed while a
        clip wipes it away from the right (never pushed off the screen edge);
        the robot scales in place and drifts right and up, away from the text. */
-    :global(html.js:not([data-motion='off'])) .hero__line { width: fit-content; translate: calc(var(--p) * -3vw) 0; clip-path: inset(-.1em calc(var(--p) * 100%) -.1em 0); opacity: calc(1 - var(--p) * 1.2); }
-    :global(html.js:not([data-motion='off'])) .hero__line:nth-child(even) { translate: calc(var(--p) * -6vw) 0; clip-path: inset(-.1em calc(min(1, var(--p) * 1.25) * 100%) -.1em 0); }
-    :global(html.js:not([data-motion='off'])) .hero__robot-scrub { scale: calc(1 + var(--p) * .16); translate: calc(var(--p) * 2vw) calc(var(--p) * -4vh); }
-    :global(html.js:not([data-motion='off'])) .hero__mark { translate: calc(-50% - var(--p) * 18vw) -50%; }
-    :global(html.js:not([data-motion='off'])) .beams { opacity: calc(.8 + var(--p) * .6); }
+    :global(html.js) .hero__line { width: fit-content; translate: calc(var(--p) * -3vw) 0; clip-path: inset(-.1em calc(var(--p) * 100%) -.1em 0); opacity: calc(1 - var(--p) * 1.2); }
+    :global(html.js) .hero__line:nth-child(even) { translate: calc(var(--p) * -6vw) 0; clip-path: inset(-.1em calc(min(1, var(--p) * 1.25) * 100%) -.1em 0); }
+    :global(html.js) .hero__robot-scrub { scale: calc(1 + var(--p) * .16); translate: calc(var(--p) * 2vw) calc(var(--p) * -4vh); }
+    :global(html.js) .hero__mark { translate: calc(-50% - var(--p) * 18vw) -50%; }
+    :global(html.js) .beams { opacity: calc(.8 + var(--p) * .6); }
   }
   /* Pin and release (desktop): half a screen of scroll while the hero plays.
      Only here do the copy and chips fade: on phones they stay solid (the
      buttons are still on screen and tappable while the title splits). */
   @media (prefers-reduced-motion: no-preference) and (min-width: 1000px) {
-    :global(html.js:not([data-motion='off'])) :is(.hero__sub, .hero__chips, .hero__eyebrow) { translate: 0 calc(var(--p) * -60px); opacity: calc(1 - var(--p) * 1.8); }
-    :global(html.js:not([data-motion='off'])) .hero-pin { height: calc(min(100svh, 1000px) + 55vh); }
-    :global(html.js:not([data-motion='off'])) .hero { position: sticky; top: 0; }
+    :global(html.js) :is(.hero__sub, .hero__chips, .hero__eyebrow) { translate: 0 calc(var(--p) * -60px); opacity: calc(1 - var(--p) * 1.8); }
+    :global(html.js) .hero-pin { height: calc(min(100svh, 1000px) + 55vh); }
+    :global(html.js) .hero { position: sticky; top: 0; }
   }
   @media (max-width: 999px) { .hero-pin { --scrub-mode: exit; } }
   @media (prefers-reduced-motion: no-preference) and (max-width: 999px) {
     @supports (animation-timeline: view()) {
-      :global(html.js:not([data-motion='off'])) .hero-pin { animation-range: exit 0% exit 100%; }
+      :global(html.js) .hero-pin { animation-range: exit 0% exit 100%; }
     }
   }
   /* Keyboard focus inside the hero always shows the hero in full (the hero is
