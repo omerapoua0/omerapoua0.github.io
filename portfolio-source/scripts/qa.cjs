@@ -850,6 +850,25 @@ async function pixelContrast(page, selectors) {
     });
   }
 
+  await check('intro with reduced motion (Android power saving): the orb offers "Tap to wake Otto"; a tap plays the real transformation; untouched, the question comes on its own', async () => {
+    if (!robotMedia) return;
+    const context = await isolated(browser, { intro: true, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`);
+    await page.waitForFunction(() => { const b = document.querySelector('[data-intro-wake]'); return b && !b.hidden && getComputedStyle(b).display !== 'none'; }, null, { timeout: 4000 });
+    const box = await page.locator('[data-intro-wake]').boundingBox();
+    assert.ok(box && box.height >= 44, `a real tap target (${JSON.stringify(box)})`);
+    await page.locator('[data-intro-wake]').tap();
+    await page.waitForFunction(() => { const i = document.querySelector('[data-intro]'); return i?.dataset.path === 'video' && ['transform', 'ask', 'look'].includes(i.dataset.stage); }, null, { timeout: 8000 });
+    await context.close();
+    const context2 = await isolated(browser, { intro: true, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    const page2 = await context2.newPage();
+    await page2.goto(`${base}/index.html`);
+    await page2.waitForFunction(() => document.querySelector('[data-intro]')?.hasAttribute('data-asked'), null, { timeout: 9000 });
+    assert.equal(await page2.evaluate(() => document.querySelector('[data-intro]').dataset.path), 'still', 'untouched: the still with the question');
+    await context2.close();
+  });
+
   await check('intro: no JavaScript → no intro at all', async () => {
     const context = await isolated(browser, { intro: true, javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
@@ -863,7 +882,7 @@ async function pixelContrast(page, selectors) {
     const context = await isolated(browser, { intro: true, viewport: { width, height: width < 600 ? 844 : 800 }, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto(`${base}/index.html`);
-    await asked(page, 3000);
+    await asked(page, 9000);
     await page.waitForTimeout(700);
     await page.addScriptTag({ path: axePath });
     const violations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })).violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).slice(0, 3).join(', ')}`));
@@ -883,7 +902,7 @@ async function pixelContrast(page, selectors) {
     const page = await context.newPage();
     const errors = watch(page);
     await page.goto(`${base}/index.html`);
-    await asked(page, 3000);
+    await asked(page, 9000);
     await page.waitForTimeout(600);
     const toggle = page.locator('.intro__bar [data-sound-toggle]');
     assert.ok(await toggle.isVisible(), 'the Sound switch is in the intro bar');
@@ -1010,7 +1029,7 @@ async function pixelContrast(page, selectors) {
     const context = await isolated(browser, { intro: true, viewport: { width, height }, isMobile: Math.min(width, height) < 600, hasTouch: touch, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.goto(`${base}/index.html`);
-    await asked(page, 3000);
+    await asked(page, 9000);
     await page.waitForTimeout(450);
     for (const clip of ['still', 'ask']) {
       if (clip === 'ask') { await page.evaluate(() => { document.querySelector('[data-intro]').dataset.clip = 'ask'; }); await page.waitForTimeout(1600); }
@@ -1248,7 +1267,7 @@ async function pixelContrast(page, selectors) {
       const context = await isolated(browser, { intro: true, viewport, isMobile: viewport.width < 600, hasTouch: viewport.width < 600, reducedMotion: 'reduce' });
       const page = await context.newPage();
       await page.goto(`${base}/index.html`);
-      await asked(page, 3000);
+      await asked(page, 9000);
       await page.waitForTimeout(400);
       const m = await page.evaluate(() => {
         const q = document.querySelector('#intro-q'), box = q.getBoundingClientRect(), cs = getComputedStyle(q);

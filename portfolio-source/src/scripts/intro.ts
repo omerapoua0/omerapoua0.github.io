@@ -70,7 +70,9 @@ function run(intro: HTMLElement) {
   const askClip = intro.querySelector<HTMLVideoElement>('[data-intro-ask]');
   const yes = $<HTMLButtonElement>('[data-intro-yes]');
   const tiltEl = $<HTMLElement>('[data-intro-tilt]');
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // let: a reduced-motion visitor who taps "Tap to wake Otto" has chosen the
+  // motion (v9.1), so the rest of the intro then plays in full.
+  let reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const lite = root.dataset.tier === 'lite';
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   const slow = !!connection?.saveData || /^(slow-2g|2g)$/.test(connection?.effectiveType ?? '');
@@ -229,9 +231,33 @@ function run(intro: HTMLElement) {
   // 2g get the CSS assemble, and reduced motion the still.
   if (reduce || !slow) onDecoded(orb, () => { if (!cur) show(orb); });
 
+  // Reduced motion (often switched on by Android power saving): no autoplay,
+  // but the orb offers "Tap to wake Otto" (motion the visitor asks for); the
+  // question still comes on its own after a few seconds.
   if (slow && !reduce) litePath();
-  else if (reduce) stillPath();
-  else {
+  else if (reduce) wakeFirst();
+  else videoPath();
+
+  function wakeFirst() {
+    const wake = $<HTMLButtonElement>('[data-intro-wake]');
+    if (!wake) { stillPath(); return; }
+    set('path', 'wake');
+    wake.hidden = false;
+    wake.style.display = '';
+    set('wake', '');
+    status('Tap to wake');
+    const auto = window.setTimeout(() => { if (intro.dataset.path === 'wake') { wake.hidden = true; wake.style.display = 'none'; set('wake', null); stillPath(); } }, 6000);
+    wake.addEventListener('click', () => {
+      window.clearTimeout(auto);
+      wake.hidden = true;
+      wake.style.display = 'none';
+      set('wake', null);
+      reduce = false;
+      videoPath();
+    }, { once: true });
+  }
+
+  function videoPath() {
     set('path', 'video');
     onFail(transform, stillPath);
     onFail(look, () => { lookReady = false; });
