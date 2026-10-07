@@ -1,0 +1,8 @@
+---
+/* A neon divider (blue and red, with a HUD notch) that draws itself as it
+   scrolls into view (neon.css .neon-line, --p from the scroll scrub). Drawn
+   in full without JavaScript, with reduced motion or with Pause motion. */
+interface Props { class?: string }
+const { class: className } = Astro.props;
+---
+<svg class:list={['neon-line', className]} data-scrub viewBox="0 0 1200 26" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 13H520l10-10h140l10 10H1200" /><path pathLength="1" d="M0 19H500l10 6h180l10-6H1200" /></svg>

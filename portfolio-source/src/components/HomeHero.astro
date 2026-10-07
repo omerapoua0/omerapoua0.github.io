@@ -33,7 +33,7 @@ const chips = [
 const doors = [
   { id: 'work', label: 'Work', href: '/work.html', promise: 'Network autonomy, a learning product, market models and research automation.', proof: `${caseStudies.length} case studies`, glyph: 'M4 18 18 4M8 4h10v10', preview: ['KATANA', 'NOOKBASE', 'INOS', 'Bitget', 'BP'] },
   { id: 'skills', label: 'Skills', href: '/index.html#skills', promise: 'Every skill tied to the place I actually used it.', proof: `${skillCount} skills with evidence`, glyph: 'M3 12h4l3-8 4 16 3-8h4', preview: ['LangGraph', 'Bayesian inference', 'MAPE-K', 'Python', 'Forecasting'] },
-  { id: 'lessons', label: 'Lessons', href: '/tutoring.html', promise: 'GCSE & A-level maths and science, online. Enhanced DBS checked.', proof: 'Free 15-min intro call', glyph: 'M4 6h16M4 12h10M4 18h7', preview: ['GCSE Foundation', 'GCSE Higher', 'A-level', 'Physics'] },
+  { id: 'lessons', label: 'Lessons', href: '/tutoring.html', promise: 'GCSE & A\u2011level maths and science, online. Enhanced DBS checked.', proof: 'Free 15-min intro call', glyph: 'M4 6h16M4 12h10M4 18h7', preview: ['GCSE Foundation', 'GCSE Higher', 'A-level', 'Physics'] },
   { id: 'contact', label: 'Contact', href: '/contact.html', promise: 'Projects, roles, research or lessons: one short message is enough.', proof: 'Email · LinkedIn · GitHub', glyph: 'M3 6h18v12H3zM3 6l9 7 9-7', preview: ['Projects', 'Roles', 'Research', 'Lessons'] },
 ];
 const labels = [
@@ -67,7 +67,7 @@ const labels = [
         ))}
       </h1>
       <div class="hero__sub">
-        <p class="hero__lede">AI Product Engineer at Digis Squared, founder of NOOKBASE, Computer Science &amp; Maths student at Birkbeck, and a GCSE &amp; A-level tutor.</p>
+        <p class="hero__lede">AI Product Engineer at Digis Squared, founder of NOOKBASE, Computer Science &amp; Maths student at Birkbeck, and a GCSE &amp; A&#8209;level tutor.</p>
         <div class="hero__ctas">
           <a class="btn hero__cta" href="/work.html" data-open="Work" data-magnetic>See my work <span class="arrow" aria-hidden="true">↗</span></a>
           <a class="btn btn--accent hero__cta" href="/tutoring.html#lesson-enquiry" data-open="Lessons" data-magnetic>Book a lesson <span class="arrow" aria-hidden="true">↗</span></a>
@@ -169,8 +169,19 @@ const labels = [
     .hero__ctas { margin-top: 24px; }
     .hero__lede { max-width: 54ch; }
     }
+  /* 1000–1199px: a narrower copy column. The eyebrow keeps to one line, the
+     chips go 2 × 2, the floating coordinates give way and the robot's tag
+     tucks into its corner. */
+  @media (min-width: 1000px) and (max-width: 1199px) {
+    .hero__eyebrow-more, .hero__label { display: none; }
+    .hero__chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hero__robot :global(.robot-stage__tag) { right: -2%; bottom: 4%; }
+  }
   @media (max-width: 999px) {
     .hero__robot { order: -1; width: min(70vw, 360px); margin: -40px auto -44px; }
+    /* The real robot media (wider than the square placeholder) runs the full
+       width of the phone, 4:3, clear of the header, with Pause motion above it. */
+    :global(.hero__robot:has(.robot-stage--media)) { width: calc(100% + 2 * var(--margin)); margin: 0 calc(var(--margin) * -1) -24px; padding-top: 40px; }
     .hero__robot :global(.robot-stage__tag), .hero__label { display: none; }
     .hero__copy { order: 0; }
     .hero__hud { --hl: 14px; }
@@ -214,15 +225,15 @@ const labels = [
   .door__proof { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
   .door__go { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-strong); font-size: 16px; transition: background-color 300ms, color 300ms, border-color 300ms, transform 400ms var(--ease-out); }
   .door:is(:hover, :focus-visible) .door__go { background: var(--ink); border-color: var(--ink); color: var(--bg); transform: rotate(45deg); }
-  .door--contact { background: linear-gradient(160deg, #2d63f2, #1638b0 85%); color: #fff; border-color: #4d84ff80; box-shadow: 0 20px 60px -24px #2f6bffaa; }
-  .door--contact .door__num, .door--contact .door__num span, .door--contact .door__promise, .door--contact .door__proof, .door--contact .door__preview b { color: #e6eeff; }
+  .door--contact { background: linear-gradient(160deg, #2858e0, #1638b0 85%); color: #fff; border-color: #4d84ff80; box-shadow: 0 20px 60px -24px #2f6bffaa; }
+  .door--contact .door__num, .door--contact .door__num span, .door--contact .door__promise, .door--contact .door__proof, .door--contact .door__preview b { color: #fff; }
   .door--contact .door__icon { border-color: #ffffff59; color: #fff; }
   .door--contact .door__foot, .door--contact:is(:hover, :focus-visible) .door__preview { border-color: #ffffff40; }
   .door--contact .door__go { border-color: #ffffff66; }
   .door--contact:is(:hover, :focus-visible) .door__go { background: #fff; color: var(--accent-fill); border-color: #fff; }
   .door--contact:is(:hover, :focus-visible) .door__icon { background: #fff; color: var(--accent-fill); }
   .door--contact .door__line rect:first-child { stroke: var(--cool); filter: drop-shadow(0 0 6px #e6eeff); }
-  .door--contact::before { background: radial-gradient(380px circle at var(--gx) var(--gy), #ffffff33, transparent 60%); }
+  .door--contact::before { background: radial-gradient(380px circle at var(--gx) var(--gy), #ffffff1f, transparent 60%); }
   .door--contact:focus-visible { outline-color: var(--cool); }
   /* Phones: a compact 2×2 grid, so all four doors (blue Contact last) sit
      within about one screen of the hero. The promise and preview give way. */
@@ -259,23 +270,32 @@ const labels = [
 
     /* Scroll scrub (individual transform properties, so they compose with
        the entrance animations above). */
-    :global(html.js:not([data-motion='off'])) .hero__line { translate: calc(var(--p) * -16vw) 0; opacity: calc(1 - var(--p) * .9); }
-    :global(html.js:not([data-motion='off'])) .hero__line:nth-child(even) { translate: calc(var(--p) * 16vw) 0; }
-    :global(html.js:not([data-motion='off'])) :is(.hero__sub, .hero__chips, .hero__eyebrow) { translate: 0 calc(var(--p) * -60px); opacity: calc(1 - var(--p) * 1.8); }
-    :global(html.js:not([data-motion='off'])) .hero__robot-scrub { scale: calc(1 + var(--p) * .2); translate: calc(var(--p) * -12vw) calc(var(--p) * 8vh); }
+    /* Clear lanes: every title line exits left at its own speed while a
+       clip wipes it away from the right (never pushed off the screen edge);
+       the robot scales in place and drifts right and up, away from the text. */
+    :global(html.js:not([data-motion='off'])) .hero__line { width: fit-content; translate: calc(var(--p) * -3vw) 0; clip-path: inset(-.1em calc(var(--p) * 100%) -.1em 0); opacity: calc(1 - var(--p) * 1.2); }
+    :global(html.js:not([data-motion='off'])) .hero__line:nth-child(even) { translate: calc(var(--p) * -6vw) 0; clip-path: inset(-.1em calc(min(1, var(--p) * 1.25) * 100%) -.1em 0); }
+    :global(html.js:not([data-motion='off'])) .hero__robot-scrub { scale: calc(1 + var(--p) * .16); translate: calc(var(--p) * 2vw) calc(var(--p) * -4vh); }
     :global(html.js:not([data-motion='off'])) .hero__mark { translate: calc(-50% - var(--p) * 18vw) -50%; }
     :global(html.js:not([data-motion='off'])) .beams { opacity: calc(.8 + var(--p) * .6); }
   }
-  /* Pin and release (desktop): half a screen of scroll while the hero plays. */
+  /* Pin and release (desktop): half a screen of scroll while the hero plays.
+     Only here do the copy and chips fade: on phones they stay solid (the
+     buttons are still on screen and tappable while the title splits). */
   @media (prefers-reduced-motion: no-preference) and (min-width: 1000px) {
+    :global(html.js:not([data-motion='off'])) :is(.hero__sub, .hero__chips, .hero__eyebrow) { translate: 0 calc(var(--p) * -60px); opacity: calc(1 - var(--p) * 1.8); }
     :global(html.js:not([data-motion='off'])) .hero-pin { height: calc(min(100svh, 1000px) + 55vh); }
     :global(html.js:not([data-motion='off'])) .hero { position: sticky; top: 0; }
   }
+  @media (max-width: 999px) { .hero-pin { --scrub-mode: exit; } }
   @media (prefers-reduced-motion: no-preference) and (max-width: 999px) {
     @supports (animation-timeline: view()) {
       :global(html.js:not([data-motion='off'])) .hero-pin { animation-range: exit 0% exit 100%; }
     }
   }
+  /* Keyboard focus inside the hero always shows the hero in full (the hero is
+     sticky, so the browser never scrolls it back into view). */
+  :global(html.js) .hero-pin:focus-within :is(.hero__sub, .hero__eyebrow, .hero__chips, .hero__line) { opacity: 1; translate: none; clip-path: none; }
   @keyframes word-up { from { transform: translateY(105%); } }
   @keyframes fade-up { from { opacity: 0; transform: translateY(26px); } }
   @keyframes robot-up { from { opacity: 0; transform: translateY(80px) scale(.92); } }

@@ -42,7 +42,7 @@
 /* Volumetric beams: soft cool-white shafts that sweep slowly. Transforms
    only; the soft edges come from gradients, never from a blur filter. */
 .beams { position: absolute; inset: 0; overflow: hidden; pointer-events: none; contain: paint; }
-.beams > i { position: absolute; top: -30%; height: 160%; width: var(--w, 22vw); left: var(--x, 50%); transform-origin: 50% 0; rotate: var(--r, 24deg); background: linear-gradient(90deg, transparent, var(--c, #e6eeff14) 35%, var(--c2, #e6eeff2b) 50%, var(--c, #e6eeff12) 65%, transparent); -webkit-mask: linear-gradient(transparent, #000 25%, #000 55%, transparent); mask: linear-gradient(transparent, #000 25%, #000 55%, transparent); }
+.beams > i { will-change: transform; position: absolute; top: -30%; height: 160%; width: var(--w, 22vw); left: var(--x, 50%); transform-origin: 50% 0; rotate: var(--r, 24deg); background: linear-gradient(90deg, transparent, var(--c, #e6eeff14) 35%, var(--c2, #e6eeff2b) 50%, var(--c, #e6eeff12) 65%, transparent); -webkit-mask: linear-gradient(transparent, #000 25%, #000 55%, transparent); mask: linear-gradient(transparent, #000 25%, #000 55%, transparent); }
 .beams > i:nth-child(2) { --w: 9vw; --x: 64%; --r: 30deg; --c: #4d84ff0d; --c2: #4d84ff21; }
 .beams > i:nth-child(3) { --w: 6vw; --x: 30%; --r: 18deg; --c: #ff2d460a; --c2: #ff4d621a; }
 .haze { position: absolute; inset: 0; pointer-events: none; background: var(--noise); opacity: .05; mix-blend-mode: screen; }

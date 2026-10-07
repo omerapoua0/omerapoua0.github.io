@@ -10,6 +10,7 @@ import Figure from '../../components/Figure.astro';
 import Marquee from '../../components/Marquee.astro';
 import ContactBand from '../../components/ContactBand.astro';
 import MotionToggle from '../../components/MotionToggle.astro';
+import NeonLine from '../../components/NeonLine.astro';
 import { projects, type Project } from '../../data/projects';
 import { statusLabel } from '../../data/site';
 
@@ -43,7 +44,7 @@ let wordIndex = 0;
       <div class="tour-hero__copy">
         <div class="tour-hero__top">
           <p class="tour-hero__eyebrow"><span class="tour-hero__idx">Tour {pad(index + 1)}<span>/{pad(total)}</span></span><a href="/work.html">All work</a></p>
-          <MotionToggle />
+          <MotionToggle class="tour-hero__pause" />
         </div>
         <h1 id="tour-title" class:list={[{ 'is-long': project.name.length > 12 }]}>{project.name.split(' ').map(word => <span class="tw"><span style={`--w:${wordIndex++}`}>{word}</span></span>)}</h1>
         <p class="tour-hero__meta">{meta.join(' · ')}</p>
@@ -74,14 +75,16 @@ let wordIndex = 0;
     </nav>
 
     <div class="chapters">
-      <section id="problem" class="chapter chapter--problem" aria-labelledby="problem-title" data-reveal="scale">
+      <section id="problem" class="chapter chapter--problem" aria-labelledby="problem-title" data-reveal="up-wipe">
         <span id="ch-1" class="alias" aria-hidden="true"></span>
         <p class="chapter__num">01 <span>/ 05</span></p>
         <h2 id="problem-title">The problem</h2>
         <p class="statement">{project.context}</p>
       </section>
 
-      <section id="contribution" class="chapter" aria-labelledby="contribution-title" data-reveal="scale">
+      <NeonLine class="chapters__line" />
+
+      <section id="contribution" class="chapter" aria-labelledby="contribution-title" data-reveal="up-wipe">
         <span id="ch-2" class="alias" aria-hidden="true"></span>
         <p class="chapter__num">02 <span>/ 05</span></p>
         <h2 id="contribution-title">What I did</h2>
@@ -90,7 +93,9 @@ let wordIndex = 0;
         </ol>
       </section>
 
-      <section id="toolkit" class="chapter" aria-labelledby="toolkit-title" data-reveal="scale">
+      <NeonLine class="chapters__line" />
+
+      <section id="toolkit" class="chapter" aria-labelledby="toolkit-title" data-reveal="up-wipe">
         <span id="ch-3" class="alias" aria-hidden="true"></span>
         <p class="chapter__num">03 <span>/ 05</span></p>
         <h2 id="toolkit-title">How it works</h2>
@@ -100,7 +105,9 @@ let wordIndex = 0;
         {schematic && <div class="schematic"><Figure kind={schematic} /></div>}
       </section>
 
-      <section id="stage" class="chapter chapter--stage" aria-labelledby="stage-title" data-reveal="scale">
+      <NeonLine class="chapters__line" />
+
+      <section id="stage" class="chapter chapter--stage" aria-labelledby="stage-title" data-reveal="up-wipe">
         <span id="ch-4" class="alias" aria-hidden="true"></span>
         <p class="chapter__num">04 <span>/ 05</span></p>
         <h2 id="stage-title">Where it stands</h2>
@@ -111,7 +118,9 @@ let wordIndex = 0;
         </div>
       </section>
 
-      <section id="next" class="chapter" aria-labelledby="next-title" data-reveal="scale">
+      <NeonLine class="chapters__line" />
+
+      <section id="next" class="chapter" aria-labelledby="next-title" data-reveal="up-wipe">
         <span id="ch-5" class="alias" aria-hidden="true"></span>
         <p class="chapter__num">05 <span>/ 05</span></p>
         <h2 id="next-title">Next</h2>
@@ -156,6 +165,8 @@ let wordIndex = 0;
   .tour-hero__copy { min-width: 0; }
   .tour-hero__eyebrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 6px 14px 6px 6px; border-radius: 4px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   .tour-hero__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  /* Desktop: Pause motion docks in the hero's top-right corner (as on every hero). */
+  @media (min-width: 900px) { .tour-hero__inner { position: relative; } .tour-hero__inner :global(.tour-hero__pause) { position: absolute; z-index: 3; top: 18px; right: var(--margin); } }
   .tour-hero__idx { padding: 3px 10px; border-radius: 999px; background: var(--accent-fill); color: #fff; font-weight: 600; }
   .tour-hero__idx span { color: #fff; font-weight: 400; }
   .tour-hero__eyebrow a { color: var(--accent); text-decoration: none; min-height: 24px; display: inline-flex; align-items: center; }
@@ -194,6 +205,7 @@ let wordIndex = 0;
     .rail a[data-active] { transform: translateX(6px); }
   }
   .chapters { display: grid; gap: 18px; }
+  .chapters__line { margin-block: 6px; opacity: .85; }
   .chapter { position: relative; display: grid; gap: var(--s-5); padding: clamp(24px, 4vw, 56px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--header) + 80px); overflow: hidden; }
   .alias { position: absolute; top: 0; left: 0; width: 1px; height: 1px; scroll-margin-top: calc(var(--header) + 80px); pointer-events: none; }
   .tour-hero > .alias { scroll-margin-top: 0; }

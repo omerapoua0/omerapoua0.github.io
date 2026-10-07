@@ -5,7 +5,8 @@
    blue/white light, a grid that follows the pointer and an outlined watermark
    word. Facts in chips come from src/data or the CV. Everything is readable
    without JavaScript; the entrance waits for the light gate (--enter-delay).
-   The Pause motion switch sits beside the eyebrow, in the first screen. */
+   The Pause motion switch sits beside the eyebrow on phones and docks in the
+   hero's top-right corner on desktop, always in the first screen. */
 import MotionToggle from './MotionToggle.astro';
 interface Line { text: string; accent?: boolean }
 interface Chip { value?: number; prefix?: string; text?: string; label: string }
@@ -102,6 +103,11 @@ const pad = (value: number) => String(value).padStart(2, '0');
   .phero--compact .phero__title { font-size: clamp(2.35rem, .9rem + 5vw, 5.6rem); }
 
   @media (min-width: 900px) { .phero__chips { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  /* Desktop: Pause motion docks in the hero's top-right corner, inside the
+     HUD frame, clear of the headline and the visual (as on the homepage). */
+  @media (min-width: 900px) {
+    .phero__inner > .phero__copy :global(.phero__pause) { position: absolute; z-index: 3; top: 18px; right: var(--margin); }
+  }
   @media (min-width: 1100px) {
     .phero--aside .phero__inner { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); column-gap: clamp(32px, 4vw, 72px); align-items: center; }
     .phero--aside .phero__title { font-size: clamp(3rem, 1rem + 4.2vw, 5.6rem); max-width: none; }

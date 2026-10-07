@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import PageHero from '../components/PageHero.astro';
 import Marquee from '../components/Marquee.astro';
+import NeonLine from '../components/NeonLine.astro';
 import '../styles/forms.css';
 import { site } from '../data/site';
 
@@ -54,9 +55,10 @@ const topics = [
 
   <section class="stage stage--grey" id="write" aria-labelledby="contact-form-title">
     <div class="wrap">
+    <NeonLine class="write__line" />
     <h2 id="contact-form-title" class="sr-only">Prepare a message</h2>
     <div class="form-shell" data-form-shell>
-      <aside class="form-shell__aside" aria-label="What to include">
+      <aside class="form-shell__aside" aria-label="What to include" data-reveal="wipe">
         <p class="eyebrow"><b>01</b>A useful first message</p>
         <p>You don’t need a polished brief. A little context and a clear question are enough.</p>
         <dl class="include">
@@ -66,7 +68,7 @@ const topics = [
         </dl>
         <p class="note">Please leave out passwords, private records and other sensitive information.</p>
       </aside>
-      <div class="form-shell__main form-panel">
+      <div class="form-shell__main form-panel" data-reveal="up-wipe">
         <noscript><h3>Email works without a form.</h3><p>Send your message to <a href={`mailto:${site.email}`}>{site.email}</a>.</p></noscript>
         <form data-enquiry="contact" hidden>
           <div class="form-progress" data-progress>
@@ -123,6 +125,7 @@ const topics = [
 </Base>
 
 <style>
+  .write__line { margin-bottom: clamp(28px, 4vw, 56px); }
   .direct { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 32px); border-radius: var(--radius-3); background: var(--navy); color: #fff; box-shadow: var(--shadow-3); position: relative; overflow: hidden; isolation: isolate; }
   .direct::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(70% 60% at 90% 0%, #2f6bff99, transparent 70%); }
   .direct__kicker { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9fb2ff; }

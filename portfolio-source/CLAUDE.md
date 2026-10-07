@@ -45,9 +45,10 @@ required. This is a static portfolio, not a hosted backend.
   longhands (`animation-name` … `animation-timeline`); the minifier folds an
   `animation` shorthand + timeline into an invalid declaration (qa-content
   checks this).
-- `src/layouts/Base.astro`: metadata, JSON-LD, header, footer, LightGate, the
-  floating Contact pill (phones, after scrolling; not on contact/tutoring), and
+- `src/layouts/Base.astro`: metadata, JSON-LD, header, footer, LightGate and
   the inline head script (restores Pause motion; marks a light-gate arrival).
+  No floating Contact pill: the sticky header's Contact is the one tap
+  everywhere (the pill covered copy on phones).
 - **Homepage** (`index.astro`): `HomeHero.astro` inside `.hero-pin`
   (one-line who, uppercase display title with staggered word reveal, See my
   work / Book a lesson / Contact me, the robot stage, HUD spec chips that count
@@ -131,9 +132,13 @@ required. This is a static portfolio, not a hosted backend.
     gate plays it full-bleed for `[data-open]` links instead of the CSS
     seams: it seeks to `OPEN_SEEK` (LightGate.astro, default 2.4 s, the
     hands-together moment; seeking needs HTTP range support, which GitHub
-    Pages has), plays 1.2 s, then the white takes over. It is preloaded when a
-    `[data-open]` link is hovered or focused; any stall falls back to the
-    seams. Headless Chromium has no H.264, so add the .webm versions too.
+    Pages has), plays 1.2 s, then the white takes over (gate.ts waits for the
+    white to be opaque before navigating). It is loaded and parked on that
+    frame when a `[data-open]` link is hovered or focused (fine pointers
+    only, never with Save-Data); at click time it plays only if it is
+    buffered and parked on the right frame (a host that cannot seek, or a
+    source error, marks it unusable), otherwise the CSS seams play at once,
+    so the clip never delays a door. Layer order: clip < white < HUD. Headless Chromium has no H.264, so add the .webm versions too.
   With no files, an abstract placeholder renders (a glossy black sphere with
   red and blue rim light, red/blue neon orbit rings, a visor slit and a
   sweeping beam; CSS only, marked PLACEHOLDER in code). Never draw a cartoon

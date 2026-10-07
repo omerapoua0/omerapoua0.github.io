@@ -103,6 +103,10 @@ button { cursor: pointer; }
 .cursor-ring[data-hot]::after { width: 52px; height: 52px; background: #2f6bff1a; border-color: var(--accent); }
 .cursor-ring[data-label]:not([data-label=''])::after { width: 74px; height: 32px; background: var(--ink); border-color: var(--ink); color: var(--bg); box-shadow: 0 0 30px -4px #e6eeff99; }
 .cursor-ring[data-text]::after { opacity: 0; }
+/* Over buttons the ring shrinks to a dot: the button's fill-wipe is the hover. */
+.cursor-ring[data-btn]::after { width: 6px; height: 6px; background: var(--ink); border-color: transparent; box-shadow: 0 0 10px #e6eeffaa; }
+/* The label pill sits below and right of the pointer, never over the target's own text. */
+.cursor-ring[data-label]:not([data-label=''])::after { translate: 14px 22px; }
 .cursor-ring[data-down]::after { scale: .85; }
 
 /* Motion: everything below is opt-in for visitors without a reduced-motion preference. */

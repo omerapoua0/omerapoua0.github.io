@@ -34,18 +34,18 @@ const OPEN_SEEK = 2.4;
 <div class="gate" data-gate aria-hidden="true" data-clip={openClip ? '' : undefined}>
   <span class="gate__veil"></span>
   <span class="gate__dark"></span>
-  <span class="gate__seam gate__seam--l"></span>
-  <span class="gate__seam gate__seam--r"></span>
-  <span class="gate__flare"></span>
-  <span class="gate__white"></span>
-  <span class="gate__ring"></span>
-  <span class="gate__scan"></span>
   {openClip && (
     <video class="gate__clip" data-gate-clip data-seek={OPEN_SEEK} muted playsinline preload="none" tabindex="-1" disablepictureinpicture>
       {openWebm && <source data-src="/robot/open.webm" type="video/webm" />}
       <source data-src="/robot/open.mp4" type="video/mp4" />
     </video>
   )}
+  <span class="gate__seam gate__seam--l"></span>
+  <span class="gate__seam gate__seam--r"></span>
+  <span class="gate__flare"></span>
+  <span class="gate__white"></span>
+  <span class="gate__ring"></span>
+  <span class="gate__scan"></span>
   <span class="gate__hud">
     <span class="gate__label"><span class="gate__kicker">Opening</span> <b data-gate-label></b></span>
     <span class="gate__line"><i></i></span>
@@ -56,6 +56,9 @@ const OPEN_SEEK = 2.4;
   .gate { --gx: 50vw; --gy: 50vh; display: none; position: fixed; inset: 0; z-index: 300; pointer-events: none; contain: strict; overflow: hidden; -webkit-user-select: none; user-select: none; }
   .gate[data-state], html[data-gate='in'] .gate { display: block; }
   .gate > * { position: absolute; }
+  /* Explicit stacking: the robot clip sits under the white, which sits under
+     the HUD, whatever the markup order. */
+  .gate__clip { z-index: 1; } .gate__white { z-index: 2; } .gate__ring, .gate__scan { z-index: 3; } .gate__hud { z-index: 4; }
   .gate__veil { inset: 0; background: #07080b; opacity: 0; }
   .gate__dark { inset: 0; background: radial-gradient(80% 70% at 50% 40%, #0d111b, #07080b 70%); opacity: 0; }
   .gate__white { inset: 0; background: radial-gradient(60% 60% at 50% 50%, #ffffff, #f2f6ff 55%, #e6eeff); opacity: 0; }
@@ -92,13 +95,14 @@ const OPEN_SEEK = 2.4;
   .gate[data-state='open'] .gate__flare { animation: g-flare 220ms cubic-bezier(.3, 0, .2, 1) 220ms both; }
   .gate[data-state='open'] .gate__white { animation: g-burst 290ms cubic-bezier(.55, 0, .25, 1) 260ms both; }
   .gate[data-state='open'] .gate__ring { animation: g-ring 310ms cubic-bezier(.55, 0, .25, 1) 260ms both; }
-  .gate[data-state='open'] .gate__hud { animation: g-fade-to 160ms ease-out 400ms both; }
+  /* The dark label only appears once the white is opaque under it. */
+  .gate[data-state='open'] .gate__hud { animation: g-fade-to 140ms ease-out 520ms both; }
   .gate[data-state='open'] .gate__line i { animation: g-line 600ms cubic-bezier(.3, .6, .3, 1) both; }
   /* Leave with the robot's own clip. gate.ts sets data-clip-on when it plays. */
   .gate[data-state='open'][data-clip-on] :is(.gate__seam, .gate__flare, .gate__veil, .gate__ring) { animation: none; opacity: 0; }
-  .gate[data-state='open'][data-clip-on] .gate__clip { opacity: 1; }
+  .gate[data-state='open'][data-clip-on] .gate__clip { animation: g-fade-to 140ms ease-out both; }
   .gate[data-state='open'][data-clip-on] .gate__white { animation: g-fade-to 260ms ease-in var(--clip-white, 1100ms) both; }
-  .gate[data-state='open'][data-clip-on] .gate__hud { animation: g-fade-to 200ms ease-out calc(var(--clip-white, 1100ms) + 120ms) both; }
+  .gate[data-state='open'][data-clip-on] .gate__hud { animation: g-fade-to 200ms ease-out calc(var(--clip-white, 1100ms) + 260ms) both; }
 
   /* Leave, "quick": the dark rises (0–300) while a scan line runs down. */
   .gate[data-state='quick'] .gate__dark { animation: g-fade-to 300ms cubic-bezier(.4, 0, .2, 1) both; }

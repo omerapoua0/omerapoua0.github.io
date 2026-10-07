@@ -1,8 +1,9 @@
 /* A trailing neon cursor ring for fine pointers. The native cursor stays
    visible (forms and text selection work as usual). The ring morphs: it
-   grows over links and buttons, becomes a labelled pill ("Open") over doors,
-   cards and anything that opens through the light gate, steps aside over
-   text fields and squeezes on press. Off for touch, reduced motion and when
+   grows over links, becomes a labelled pill ("Open") only over large targets
+   (doors, gallery cards, [data-cursor-label]), shrinks to a dot over buttons
+   (their own fill-wipe is the hover effect), steps aside over text fields and
+   squeezes on press. Off for touch, reduced motion and when
    motion is paused. */
 const root = document.documentElement;
 const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
@@ -24,10 +25,12 @@ if (fine.matches && !reduce.matches) {
     if (target === last) return;
     last = target;
     const text = !!target?.closest?.('input:not([type="radio"]):not([type="checkbox"]), textarea, select, [contenteditable]');
-    const opens = target?.closest?.('a[data-open], [data-hgallery-item] a');
+    const big = target?.closest?.<HTMLElement>('.door, [data-hgallery-item] a, .tours__card, [data-cursor-label]');
+    const button = !big && !!target?.closest?.('.btn, .copy-btn, .header__cta');
     ring.toggleAttribute('data-text', text);
-    ring.dataset.label = opens && !text ? 'Open' : '';
-    ring.toggleAttribute('data-hot', !text && !opens && !!target?.closest?.('a, button, label, summary, [data-graph]'));
+    ring.dataset.label = big && !text ? (big.dataset.cursorLabel || 'Open') : '';
+    ring.toggleAttribute('data-btn', !text && button);
+    ring.toggleAttribute('data-hot', !text && !big && !button && !!target?.closest?.('a, button, label, summary, [data-graph]'));
   };
   addEventListener('pointermove', event => {
     if (event.pointerType !== 'mouse' || root.dataset.motion === 'off') { ring.hidden = true; return; }

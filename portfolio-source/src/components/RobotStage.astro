@@ -79,6 +79,12 @@ const media = !!(poster || greet);
   .robot-stage__sweep { position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, #e6eeff14 48%, #e6eeff26 50%, #e6eeff14 52%, transparent 65%) 0 0 / 260% 100%; mix-blend-mode: screen; pointer-events: none; }
   .robot-stage--media :is(.robot-stage__floor, .robot-stage__beam, .robot-stage__halo) { display: none; }
   .robot-stage--media .robot-stage__tag { right: 24%; bottom: 10%; }
+  @media (max-width: 999px) {
+    .robot-stage--media { --size: 100%; aspect-ratio: 4 / 3; }
+    .robot-stage--media .robot-stage__media :is(img, video) { object-position: 60% 40%; }
+    /* A tighter ellipse that has fully faded before any clipped edge. */
+    .robot-stage--media .robot-stage__media { -webkit-mask: radial-gradient(ellipse closest-side at 55% 50%, #000 40%, #0008 68%, transparent 94%); mask: radial-gradient(ellipse closest-side at 55% 50%, #000 40%, #0008 68%, transparent 94%); }
+  }
 
   .robot-stage__tag { position: absolute; right: 2%; bottom: 14%; z-index: 3; display: grid; gap: 2px; padding: 10px 14px; border-radius: 4px; background: #0b0d12cc; border: 1px solid var(--line-strong); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .robot-stage__tag::after { content: ''; position: absolute; inset: -5px; background: var(--hud); --hc: #ff4d62b3; --hl: 8px; background-repeat: no-repeat; pointer-events: none; }
@@ -95,9 +101,12 @@ const media = !!(poster || greet);
       inset 3px 0 2px -1px #ff6b7d,
       inset -18px -2px 26px -12px #2f6bffee,
       inset -3px 0 2px -1px #8fb0ff,
-      inset 0 -30px 40px -20px #000,
-      -34px 6px 80px -30px #ff2d4680,
-      34px -6px 90px -26px #2f6bff8c; }
+      inset 0 -30px 40px -20px #000; }
+  /* The outer red/blue glow is painted on a flat layer outside the
+     preserve-3d subtree: large outer shadows inside it get clipped to a hard
+     rectangle by the compositor. */
+  .orb::before { content: ''; position: absolute; inset: 10%; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side at 30% 56%, #ff2d4652, #ff2d461a 55%, transparent), radial-gradient(closest-side at 72% 44%, #2f6bff5c, #2f6bff1f 55%, transparent); }
   /* Rim light and the cool reflection of the beam on the gloss. */
   .orb__shade { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 80% 64%, #2f6bff33, transparent 36%), radial-gradient(circle at 16% 58%, #ff2d4626, transparent 34%), radial-gradient(120% 60% at 50% 120%, #e6eeff14, transparent 50%); }
   .orb__sweep { position: absolute; inset: -20%; background: linear-gradient(112deg, transparent 40%, #e6eeff0f 46%, #e6eeff38 50%, #e6eeff0f 54%, transparent 60%); transform: translateX(var(--sweep, -30%)); }

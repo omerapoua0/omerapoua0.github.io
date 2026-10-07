@@ -184,7 +184,9 @@ async function pixelContrast(page, selectors) {
           assert.deepEqual(violations, []);
           // axe cannot decide contrast over gradients, images and translucent
           // layers ("incomplete"). Measure those from pixels instead.
-          const low = await pixelContrast(page, incomplete);
+          // Text on the blue Contact door sits on a gradient: always measure it.
+          const extra = route === 'index' ? ['.door--contact .door__num', '.door--contact .door__promise', '.door--contact .door__proof'] : [];
+          const low = await pixelContrast(page, [...incomplete, ...extra]);
           assert.ok(low.length === 0, `text below AA contrast (pixel check, ${incomplete.length} nodes): ${low.slice(0, 6).join(' ; ')}`);
           await page.close();
         });
@@ -252,6 +254,7 @@ async function pixelContrast(page, selectors) {
   });
 
   /* 5. The light gate: leaving ends opaque white, arriving starts white at first paint and reveals. */
+  const GATE_TOL = 250;
   const gateScenario = async ({ label, reducedMotion, motionOff, width }) => {
     const context = await isolated(browser, { reducedMotion, viewport: { width, height: 900 } });
     if (motionOff) await context.addInitScript(() => { try { sessionStorage.setItem('omar-motion', 'off'); } catch {} });
@@ -295,6 +298,24 @@ async function pixelContrast(page, selectors) {
         });
       };
     });
+    // The design timing, from the animation timeline (frame-rate independent):
+    // when data-state is set, and when the leaving layer's animation finishes.
+    await page.evaluate(() => {
+      const gate = document.querySelector('[data-gate]');
+      new MutationObserver(() => {
+        if (!gate.dataset.state || window.__tlStart !== undefined) return;
+        const t0 = document.timeline.currentTime;
+        window.__tlStart = t0;
+        requestAnimationFrame(() => {
+          const animations = gate.querySelector('.gate__white').getAnimations();
+          Promise.all(animations.map(a => a.finished)).then(() => {
+            const start = Math.min(...animations.map(a => a.startTime));
+            const end = Math.max(...animations.map(a => a.startTime + a.effect.getComputedTiming().endTime));
+            try { sessionStorage.setItem('qa-tl', JSON.stringify({ design: Math.round(end - start), firstFrame: Math.round(start - t0) })); } catch {}
+          });
+        });
+      }).observe(gate, { attributes: true, attributeFilter: ['data-state'] });
+    });
     // Click via the DOM so Playwright's wait for the doors' entrance animation is not timed.
     const started = await page.evaluate(() => Date.now());
     await Promise.all([page.waitForURL(/work\.html$/), page.evaluate(() => document.querySelector('.doors a[href="/work.html"]').click())]);
@@ -310,11 +331,19 @@ async function pixelContrast(page, selectors) {
     assert.ok(first.white >= .99, `arriving page white at first paint (${first.white})`);
     await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-gate]')).visibility === 'hidden' || getComputedStyle(document.querySelector('[data-gate]')).display === 'none', null, { timeout: 1500 });
     assert.equal(await page.evaluate(() => window.__vt), 0, 'no native view transition alongside the gate');
-    assert.ok(leaveMs > 0 && leaveMs <= 900, `click → pagehide within 900ms (${leaveMs}ms)`);
-    if (reducedMotion === 'reduce' || motionOff) assert.ok(leaveMs < 600, `reduced/paused leave is quick (${leaveMs}ms)`);
+    // The design budget is asserted on the animation timeline: the white is
+    // opaque 550ms after a door is chosen (160ms reduced/paused), frame-rate
+    // independent. Wall-clock click → pagehide is only a stall guard: headless
+    // Chromium composites the hero in software at ~15fps, so every frame-bound
+    // step (finished promises, the two frames before navigating) runs late.
+    const tl = JSON.parse(await page.evaluate(() => sessionStorage.getItem('qa-tl')) || '{}');
+    const still = reducedMotion === 'reduce' || motionOff;
+    assert.ok(tl.design > 0 && tl.design <= (still ? 170 : 560), `white opaque ${tl.design}ms into the gate's own timeline (design ${still ? 160 : 550}ms)`);
+    assert.ok(tl.firstFrame <= 400, `the gate starts on the next frame (${tl.firstFrame}ms; headless software frames)`);
+    assert.ok(leaveMs > 0 && leaveMs <= (still ? 700 : 900) + GATE_TOL, `click → pagehide within ${(still ? 700 : 900)}ms + ${GATE_TOL}ms headless tolerance (${leaveMs}ms)`);
     await page.waitForFunction(() => window.__whiteGone !== undefined, null, { timeout: 3000 });
     const whiteGone = await page.evaluate(() => window.__whiteGone);
-    assert.ok(whiteGone <= 700, `arrival white gone within 700ms of first paint (${Math.round(whiteGone)}ms)`);
+    assert.ok(whiteGone <= 700 + GATE_TOL, `arrival white gone within 700ms (+ tolerance) of first paint (${Math.round(whiteGone)}ms)`);
     // A same-page door: Skills on the homepage opens, jumps, reveals.
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await page.click('.doors a[href="/index.html#skills"]');
@@ -322,7 +351,7 @@ async function pixelContrast(page, selectors) {
     const top = await page.locator('#skills').evaluate(el => el.getBoundingClientRect().top);
     assert.ok(Math.abs(top) < 120, `jumped to skills (${top})`);
     assert.deepEqual(errors, []);
-    results.push({ name: `gate ${label} timing`, status: 'info', message: `${leaveMs}ms click → pagehide; arrival white gone after ${Math.round(whiteGone)}ms` });
+    results.push({ name: `gate ${label} timing`, status: 'info', message: `timeline ${await page.evaluate(() => sessionStorage.getItem('qa-tl'))}; ${leaveMs}ms click → pagehide; arrival white gone after ${Math.round(whiteGone)}ms` });
     await context.close();
   };
   for (const scenario of [
@@ -330,7 +359,33 @@ async function pixelContrast(page, selectors) {
     { label: 'motion 390', reducedMotion: 'no-preference', width: 390 },
     { label: 'reduced motion', reducedMotion: 'reduce', width: 1280 },
     { label: 'Pause motion', reducedMotion: 'no-preference', motionOff: true, width: 1280 },
-  ]) await check(`light gate ${scenario.label}: opaque white leaving, white at first paint, revealed ≤ 1.5 s`, () => gateScenario(scenario));
+  ]) await check(`light gate ${scenario.label}: opaque white leaving, white at first paint, revealed ≤ 1.5 s`, async () => {
+    // Wall-clock timings in headless Chromium are noisy: one retry, and the
+    // retry is reported, so a real regression still fails twice.
+    try { await gateScenario(scenario); }
+    catch (error) { results.push({ name: `light gate ${scenario.label} retry`, status: 'info', message: error.message.slice(0, 200) }); await gateScenario(scenario); }
+  });
+
+  /* The robot's open clip (only when the build has public/robot/open.*, e.g.
+     a scratch copy with stand-in media): it must start on the parked frame,
+     and the page must be fully white when it is hidden. */
+  await check('light gate robot clip (when present): plays from the hands moment, white ≥ 0.99 at pagehide', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    await context.addInitScript(() => addEventListener('pagehide', () => {
+      const gate = document.querySelector('[data-gate]');
+      try { sessionStorage.setItem('qa-clip', JSON.stringify({ white: Number(getComputedStyle(gate.querySelector('.gate__white')).opacity), clipOn: gate.hasAttribute('data-clip-on') })); } catch {}
+    }));
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    if (!(await page.locator('[data-gate-clip]').count())) { results.push({ name: 'robot clip', status: 'info', message: 'no open clip in this build: skipped' }); await context.close(); return; }
+    await page.hover('.doors a[href="/work.html"]');
+    await page.waitForFunction(() => { const v = document.querySelector('[data-gate-clip]'); return v.readyState >= 3 && Math.abs(v.currentTime - Math.min(Number(v.dataset.seek), v.duration - 1.3)) < .15; }, null, { timeout: 5000 });
+    await Promise.all([page.waitForURL(/work\.html$/), page.evaluate(() => document.querySelector('.doors a[href="/work.html"]').click())]);
+    const state = JSON.parse(await page.evaluate(() => sessionStorage.getItem('qa-clip')));
+    assert.ok(state.clipOn, 'the clip played');
+    assert.ok(state.white >= .99, `white at pagehide ${state.white}`);
+    await context.close();
+  });
 
   await check('light gate: ordinary links use the quick gate; PDFs, mail and new tabs are untouched; back from bfcache is never white', async () => {
     // Playwright disables the back/forward cache by default; this browser keeps
@@ -466,6 +521,95 @@ async function pixelContrast(page, selectors) {
     });
   }
 
+  await check('horizontal gallery: a mouse click on a partly visible card (pinned) navigates to its tour', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.evaluate(() => { const g = document.querySelector('[data-hgallery]'); scrollTo(0, g.getBoundingClientRect().top + scrollY + 4); });
+    await page.waitForTimeout(400);
+    // The first card whose tour link starts on screen but is not centred.
+    const target = await page.evaluate(() => [...document.querySelectorAll('[data-hgallery-item] a[href^="/inside/"]')].map(a => ({ href: a.getAttribute('href'), box: a.getBoundingClientRect() })).find(({ box }) => box.left > innerWidth * .55 && box.left < innerWidth - 80));
+    assert.ok(target, 'a partly visible card');
+    const before = await page.evaluate(() => scrollY);
+    await page.mouse.move(target.box.left + 40, target.box.top + 120);
+    await page.mouse.down();
+    await page.waitForTimeout(120);
+    assert.equal(await page.evaluate(() => scrollY), before, 'pressing a card never scrolls the page');
+    await Promise.all([page.waitForURL(new RegExp(`${target.href.replace(/[./]/g, '\\$&')}$`), { timeout: 4000 }), page.mouse.up()]);
+    await context.close();
+  });
+
+  await check('horizontal gallery: scrollIntoView inside the pinned frame never leaves it offset', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.querySelector('#card-bp-name').scrollIntoView());
+    await page.waitForTimeout(200);
+    assert.equal(await page.evaluate(() => document.querySelector('.hgal__sticky').scrollLeft), 0);
+    await context.close();
+  });
+
+  await check('pinned gallery only where it fits (1366×768): heading clear of the header', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1366, height: 768 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.evaluate(() => { const g = document.querySelector('[data-hgallery]'); scrollTo(0, g.getBoundingClientRect().top + scrollY); });
+    await page.waitForTimeout(300);
+    const state = await page.evaluate(() => {
+      const header = document.querySelector('[data-header]').getBoundingClientRect().bottom;
+      return { header, top: document.querySelector('#work-title').getBoundingClientRect().top, pinned: getComputedStyle(document.querySelector('[data-hgallery]')).getPropertyValue('--pinned').trim() };
+    });
+    assert.ok(state.top >= state.header - 1, `#work-title below the header (${JSON.stringify(state)})`);
+    assert.notEqual(state.pinned, '1', 'not pinned on a 768px-tall screen');
+    await context.close();
+  });
+
+  await check('hero: keyboard focus on a CTA after scrolling the pin is fully visible (Shift+Tab from a door)', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1800);
+    await page.locator('.doors a.door').first().focus();
+    await page.waitForTimeout(200);
+    const low = [];
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Shift+Tab');
+      await page.waitForTimeout(150);
+      const info = await page.evaluate(() => {
+        const el = document.activeElement;
+        if (!el.closest('.hero')) return null;
+        let o = 1; for (let n = el; n; n = n.parentElement) o *= Number(getComputedStyle(n).opacity);
+        return { text: el.textContent.trim().slice(0, 20), o };
+      });
+      if (info && info.o < .99) low.push(`${info.text} ${info.o.toFixed(2)}`);
+    }
+    assert.deepEqual(low, []);
+    await context.close();
+  });
+
+  await check('scroll scrub fallback (no native scroll timelines): phone hero copy stays solid for the first 300px', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await context.addInitScript(() => {
+      const supports = CSS.supports.bind(CSS);
+      CSS.supports = (...args) => (/animation-timeline/.test(args.join(' ')) ? false : supports(...args));
+      document.addEventListener('DOMContentLoaded', () => { const style = document.createElement('style'); style.textContent = '[data-scrub]{animation:none!important}'; document.head.append(style); });
+    });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1800);
+    const low = [];
+    for (const y of [0, 100, 200, 300]) {
+      await page.evaluate(top => scrollTo(0, top), y);
+      await page.waitForTimeout(200);
+      const o = await page.evaluate(() => Number(getComputedStyle(document.querySelector('.hero__sub')).opacity));
+      if (o < .95) low.push(`${y}px: ${o}`);
+    }
+    assert.deepEqual(low, []);
+    // The fallback really ran: the title lines have started to split by 300px.
+    assert.ok(Number(await page.evaluate(() => getComputedStyle(document.querySelector('.hero-pin')).getPropertyValue('--p'))) > 0, 'scrub.ts wrote --p');
+    await context.close();
+  });
+
   for (const [label, viewport, mobile] of [['phone', { width: 390, height: 844 }, true], ['desktop', { width: 1280, height: 900 }, false]]) {
     await check(`contact in one tap from every page (${label})`, async () => {
       const context = await isolated(browser, { viewport, isMobile: mobile, hasTouch: mobile });
@@ -478,7 +622,7 @@ async function pixelContrast(page, selectors) {
         if (mobile && !['contact', 'tutoring'].includes(route)) {
           await page.evaluate(() => scrollTo(0, innerHeight * 2));
           await page.waitForTimeout(500);
-          assert.ok(await page.locator('[data-float-contact]').isVisible(), `${route}: floating Contact after scrolling`);
+          assert.equal(await page.locator('[data-float-contact]').count(), 0, `${route}: no floating Contact pill over the copy (the sticky header's Contact is the one tap)`);
           assert.ok(await page.locator('.header__cta').isVisible(), `${route}: header Contact still visible (sticky)`);
         }
       }

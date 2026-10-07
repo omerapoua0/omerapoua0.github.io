@@ -46,6 +46,7 @@ const samePath = (a: string, b: string) => (a === '/' ? '/index.html' : a) === (
 
 let busy = false;
 
+
 /** Resolve once the white layer's animation has finished (it is then fully
  *  opaque), never before `min` ms and never after `cap` ms. Waiting on the
  *  animation itself, not a timer, keeps slow first frames from navigating
@@ -58,45 +59,59 @@ async function layerDone(min: number, cap: number, layer = '.gate__white') {
 }
 
 const clip = () => gate?.querySelector<HTMLVideoElement>('[data-gate-clip]') ?? null;
-/** Attach the clip's sources and start loading it (once). */
+/* The clip is only worth fetching on a fine pointer without Save-Data: on
+   touch (iOS ignores preload) it would only ever be warmed by the tap itself
+   and could never be ready in time. */
+const saveData = () => !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+const coarse = window.matchMedia('(pointer: coarse)');
+const clipAllowed = () => !saveData() && !coarse.matches;
+const seekOf = (video: HTMLVideoElement) => Math.min(Number(video.dataset.seek) || 0, Math.max(0, (video.duration || 0) - 1.3));
+/** Attach the clip's sources, load it and park it on the hands-together
+ *  frame (once), so a door can play it the moment it is chosen. A source
+ *  error (no codec) or a host that cannot seek marks it unusable. */
 function warm() {
   const video = clip();
-  if (!video || video.dataset.warm) return;
+  if (!video || video.dataset.warm || !clipAllowed()) return;
   video.dataset.warm = '1';
-  video.querySelectorAll<HTMLSourceElement>('source[data-src]').forEach(source => { if (!source.src) source.src = source.dataset.src!; });
+  const sources = [...video.querySelectorAll<HTMLSourceElement>('source[data-src]')];
+  sources.at(-1)?.addEventListener('error', () => { video.dataset.failed = ''; }, { once: true });
+  video.addEventListener('error', () => { video.dataset.failed = ''; }, { once: true });
+  video.addEventListener('loadedmetadata', () => {
+    const seek = seekOf(video);
+    if (seek <= 0) return;
+    video.addEventListener('seeked', () => { if (Math.abs(video.currentTime - seek) > .15) video.dataset.failed = ''; }, { once: true });
+    video.currentTime = seek;
+  }, { once: true });
+  sources.forEach(source => { if (!source.src) source.src = source.dataset.src!; });
   video.preload = 'auto';
   video.load();
 }
-const once = (target: EventTarget, name: string, ms: number) => new Promise<boolean>(resolve => {
-  const done = (ok: boolean) => { target.removeEventListener(name, yes); resolve(ok); };
-  const yes = () => done(true);
-  target.addEventListener(name, yes, { once: true });
-  window.setTimeout(() => done(false), ms);
-});
+/** The clip plays only when it is already buffered and parked on the right
+ *  frame at click time; otherwise the CSS seams play straight away, so a
+ *  slow network, a missing codec or a host without range requests never
+ *  delays the door. */
+function clipReady(video: HTMLVideoElement | null): video is HTMLVideoElement {
+  if (!video || !clipAllowed() || video.dataset.failed !== undefined || video.readyState < 3 || video.seeking) return false;
+  return Math.abs(video.currentTime - seekOf(video)) < .15;
+}
 
 /** Wait for the open animation, or the robot's clip, to reach full white.
- *  The clip seeks to the hands-together moment and plays for ~1.2 s, then
- *  the white takes over; any stall falls back to the CSS seams. */
-async function playOpen(): Promise<void> {
+ *  The clip plays from the hands-together moment for ~1.2 s, then the white
+ *  takes over (and must be opaque before this returns); a failed play()
+ *  falls back to the CSS seams. `start` is when data-state='open' was set. */
+async function playOpen(start: number): Promise<void> {
   const video = clip();
-  if (video && gate) {
-    warm();
+  if (gate && clipReady(video)) {
+    const length = 1200;
+    gate.style.setProperty('--clip-white', `${length - 260}ms`);
+    gate.dataset.clipOn = '';
     try {
-      if (video.readyState < 1 && !(await once(video, 'loadedmetadata', 450))) throw new Error('slow');
-      const seek = Math.min(Number(video.dataset.seek) || 0, Math.max(0, (video.duration || 0) - 1.3));
-      if (seek > 0 && Math.abs(video.currentTime - seek) > .05) {
-        video.currentTime = seek;
-        if (!(await once(video, 'seeked', 350))) throw new Error('slow');
-      }
-      await Promise.race([video.play(), sleep(400).then(() => { throw new Error('slow'); })]);
-      const length = 1200;
-      gate.style.setProperty('--clip-white', `${length - 260}ms`);
-      gate.dataset.clipOn = '';
-      await sleep(length);
+      await Promise.race([video.play(), sleep(300).then(() => { throw new Error('slow'); })]);
+      await layerDone(length, length + 600);
       return;
     } catch { video.pause(); gate.removeAttribute('data-clip-on'); }
   }
-  await layerDone(550, 850);
+  await layerDone(Math.max(0, 550 - (performance.now() - start)), 850);
 }
 
 const robot = () => document.querySelector<HTMLElement>('[data-robot-stage]');
@@ -126,7 +141,7 @@ async function go(href: string, mode: Mode = 'quick', link?: Element | null, poi
   gate.dataset.state = mode;
   const layer = mode === 'quick' ? '.gate__dark' : '.gate__white';
   if (still()) await layerDone(160, 600, layer);
-  else if (mode === 'open') await playOpen();
+  else if (mode === 'open') await playOpen(performance.now());
   else await layerDone(300, 800, layer);
 
   // Same page, different section: jump behind the white, then reveal.

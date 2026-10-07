@@ -12,7 +12,7 @@ const href = topic ? `/contact.html?topic=${encodeURIComponent(topic)}` : '/cont
   <div class="band__bg" aria-hidden="true"><span></span><span></span><i></i><b class="beams"><i></i><i></i><i></i></b><em class="hud band__hud"></em></div>
   <div class="wrap band__inner">
     <p class="eyebrow eyebrow--dark">{mark && <b>{mark}</b>}Contact</p>
-    <h2 id={`${id}-title`} class="band__title" data-reveal>{title} <span>{accent}</span></h2>
+    <h2 id={`${id}-title`} class="band__title fill-text" data-scrub="entry" data-reveal>{title} <span>{accent}</span></h2>
     <p class="band__lede" data-reveal>{lede}</p>
     <div class="band__row" data-reveal>
       <div class="band__email">

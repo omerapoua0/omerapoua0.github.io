@@ -17,9 +17,6 @@ interface Props { title: string; description?: string; home?: boolean; image?: s
 const { title, description = site.description, home = false, image = '/portrait-hero.jpg', noindex = false } = Astro.props;
 const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 const fullTitle = home ? `${site.name} | ${title}` : `${title} | ${site.name}`;
-/* The floating Contact pill (phones) is redundant on the contact page and
-   would collide with the lesson page's own sticky call to action. */
-const floatingContact = !['/contact.html', '/tutoring.html'].includes(path);
 const person = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -76,11 +73,6 @@ const person = {
     <SiteHeader />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter />
-    {floatingContact && (
-      <a class="float-contact" href="/contact.html" data-open data-float-contact>
-        <span class="float-contact__dot" aria-hidden="true"></span>Contact Omar
-      </a>
-    )}
     <CommandPalette />
     <script>import '../scripts/site';</script>
     <script>import '../scripts/gate';</script>
@@ -92,13 +84,3 @@ const person = {
   </body>
 </html>
 
-<style>
-  /* Phones and tablets: a floating Contact pill once the header's own pill has
-     scrolled out of view (site.ts toggles data-show). Always a real link. */
-  .float-contact { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 45; display: none; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--accent-fill); color: #fff; font-weight: 620; font-size: 15px; text-decoration: none; box-shadow: 0 14px 34px -10px #2f6bffcc, 0 0 0 1px #4d84ff, 0 0 0 5px #07080bcc, 0 0 30px -4px #2f6bff99; transition: transform 420ms var(--ease-spring), opacity 300ms; }
-  .float-contact__dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px #ffffff4d, 0 0 10px #fff; }
-  @media (max-width: 1099px) {
-    .float-contact { display: inline-flex; }
-    :global(html.js) .float-contact:not([data-show]) { transform: translateY(140%); opacity: 0; visibility: hidden; transition: transform 420ms var(--ease-spring), opacity 300ms, visibility 0s 300ms; }
-  }
-</style>

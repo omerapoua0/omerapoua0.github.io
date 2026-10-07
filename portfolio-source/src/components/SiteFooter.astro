@@ -5,7 +5,7 @@ const year = new Date().getFullYear();
 <footer class="footer">
   <div class="wrap">
     <div class="footer__top">
-      <a class="footer__big" href="/contact.html" data-open>Let’s build <span>something.</span> <span class="footer__arrow" aria-hidden="true">↗</span></a>
+      <a class="footer__big fill-text" href="/contact.html" data-open data-scrub="entry">Let’s build <span>something.</span> <span class="footer__arrow" aria-hidden="true">↗</span></a>
       <div class="footer__reach">
         <a class="footer__email" href={`mailto:${site.email}`}>{site.email}</a>
         <p>London, UK · lessons online worldwide</p>
@@ -46,7 +46,7 @@ const year = new Date().getFullYear();
   .footer a { text-decoration: none; }
   .footer a:hover { color: var(--accent); }
   .footer__top { display: grid; gap: var(--s-6); padding-bottom: clamp(48px, 6vw, 88px); border-bottom: 1px solid var(--line); }
-  .footer__big { font-size: clamp(2.6rem, 1rem + 6.4vw, 7.5rem); font-weight: 640; letter-spacing: -.055em; line-height: .92; max-width: 12ch; }
+  .footer__big { font-size: clamp(2.6rem, 1rem + 6.4vw, 7.5rem); font-weight: 760; text-transform: uppercase; letter-spacing: -.05em; line-height: .92; max-width: 12ch; }
   .footer__big span:first-child { color: var(--accent); }
   .footer__arrow { display: inline-block; font-size: .55em; vertical-align: top; transition: transform var(--d-3) var(--ease-out); }
   .footer__big:hover .footer__arrow { transform: translate(8px, -8px); }

@@ -13,7 +13,7 @@ previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for histo
   robot opens it": two light seams meet like hands, white light bursts open,
   and the next page rises out of the white. Ordinary links get a quick white
   rise. Reduced motion and Pause motion get a short fade.
-- **Everywhere:** a Contact pill in the header (and floating on phones), a
+- **Everywhere:** a Contact pill in the sticky header on every width, a
   ⌘K / Ctrl+K command menu (quick links, pages, case studies, tours, copy email,
   CV, LinkedIn, GitHub) and a visible Pause motion switch.
 - **Every page:** a studio hero (numbered eyebrow, word-by-word title,
