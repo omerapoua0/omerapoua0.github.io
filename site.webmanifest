@@ -4,8 +4,8 @@
   "description": "AI product engineering, mathematics and learning.",
   "start_url": "/",
   "display": "browser",
-  "background_color": "#151515",
-  "theme_color": "#151515",
+  "background_color": "#07080b",
+  "theme_color": "#07080b",
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]

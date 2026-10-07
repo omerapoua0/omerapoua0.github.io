@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>Omar Aboelella</title>
-  <rect width="64" height="64" fill="#151515"/>
-  <circle cx="29" cy="33" r="16" fill="none" stroke="#eeeae4" stroke-width="6"/>
-  <path d="M48 14v34" stroke="#eeeae4" stroke-width="6"/>
+  <rect width="64" height="64" rx="14" fill="#07080b"/>
+  <circle cx="29" cy="33" r="16" fill="none" stroke="#f4f6fb" stroke-width="6"/>
+  <path d="M48 14v34" stroke="#4d84ff" stroke-width="6"/>
+  <path d="M13 33h8" stroke="#ff2d46" stroke-width="3"/>
 </svg>
