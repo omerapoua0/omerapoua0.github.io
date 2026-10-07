@@ -72,7 +72,7 @@ export const projects: Project[] = [
     areas: ['ai', 'research'],
     summary: 'An agentic study platform for iOS, Android and web, built around a conversational tutoring agent.',
     href: '/work.html#nookbase',
-    media: { image: '/project-nookbase.jpg', video: '/project-nookbase.webm', logo: '/logo-nookbase.png', alt: 'NOOKBASE learning product concept visual' },
+    media: { image: '/project-nookbase.jpg', video: '/project-nookbase.webm', logo: '/logo-nookbase-120.png', alt: 'NOOKBASE learning product concept visual' },
     context:
       'Completing a task with AI and understanding it are different outcomes. NOOKBASE asks how a learner can understand and explain the work, not just finish it.',
     contribution: [

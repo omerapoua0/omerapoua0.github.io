@@ -11,10 +11,10 @@
 @keyframes scrub-p { from { --p: 0; } to { --p: 1; } }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    html.js [data-scrub] { animation-name: scrub-p; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(block 0px); animation-range: cover; }
-    html.js [data-scrub='contain'] { animation-range: contain 0% contain 100%; }
-    html.js [data-scrub='exit'] { animation-range: exit 0% exit 100%; }
-    html.js [data-scrub='entry'] { animation-range: entry 0% cover 50%; }
+    html.js:not([data-tier='lite']) [data-scrub] { animation-name: scrub-p; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(block 0px); animation-range: cover; }
+    html.js:not([data-tier='lite']) [data-scrub='contain'] { animation-range: contain 0% contain 100%; }
+    html.js:not([data-tier='lite']) [data-scrub='exit'] { animation-range: exit 0% exit 100%; }
+    html.js:not([data-tier='lite']) [data-scrub='entry'] { animation-range: entry 0% cover 50%; }
   }
 }
 
@@ -58,15 +58,15 @@
 .neon-line path:first-child { stroke: var(--blue); filter: drop-shadow(0 0 4px #2f6bffcc); }
 .neon-line path:last-child { stroke: var(--red); opacity: .8; filter: drop-shadow(0 0 4px #ff2d46aa); }
 @media (prefers-reduced-motion: no-preference) {
-  html.js .neon-line path:first-child { stroke-dashoffset: calc(1 - min(1, var(--p) * 2.4)); }
-  html.js .neon-line path:last-child { stroke-dashoffset: calc(1 - min(1, max(0, var(--p) * 2.4 - .25))); }
+  html.js:not([data-tier='lite']) .neon-line path:first-child { stroke-dashoffset: calc(1 - min(1, var(--p) * 2.4)); }
+  html.js:not([data-tier='lite']) .neon-line path:last-child { stroke-dashoffset: calc(1 - min(1, max(0, var(--p) * 2.4 - .25))); }
 }
 
 /* Big outlined display word that fills with light as you scroll past
    (mask reveal). At rest it is filled. */
 .fill-text { color: var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
-  html.js .fill-text { color: transparent; background: linear-gradient(90deg, var(--ink) 0 calc(var(--p) * 180% - 40%), #ffffff2e calc(var(--p) * 180% - 20%)) 0 0 / 100% 100%; -webkit-background-clip: text; background-clip: text; }
+  html.js:not([data-tier='lite']) .fill-text { color: transparent; background: linear-gradient(90deg, var(--ink) 0 calc(var(--p) * 180% - 40%), #ffffff2e calc(var(--p) * 180% - 20%)) 0 0 / 100% 100%; -webkit-background-clip: text; background-clip: text; }
 }
 
 /* Ambient loops: only without a reduced-motion preference. */

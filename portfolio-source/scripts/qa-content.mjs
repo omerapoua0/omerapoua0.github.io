@@ -113,7 +113,8 @@ expect(!/animation:[^;}]*\b(view|scroll)\(\)/.test(builtText), 'A scroll-driven 
 // The v4 journey: no chat anywhere, four doors as real links, contact always one tap away.
 const sitemap = (await readdir(dist)).filter(file => /^sitemap.*\.xml$/.test(file));
 const sitemapText = (await Promise.all(sitemap.map(file => readFile(path.join(dist, file), 'utf8')))).join(' ');
-expect(!/data-chat|otto-choice|Ask Otto|I’m Otto/.test(Object.values(html).join(' ') + Object.values(insideHtml).join(' ')), 'Chat or Otto remnants remain');
+// (v9: the robot is now named Otto, at the user's request; the old Otto chat stays gone.)
+expect(!/data-chat|otto-choice|Ask Otto|otto-dock|data-otto/.test(Object.values(html).join(' ') + Object.values(insideHtml).join(' ')), 'Chat or Otto remnants remain');
 expect(!/do you want to discover/i.test(all), 'Vague “discover” copy remains');
 for (const href of ['/work.html', '/index.html#skills', '/tutoring.html', '/contact.html']) expect(new RegExp(`class="door[^"]*"[^>]*href="${href.replace('.', '\\.')}"|href="${href.replace('.', '\\.')}"[^>]*class="door`).test(html.index), `index: door to ${href} missing`);
 for (const [name, source] of everyPage) expect(/class="header__cta"[^>]*href="\/contact\.html"|href="\/contact\.html"[^>]*class="header__cta"/.test(source), `${name}: header Contact missing`);
@@ -136,14 +137,23 @@ const media = await readdir(dist);
 const ROBOT_CDN = 'https://d8j0ntlcm91z4.cloudfront.net';
 expect(html.index.includes(`<link rel="preconnect" href="${ROBOT_CDN}"`), 'index: preconnect to the robot CDN missing');
 expect(/<img class="robot__poster[^"]*" src="https:\/\/d8j0ntlcm91z4\.cloudfront\.net\/[^"]+\.webp"[^>]*width="1344" height="752"/.test(html.index), 'index: robot poster with width/height missing');
-expect(/<button class="robot-stage__hit[^"]*" type="button" aria-label="Say hi to OA-01, Omar’s robot"/.test(html.index), 'index: "Say hi to OA-01, Omar’s robot" button missing');
+expect(/<button class="robot-stage__hit[^"]*" type="button" aria-label="Say hi to Otto, Omar’s robot"/.test(html.index), 'index: "Say hi to Otto, Omar’s robot" button missing');
+// v9: the robot's name is Otto everywhere (no "OA-01" left in any page, script or style).
+expect(!/OA-01|OA‑01/.test(builtText), 'The old robot name "OA-01" remains in the build');
+expect(/Hi — I’m Otto, Omar’s robot\./.test(html.index) && /<b>Otto<\/b>/.test(html.index), 'index: Otto’s introduction ("Hi — I’m Otto, Omar’s robot.") or his HUD name missing');
+// v9 moves: ASK in the intro, WAVE and HEART in the hero (fetched on demand: preload="none").
+for (const [id, name] of [['df410d0c-f3b9-4fd7-ad45-b4829ca41dc5', 'ASK'], ['0d5a7893-8f58-49d0-95c5-5dec71b6f69e', 'WAVE'], ['86ab53ef-2514-4434-9a8a-0587120b5e1d', 'HEART']]) expect(new RegExp(`data-src="${ROBOT_CDN}/user_3Hu8nuHpTz0mXVPyD5jCOMXRDom/hf_20261007_140440_${id}\\.mp4"`).test(html.index), `index: the ${name} clip missing`);
+expect(/<video[^>]*data-intro-ask[^>]*preload="none"/.test(html.index) && /<video class="robot__video[^"]*" data-robot-video="wave"[^>]*preload="none"/.test(html.index) && /data-robot-video="heart"[^>]*preload="none"/.test(html.index), 'index: the ASK/WAVE/HEART videos must be preload="none" (fetched on demand)');
+// v9 capability tier: set before first paint on every page (Base.astro).
+for (const [name, source] of everyPage) expect(/<head>[\s\S]*d\.dataset\.tier=t[\s\S]*<\/head>/.test(source) && /deviceMemory<=4/.test(source) && /hardwareConcurrency<=4/.test(source) && /saveData/.test(source) && /tier=\(lite\|full\)/.test(source), `${name}: the capability-tier head script is missing`);
 expect(/<video class="robot__video[^"]*"[^>]*muted[^>]*playsinline[^>]*preload="none"/.test(html.index) && html.index.includes(`data-src="${ROBOT_CDN}/user_3Hu8nuHpTz0mXVPyD5jCOMXRDom/hf_20261007_090943_37408964-1dfa-49d9-a00e-9e3274b9c883.mp4"`), 'index: LOOK clip (muted, playsinline, preload=none) missing');
 // v8 intro: the transform and LOOK clips, both stills, the question, Skip,
 // hidden without JavaScript (display:none unless html[data-intro]), the
 // first-paint session check, and the v7 design #1 media gone everywhere.
 expect(/<div class="intro"[^>]*data-intro[^>]*role="dialog"/.test(html.index), 'index: intro layer missing');
 for (const id of ['0df9aeb7-1ee7-410b-b9d0-dbd0f0a3aa7c_min.webp', '69dabef2-b785-4918-bc7a-1b0cf9704c6f_min.webp', '99e661a7-2a3e-4037-b3b8-deb8ab7062f1.mp4', '37408964-1dfa-49d9-a00e-9e3274b9c883.mp4']) expect(html.index.includes(id), `index: intro media ${id} missing`);
-expect(/Do you want to see the(&nbsp;|\s| )work\?/.test(html.index) && /Yes, show me/.test(html.index) && /Skip intro/.test(html.index) && /Omar’s robot/.test(html.index), 'index: intro question, Yes, Skip or "Omar’s robot" missing');
+expect(/Do you want to see his(&nbsp;|\s| )work\?/.test(html.index) && /Yes, show me/.test(html.index) && /Skip intro/.test(html.index) && /Omar’s robot/.test(html.index), 'index: intro question ("Do you want to see his work?"), Yes, Skip or "Omar’s robot" missing');
+expect(!/see the(&nbsp;|\s| )work\?/.test(html.index), 'index: the v8 question wording remains');
 expect(/sessionStorage\.getItem\('omar-intro'\)/.test(html.index), 'index: intro session check missing');
 const css = (await Promise.all((await readdir(path.join(dist, '_astro'))).filter(file => file.endsWith('.css')).map(file => readFile(path.join(dist, '_astro', file), 'utf8')))).join('\n') + Object.values(html).join('\n');
 expect(/\.intro\{display:none\}/.test(css.replace(/\s/g, '')) && /html\[data-intro-on\]\s*\.intro\{display:block/.test(css.replace(/\s/g, '')), 'intro must be display:none unless html[data-intro]');

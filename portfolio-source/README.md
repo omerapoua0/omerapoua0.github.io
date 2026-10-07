@@ -18,7 +18,7 @@ previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for histo
   session (sessionStorage `omar-intro`, decided before first paint by an
   inline script in `index.astro`; JavaScript only) a full-screen intro plays
   (`Intro.astro`, `src/scripts/intro.ts`): the glossy sphere head transforms
-  into OA-01, Omar's robot (Higgsfield clips, URLs and timings in
+  into Otto, Omar's robot (Higgsfield clips, URLs and timings in
   `src/data/robot.ts`), he turns to look at you and asks "Do you want to see
   the work?". "Yes, show me" plays his hands-together burst of light into the
   white light gate, which dissolves into the homepage; "Contact Omar" opens
@@ -26,8 +26,27 @@ previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for histo
   the homepage. Reduced motion, Save-Data / 2g / 3g, a CDN that does not
   answer within 2.5 s or a video error: no clips, the robot still (or the dark
   HUD stage) with the question. Later views: no intro; the hero shows the
-  robot still, "Say hi to OA-01" makes him look at you, "Replay intro" plays
+  robot still, "Say hi to Otto" makes him move (v9, below), "Replay intro" plays
   the intro again. The light gate plays the same clip from 3.4 s for 0.7 s.
+- **v9 (October 2026): Otto.** The robot is named Otto: "Hi — I'm Otto,
+  Omar's robot." In the intro he now asks with a new clip (ASK): he turns to
+  you and presents the question with an open hand, and the question, "Do you
+  want to see his work?", appears as his palm opens toward it, much bigger
+  (about 1.4× on desktop, as big as fits in two or three lines on phones)
+  with a bigger, glowing "Yes, show me". In the hero, "Say hi to Otto" plays
+  his moves in turn: a wave, a heart made with his hands (glowing red), then
+  he looks at you and holds; clips load only when you reach for him (hover,
+  focus, press). On a capable device he may wave once if the hero sits idle
+  for ~20 s. **Weaker phones:** a capability tier set before first paint
+  (`html[data-tier="lite"]` for ≤ 4 GB memory, ≤ 4 cores (not on iPhones,
+  whose browser caps the count), Save-Data or a 2g/3g connection;
+  `?tier=lite|full` to try either) keeps the same design but drops what
+  costs most: no intro or gate clips (the intro assembles Otto from his two
+  stills in CSS), no backdrop blur, blending, cursor ring, tilt, pins or
+  scroll scrub, ambient light at rest, short reveals. Every device gains
+  render-on-demand sections (`content-visibility`), heroes that pause off
+  screen, layout-free pointer handlers and responsive WebP plates. Numbers
+  below.
 - **Hero:** who I am in one line, See my work / Book a lesson / Contact me, the
   robot (abstract CSS orb as its loading/CDN-down fallback), spec chips that
   count up, and four big doors underneath: Work, Skills, Lessons, Contact. No
@@ -95,8 +114,50 @@ never be third-party media).
 
 The robot's CDN is never contacted by QA: `qa.cjs` serves local stand-ins
 (generated with ffmpeg into `.qa/robot8`, or `QA_ROBOT_MEDIA=<dir>` with
-orb.webp, robot.webp, transform.mp4, look.mp4 and optionally look-h264.mp4). Never commit
-stand-in media.
+orb.webp, robot.webp, transform.mp4, look.mp4, ask.mp4, wave.mp4, heart.mp4
+and optionally look-h264.mp4). Never commit stand-in media. Checks run as a
+capable device (8 cores, 8 GB) unless they ask for the lite tier; v9 adds
+the tier detection and overrides, the lite homepage (no clips requested, no
+cursor, pins, scrub or blur), the lite intro end to end, the ASK-timed
+question, the hero's WAVE → HEART → LOOK cycle and on-intent prefetch, the
+question size and fit at 360/390/1440, and lite LCP/CLS/TBT budgets.
+
+## Performance (v9)
+
+Measured before (v8, c74f8b7 content) and after (v9) on the same machine with
+Playwright Chromium (headless, software rendering), CDP CPU throttling and
+network emulation (Slow 4G: 150 ms RTT, 1.6 Mbps; Fast 3G: 562 ms, 1.44
+Mbps), the built site served with gzip like GitHub Pages, the robot CDN
+answered with the local stand-ins (as in QA), median of 3 runs. "Low phone" =
+390×844, DPR 2.75, mobile + touch, `deviceMemory` 3 GB and 4 cores (so v9
+picks the lite tier); "capable phone" = DPR 2, 8 GB, 8 cores (full tier).
+Homepage runs are later views (no intro) unless marked. Scroll smoothness is
+the main-thread rAF frame time while wheel-scrolling the page (headless
+Chromium cannot synthesise touch scrolls); software rendering exaggerates
+compositing work (blur, blending), so real GPUs do better on every row.
+
+| Scenario | Tier (before → after) | LCP ms | TBT ms | CLS | Main thread ms | Style+layout ms | JS / CSS KB (gz, transferred) |
+|---|---|---|---|---|---|---|---|
+| Low phone, homepage (later view), 6× CPU, Slow 4G | full (no tiers) → lite | 2552 → **1580** | 0 → **0** | 0 → 0 | 4685 → **1792** | 2252 → 894 | 7.7 / 27.8 → 10.8 / 28.9 |
+| Low phone, homepage, 4× CPU, Fast 3G | full (no tiers) → lite | 2220 → **1916** | 115 → **0** | 0 → 0 | 3700 → **1361** | 1566 → 678 | 7.7 / 27.8 → 10.8 / 28.9 |
+| Low phone, /work, 6× CPU, Slow 4G | full (no tiers) → lite | 2008 → **1380** | 14 → **0** | 0 → 0 | 4520 → **2151** | 2085 → 943 | 4.9 / 23 → 5 / 23.4 |
+| Low phone, homepage first view (intro), 6× CPU, Slow 4G | full (no tiers) → lite | 2868 → **1740** | 788 → **0** | 0.0022 → 0.0017 | 10285 → **4369** | 2082 → 1070 | 7.7 / 27.8 → 10.8 / 28.9 |
+| Capable phone (full tier), homepage, Slow 4G | full (no tiers) → full | 912 → **844** | 0 → **0** | 0 → 0 | 1049 → **373** | 314 → 148 | 7.7 / 27.8 → 10.8 / 28.9 |
+| Desktop 1440 (full tier), homepage | full (no tiers) → full | 492 → **440** | 55 → **51** | 0.0029 → 0.0029 | 812 → **663** | 256 → 190 | 7.7 / 27.8 → 10.8 / 28.9 |
+
+| Scroll (rAF frame times while wheel-scrolling ~9000 px) | Tier after | p95 frame ms | dropped frames |
+|---|---|---|---|
+| Low phone 390×844, homepage, 4× CPU | lite | 33.4 → **16.8** | 14.2% → **2.5%** |
+| Low phone, /work, 4× CPU | lite | 33.3 → **16.8** | 7.7% → **1%** |
+| Capable phone, homepage, 4× CPU | full | 33.4 → **33.3** | 15.6% → **10.7%** |
+| Desktop 1440, homepage, 1× | full | 33.4 → **33.3** | 14.6% → **13.5%** |
+| Desktop 1440, homepage, 4× CPU | full | 50 → **50** | 29.5% → **27.2%** |
+
+Intro on the low phone: question asked after 11244 ms → 5551 ms, clips requested 2 → 0, main-thread script 5377 → 108 ms.
+
+Budgets: lite phone (6× CPU, Slow 4G) homepage LCP ≤ 2.5 s, TBT ≤ 200 ms,
+CLS ≤ 0.05 (checked by `qa.cjs` too), scroll p95 ≤ 20 ms at 4× CPU on lite,
+full tier no worse than v8, first-load JS ≤ 30 KB gz per page.
 
 Build success does not mean publication. Do not deploy without explicit user
 authorisation. Preserve copyright notices, retained credits and personal-data

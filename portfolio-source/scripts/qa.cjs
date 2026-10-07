@@ -14,9 +14,11 @@
  * The hero robot's media live on Higgsfield's CDN (src/data/robot.ts). QA
  * never fetches them: requests to that host are answered with local
  * STAND-INS (dark ~5 s clips with simple shapes: an orb that becomes a
- * "robot", and LOOK ending white; two webp stills), taken from QA_ROBOT_MEDIA
- * (a directory with orb.webp, robot.webp, transform.mp4, look.mp4 and
- * optionally look-h264.mp4) or generated with ffmpeg into .qa/robot8. The
+ * "robot", and LOOK ending white; v9's ASK (a "hand" box presenting to the
+ * left), WAVE and HEART (a red box at the chest); two webp stills), taken
+ * from QA_ROBOT_MEDIA (a directory with orb.webp, robot.webp, transform.mp4,
+ * look.mp4, ask.mp4, wave.mp4, heart.mp4 and optionally look-h264.mp4) or
+ * generated with ffmpeg into .qa/robot8. The
  * stand-in clips are VP9 in an MP4 container, which this Chromium (no H.264)
  * accepts for the .mp4 URLs; look-h264.mp4 is real H.264, used to test the
  * "H.264 unsupported" path. Stand-ins are never committed.
@@ -43,9 +45,9 @@ const robotDir = process.env.QA_ROBOT_MEDIA || path.join(output, 'robot8');
 let robotMedia = null; // { orb, still, transform, look, h264 } file paths, or null when unavailable
 function prepareRobotMedia() {
   const fsSync = require('node:fs');
-  const want = { orb: 'orb.webp', still: 'robot.webp', transform: 'transform.mp4', look: 'look.mp4', h264: 'look-h264.mp4' };
+  const want = { orb: 'orb.webp', still: 'robot.webp', transform: 'transform.mp4', look: 'look.mp4', ask: 'ask.mp4', wave: 'wave.mp4', heart: 'heart.mp4', h264: 'look-h264.mp4' };
   const files = Object.fromEntries(Object.entries(want).map(([key, name]) => [key, path.join(robotDir, name)]));
-  if (!process.env.QA_ROBOT_MEDIA && !fsSync.existsSync(files.look)) {
+  if (!process.env.QA_ROBOT_MEDIA && !['look', 'ask', 'wave', 'heart'].every(key => fsSync.existsSync(files[key]))) {
     const { execFileSync } = require('node:child_process');
     fsSync.mkdirSync(robotDir, { recursive: true });
     const ff = args => execFileSync('ffmpeg', ['-loglevel', 'error', '-y', ...args], { stdio: 'pipe' });
@@ -57,12 +59,16 @@ function prepareRobotMedia() {
     try {
       ff([...bg(1280, 720, 5.06), '-vf', `drawbox=x=600:y=90:w=180:h=180:color=0x4d84ff@0.9:t=fill:enable='lt(t,2.2)',drawbox=x='600-40*(t-2.2)':y=90:w='180+20*(t-2.2)':h='180+60*(t-2.2)':color=0xe6eeff@0.6:t=fill:enable='between(t,2.2,4.0)',${robotShape(1280, 720, ":enable='gte(t,3.2)'")}`, '-c:v', 'libvpx-vp9', '-b:v', '300k', '-an', files.transform]);
       ff([...bg(1344, 768, 5.18), '-vf', `${robotShape(1344, 768)},drawbox=x='740-120*min(t,1)':y=60:w=40:h=40:color=white@0.9:t=fill,drawbox=x=0:y=0:w=1344:h=768:color=white@1:t=fill:enable='gt(t,3.6)'`, '-c:v', 'libvpx-vp9', '-b:v', '300k', '-an', files.look]);
+      // v9 moves (1280 × 720, 5.06 s, starting and, for WAVE/HEART, ending on the robot).
+      ff([...bg(1280, 720, 5.06), '-vf', `${robotShape(1280, 720)},drawbox=x='700-260*min(max(t-1.7,0),0.4)/0.4':y=330:w=90:h=60:color=0xe6eeff@0.9:t=fill:enable='between(t,1.7,3.75)'`, '-c:v', 'libvpx-vp9', '-b:v', '300k', '-an', files.ask]);
+      ff([...bg(1280, 720, 5.06), '-vf', `${robotShape(1280, 720)},drawbox=x=520:y='200+40*sin(12*t)':w=60:h=90:color=0xe6eeff@0.9:t=fill:enable='between(t,1.25,2.9)'`, '-c:v', 'libvpx-vp9', '-b:v', '300k', '-an', files.wave]);
+      ff([...bg(1280, 720, 5.06), '-vf', `${robotShape(1280, 720)},drawbox=x=700:y=420:w=110:h=90:color=0xff2d46@1:t=fill:enable='between(t,1.7,3.75)'`, '-c:v', 'libvpx-vp9', '-b:v', '300k', '-an', files.heart]);
       ff([...bg(1344, 752, 1), '-vf', 'drawbox=x=780:y=150:w=200:h=200:color=0x4d84ff@0.9:t=fill', '-frames:v', '1', '-c:v', 'libwebp', files.orb]);
       ff([...bg(1344, 752, 1), '-vf', robotShape(1344, 752), '-frames:v', '1', '-c:v', 'libwebp', files.still]);
       try { ff([...bg(1344, 768, 5.18), '-vf', robotShape(1344, 768), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-an', files.h264]); } catch { /* no libx264: that path is skipped */ }
     } catch (error) { console.warn('Robot stand-ins unavailable (ffmpeg):', error.message.split('\n')[0]); }
   }
-  robotMedia = ['orb', 'still', 'transform', 'look'].every(key => fsSync.existsSync(files[key])) ? { ...files, h264: fsSync.existsSync(files.h264) ? files.h264 : null } : null;
+  robotMedia = ['orb', 'still', 'transform', 'look', 'ask', 'wave', 'heart'].every(key => fsSync.existsSync(files[key])) ? { ...files, h264: fsSync.existsSync(files.h264) ? files.h264 : null } : null;
 }
 /** Answer the robot CDN with stand-ins. mode: 'play' (default), 'h264' (the
  *  clips are H.264, which this Chromium cannot decode), 'poster404' (the
@@ -80,7 +86,8 @@ async function routeRobot(context, mode = 'play', { posterDelay = 0 } = {}) {
       return route.fulfill({ path: /0df9aeb7/.test(url) ? robotMedia.orb : robotMedia.still, contentType: 'image/webp', headers: { 'cache-control': 'no-store' } });
     }
     if (mode === 'video404') return route.fulfill({ status: 404, body: '' });
-    const file = mode === 'h264' ? robotMedia.h264 : /99e661a7/.test(url) ? robotMedia.transform : robotMedia.look;
+    const file = mode === 'h264' ? robotMedia.h264 : /99e661a7/.test(url) ? robotMedia.transform : /df410d0c/.test(url) ? robotMedia.ask : /0d5a7893/.test(url) ? robotMedia.wave : /86ab53ef/.test(url) ? robotMedia.heart : robotMedia.look;
+    robotLog.push(url.split('/').pop());
     if (!file) return route.fulfill({ status: 404, body: '' });
     // Like the CDN: byte ranges, so the gate can seek the clip.
     const body = require('node:fs').readFileSync(file);
@@ -92,6 +99,8 @@ async function routeRobot(context, mode = 'play', { posterDelay = 0 } = {}) {
     return route.fulfill({ status: 206, body: body.subarray(start, end + 1), contentType: 'video/mp4', headers: { ...headers, 'content-range': `bytes ${start}-${end}/${body.length}` } });
   });
 }
+/** Every robot clip a context requested (file names), for the on-demand checks. */
+const robotLog = [];
 /** Later homepage views: the intro has already played in this session. */
 const introSeen = context => context.addInitScript(() => { try { sessionStorage.setItem('omar-intro', '1'); } catch { /* blocked */ } });
 
@@ -111,10 +120,18 @@ async function check(name, run) {
     for (const context of [...openContexts]) if (!before.has(context)) await context.close().catch(() => {});
   }
 }
-async function isolated(browser, { intro = false, ...options } = {}, robot = 'play') {
+/* v9 capability tier (Base.astro head script): every check runs as a
+   capable device (8 cores, 8 GB) unless it asks for device 'low' (4 cores,
+   2 GB: the lite tier) or 'native' (whatever this machine reports). */
+const emulateDevice = (context, device) => device === 'native' ? null : context.addInitScript(low => {
+  Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => (low ? 4 : 8) });
+  Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => (low ? 2 : 8) });
+}, device === 'low');
+async function isolated(browser, { intro = false, device = 'capable', ...options } = {}, robot = 'play') {
   const context = await browser.newContext({ reducedMotion: 'reduce', ...options });
   openContexts.add(context);
   context.on('close', () => openContexts.delete(context));
+  await emulateDevice(context, device);
   // Every check runs as a later homepage view unless it asks for the intro.
   if (!intro) await introSeen(context);
   await context.route('**/*', route => {
@@ -523,15 +540,18 @@ async function pixelContrast(page, selectors) {
   /* The hero robot: it greets on every open, holds the last frame, replays on
      "Say hi", turns toward the pointer, and degrades to the poster (and the
      poster to the orb) without breaking. */
-  const countPlays = context => context.addInitScript(() => document.addEventListener('play', event => { if (event.target.matches?.('[data-robot-video]')) window.__robotPlays = (window.__robotPlays || 0) + 1; }, true));
+  const countPlays = context => context.addInitScript(() => document.addEventListener('play', event => { if (event.target.matches?.('[data-robot-video]')) { window.__robotPlays = (window.__robotPlays || 0) + 1; (window.__robotMoves ||= []).push(event.target.dataset.robotVideo); } }, true));
+  /* v9: "Say hi" cycles WAVE → HEART → LOOK; `video` is the clip of the
+     current (or last) move, `src` every clip fetched so far. */
   const robotState = page => page.evaluate(() => {
-    const stage = document.querySelector('[data-robot-stage]'), video = stage.querySelector('[data-robot-video]'), img = stage.querySelector('.robot__poster'), orb = stage.querySelector('[data-orb]');
-    return { poster: stage.dataset.poster, video: stage.dataset.video, greet: stage.dataset.greet, plays: window.__robotPlays || 0, paused: video.paused, t: video.currentTime, duration: video.duration, src: video.currentSrc,
+    const stage = document.querySelector('[data-robot-stage]'), videos = [...stage.querySelectorAll('[data-robot-video]')], img = stage.querySelector('.robot__poster'), orb = stage.querySelector('[data-orb]');
+    const video = videos.find(v => v.dataset.robotVideo === stage.dataset.move) ?? videos[0];
+    return { poster: stage.dataset.poster, video: stage.dataset.video, greet: stage.dataset.greet, move: stage.dataset.move ?? null, moves: window.__robotMoves || [], plays: window.__robotPlays || 0, paused: video.paused, t: video.currentTime, duration: video.duration, src: videos.map(v => v.currentSrc).join(''),
       still: stage.dataset.still, stillOpacity: Math.max(Number(getComputedStyle(img).opacity), Number(getComputedStyle(stage.querySelector('.robot__still') ?? img).opacity)), mediaOpacity: Number(getComputedStyle(stage.querySelector('.robot-stage__media')).opacity), orbVisible: getComputedStyle(orb).visibility === 'visible' && Number(getComputedStyle(orb).opacity) > .9 };
   });
   const greetDone = (page, timeout = 12000) => page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.greet === 'done', null, { timeout });
 
-  await check('robot: the ROBOT still <img> has intrinsic width/height, sits behind a real "Say hi to OA-01" button, and causes no layout shift', async () => {
+  await check('robot: the ROBOT still <img> has intrinsic width/height, sits behind a real "Say hi to Otto" button, and causes no layout shift', async () => {
     for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
       const context = await isolated(browser, { viewport, reducedMotion: 'no-preference' });
       await context.addInitScript(() => { window.__shifts = []; new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__shifts.push({ value: entry.value, nodes: entry.sources.map(source => source.node?.className ?? '') }); }).observe({ type: 'layout-shift', buffered: true }); });
@@ -546,7 +566,7 @@ async function pixelContrast(page, selectors) {
       assert.ok(info.painted && info.stillOpacity > .99, `the still is painted over exactly the <img> box (${info.painted}, ${info.stillOpacity})`);
       assert.equal(info.w, '1344'); assert.equal(info.h, '752'); assert.equal(info.decoding, 'async');
       assert.match(info.src, /^https:\/\/d8j0ntlcm91z4\.cloudfront\.net\/.+69dabef2-b785-4918-bc7a-1b0cf9704c6f_min\.webp$/, 'the ROBOT still from the CDN (src/data/robot.ts)');
-      assert.equal(info.tag, 'BUTTON'); assert.equal(info.type, 'button'); assert.equal(info.name, 'Say hi to OA-01, Omar’s robot');
+      assert.equal(info.tag, 'BUTTON'); assert.equal(info.type, 'button'); assert.equal(info.name, 'Say hi to Otto, Omar’s robot');
       assert.equal(info.mediaHidden, 'true', 'the media are aria-hidden');
       assert.ok(!info.intro, 'a later homepage view has no intro');
       assert.ok(info.replay, '"Replay intro" is offered');
@@ -557,8 +577,8 @@ async function pixelContrast(page, selectors) {
     }
   });
 
-  await check('robot: no autoplay; "Say hi" (click and keyboard) plays LOOK to the hold frame (facing you) and holds; forced-colors focus ring', async () => {
-    if (!robotMedia) { results.push({ name: 'robot look', status: 'skipped', message: 'no stand-in media' }); return; }
+  await check('robot: no autoplay; "Say hi" (click and keyboard) cycles WAVE → HEART → LOOK (held facing you); WAVE and HEART return to the still; forced-colors focus ring', async () => {
+    if (!robotMedia) { results.push({ name: 'robot moves', status: 'skipped', message: 'no stand-in media' }); return; }
     const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     await countPlays(context);
     const page = await context.newPage();
@@ -566,13 +586,17 @@ async function pixelContrast(page, selectors) {
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1500);
     const idle = await robotState(page);
-    assert.equal(idle.plays, 0, 'nothing plays on its own'); assert.equal(idle.src, '', 'the 5.7 MB clip is not fetched until asked');
-    await page.click('[data-robot-hi]');
-    await greetDone(page);
-    const held = await robotState(page);
-    assert.equal(held.plays, 1);
-    assert.ok(held.paused && held.t >= 1.5 && held.t < 2.1, `held on the frame where he faces you (${held.t})`);
-    assert.equal(held.video, 'on', 'the held frame stays on screen');
+    assert.equal(idle.plays, 0, 'nothing plays on its own'); assert.equal(idle.src, '', 'no clip is fetched until asked');
+    assert.equal(await page.evaluate(() => document.querySelector('[data-robot-stage]').dataset.moves), 'wave heart look', 'his moves, in turn');
+    for (const move of ['wave', 'heart']) {
+      await page.click('[data-robot-hi]');
+      await page.waitForFunction(name => { const s = document.querySelector('[data-robot-stage]'); return s.dataset.move === name && s.dataset.greet === 'playing' && s.dataset.video === 'on'; }, move, { timeout: 5000 });
+      assert.equal(await page.evaluate(() => document.querySelector('[data-robot-said]').textContent), move === 'wave' ? 'Otto waves hello.' : 'Otto makes a heart with his hands.', `${move}: announced`);
+      await greetDone(page);
+      await page.waitForTimeout(300);
+      const after = await robotState(page);
+      assert.ok(after.move === move && after.video === 'off' && after.stillOpacity > .99, `${move} played to its end and he is back on the still (${JSON.stringify(after)})`);
+    }
     await page.locator('.hero__ctas .btn--ghost').focus();
     await page.keyboard.press('Tab');
     assert.ok(await page.evaluate(() => document.activeElement?.hasAttribute('data-robot-hi')), 'Tab after the hero CTAs reaches the robot button');
@@ -584,10 +608,19 @@ async function pixelContrast(page, selectors) {
     assert.ok(forced.style === 'solid' && forced.width >= 2, `forced colours: a real outline (${JSON.stringify(forced)})`);
     await page.emulateMedia({ forcedColors: 'none' });
     await page.keyboard.press('Enter');
-    await page.waitForFunction(() => (window.__robotPlays || 0) >= 2, null, { timeout: 4000 });
+    await page.waitForFunction(() => { const s = document.querySelector('[data-robot-stage]'); return s.dataset.move === 'look' && s.dataset.greet === 'playing'; }, null, { timeout: 5000 });
     await greetDone(page);
-    await page.waitForTimeout(1200);
-    assert.equal((await robotState(page)).plays, 2, 'no extra plays');
+    const held = await robotState(page);
+    assert.equal(held.move, 'look');
+    assert.ok(held.paused && held.t >= 1.5 && held.t < 2.1, `LOOK held on the frame where he faces you (${held.t})`);
+    assert.equal(held.video, 'on', 'the held frame stays on screen');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => (window.__robotPlays || 0) >= 4, null, { timeout: 4000 });
+    await greetDone(page);
+    await page.waitForTimeout(800);
+    const last = await robotState(page);
+    assert.deepEqual(last.moves, ['wave', 'heart', 'look', 'wave'], 'the cycle starts again after LOOK');
+    assert.equal(last.plays, 4, 'no extra plays');
     assert.deepEqual(errors, []);
     await context.close();
   });
@@ -681,19 +714,22 @@ async function pixelContrast(page, selectors) {
     await context.close();
   });
 
-  /* The homepage intro (v8): the orb becomes the robot, he asks "Do you want
-     to see the work?", Yes opens the homepage through the light. */
+  /* The homepage intro (v8, v9): the orb becomes Otto, who turns to you and
+     asks "Do you want to see his work?" (the ASK clip presents it), Yes
+     opens the homepage through the light. */
   const introState = page => page.evaluate(() => {
     const intro = document.querySelector('[data-intro]');
-    return { present: !!intro, shown: !!intro && getComputedStyle(intro).display !== 'none', stage: intro?.dataset.stage, path: intro?.dataset.path, asked: intro?.hasAttribute('data-asked'), html: document.documentElement.dataset.introOn ?? null, inert: document.querySelector('main').inert, active: document.activeElement?.id || document.activeElement?.getAttribute('data-intro-yes') !== null && 'yes' || document.activeElement?.tagName, live: document.querySelector('[data-intro-live]')?.textContent ?? '', look: document.querySelector('[data-intro-look]')?.currentSrc ?? '', transform: document.querySelector('[data-intro-transform]')?.currentSrc ?? '' };
+    return { present: !!intro, shown: !!intro && getComputedStyle(intro).display !== 'none', stage: intro?.dataset.stage, path: intro?.dataset.path, asked: intro?.hasAttribute('data-asked'), html: document.documentElement.dataset.introOn ?? null, inert: document.querySelector('main').inert, active: document.activeElement?.id || document.activeElement?.getAttribute('data-intro-yes') !== null && 'yes' || document.activeElement?.tagName, live: document.querySelector('[data-intro-live]')?.textContent ?? '', look: document.querySelector('[data-intro-look]')?.currentSrc ?? '', transform: document.querySelector('[data-intro-transform]')?.currentSrc ?? '', ask: document.querySelector('[data-intro-ask]')?.currentSrc ?? '', clip: intro?.dataset.clip ?? null, tier: document.documentElement.dataset.tier };
   });
   const asked = (page, timeout) => page.waitForFunction(() => document.querySelector('[data-intro]')?.hasAttribute('data-asked'), null, { timeout });
   const introGone = (page, timeout) => page.waitForFunction(() => !document.querySelector('[data-intro]') && document.documentElement.dataset.introOn === undefined, null, { timeout });
 
-  await check('intro: first homepage view plays it (transform → he looks at you and asks); Yes opens the homepage through the light; focus, no shift; second view none; Replay intro replays', async () => {
+  await check('intro: first homepage view plays it (transform → ASK: he turns to you and presents the question); Yes cross-fades into LOOK and opens the homepage through the light; focus, no shift; second view none; Replay intro replays', async () => {
     if (!robotMedia) { results.push({ name: 'intro video path', status: 'skipped', message: 'no stand-in media' }); return; }
     const context = await isolated(browser, { intro: true, viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     await context.addInitScript(() => { window.__shift = 0; new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__shift += entry.value; }).observe({ type: 'layout-shift', buffered: true }); });
+    // When the question appears, where is ASK? (It is timed to his open palm.)
+    await context.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { const intro = document.querySelector('[data-intro]'); if (intro) new MutationObserver(() => { if (intro.hasAttribute('data-asked') && window.__askedAt === undefined) window.__askedAt = document.querySelector('[data-intro-ask]')?.currentTime ?? -1; }).observe(intro, { attributes: true }); }));
     const page = await context.newPage();
     const errors = watch(page);
     await page.goto(`${base}/index.html`);
@@ -704,14 +740,20 @@ async function pixelContrast(page, selectors) {
     await asked(page, 14000);
     const ask = await introState(page);
     assert.equal(ask.path, 'video', 'the clips played');
-    assert.match(ask.look, /37408964/, 'LOOK was fetched once the transform played');
+    assert.equal(ask.clip, 'ask', 'he asks with the ASK clip');
+    assert.match(ask.ask, /df410d0c/, 'ASK was fetched once the transform played');
     assert.equal(ask.active, 'yes', 'focus on "Yes, show me"');
-    assert.match(ask.live, /Hi — I’m OA-01, Omar’s robot\. Do you want to see the work\?/, 'question announced');
-    const t = await page.evaluate(() => document.querySelector('[data-intro-look]').currentTime);
-    assert.ok(t >= 1.5 && t < 2.2, `LOOK paused where he faces you (${t})`);
+    assert.match(ask.live, /Hi — I’m Otto, Omar’s robot\. Do you want to see his work\?/, 'question announced');
+    const askedAt = await page.evaluate(() => window.__askedAt);
+    assert.ok(askedAt >= 1.9 && askedAt < 2.9, `the question appears as his palm presents it (ASK at ${askedAt} s)`);
+    // He finishes the gesture and holds, facing you; LOOK waits, parked where Yes continues.
+    await page.waitForFunction(() => { const intro = document.querySelector('[data-intro]'), v = document.querySelector('[data-intro-ask]'); return v.ended && !intro.hasAttribute('data-moving'); }, null, { timeout: 6000 });
+    await page.waitForFunction(() => Math.abs(document.querySelector('[data-intro-look]').currentTime - 2.3) < .1, null, { timeout: 4000 });
+    assert.match((await introState(page)).look, /37408964/, 'LOOK fetched once ASK played');
     const before = await page.evaluate(() => window.__shift);
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.querySelector('[data-intro]')?.dataset.stage === 'go', null, { timeout: 2000 });
+    await page.waitForFunction(() => !document.querySelector('[data-intro]') || document.querySelector('[data-intro-look]').currentTime > 2.5, null, { timeout: 3000 });
     await introGone(page, 6000);
     const after = await introState(page);
     assert.ok(!after.inert, 'the homepage is interactive again');
@@ -748,8 +790,9 @@ async function pixelContrast(page, selectors) {
     await context.close();
   });
 
-  for (const [label, options, mode, limit] of [['reduced motion', { reducedMotion: 'reduce' }, 'play', 1500], ['CDN blocked', { reducedMotion: 'no-preference' }, 'block', 3000], ['Save-Data', { reducedMotion: 'no-preference' }, 'play', 3000]]) {
-    await check(`intro (${label}): no clips, the still or fallback with the question within ${limit / 1000} s; Yes opens the homepage`, async () => {
+  // Save-Data makes the lite tier (v9): its CSS path, no clips.
+  for (const [label, options, mode, limit, path] of [['reduced motion', { reducedMotion: 'reduce' }, 'play', 1500, 'still'], ['CDN blocked', { reducedMotion: 'no-preference' }, 'block', 3000, 'still'], ['Save-Data', { reducedMotion: 'no-preference' }, 'play', 5000, 'lite']]) {
+    await check(`intro (${label}): no clips, the ${path} path with the question within ${limit / 1000} s; Yes opens the homepage`, async () => {
       const context = await isolated(browser, { intro: true, viewport: { width: 390, height: 844 }, ...options }, mode);
       if (label === 'Save-Data') await context.addInitScript(() => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ saveData: true }) }));
       const page = await context.newPage();
@@ -758,8 +801,8 @@ async function pixelContrast(page, selectors) {
       await asked(page, limit);
       const ask = await introState(page);
       assert.ok(Date.now() - started <= limit + 800, `asked after ${Date.now() - started}ms`);
-      assert.equal(ask.path, 'still');
-      if (label !== 'CDN blocked') assert.ok(!ask.look && !ask.transform, `no clip fetched (${ask.look} ${ask.transform})`);
+      assert.equal(ask.path, path);
+      if (label !== 'CDN blocked') assert.ok(!ask.look && !ask.transform && !ask.ask, `no clip fetched (${ask.look} ${ask.transform} ${ask.ask})`);
       assert.equal(ask.active, 'yes');
       await page.click('[data-intro-yes]');
       await introGone(page, label === 'reduced motion' ? 800 : 2500);
@@ -789,6 +832,180 @@ async function pixelContrast(page, selectors) {
     assert.deepEqual(await pixelContrast(page, ['#intro-q', '.intro__say-typed', '[data-intro-status]', '.intro__link--skip']), [], 'intro text contrast');
     await context.close();
   });
+
+  /* v9: the capability tier (Base.astro head script) and the lite tier. */
+  const tierOf = page => page.evaluate(() => document.documentElement.dataset.tier);
+  await check('tier: capable devices get "full"; ≤ 4 GB memory, ≤ 4 cores, Save-Data or a 3g connection get "lite"; ?tier= overrides it for the session', async () => {
+    const cases = [
+      ['capable (8 cores, 8 GB)', {}, null, '', 'full'],
+      ['low (4 cores, 2 GB)', { device: 'low' }, null, '', 'lite'],
+      ['4 GB only', {}, () => Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => 4 }), '', 'lite'],
+      ['4 cores only', {}, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'lite'],
+      ['4 cores, iPhone (WebKit caps the count)', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' }, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'full'],
+      ['Save-Data', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ saveData: true }) }), '', 'lite'],
+      ['3g', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ effectiveType: '3g' }) }), '', 'lite'],
+      ['?tier=lite on a capable device', {}, null, '?tier=lite', 'lite'],
+      ['?tier=full on a low device', { device: 'low' }, null, '?tier=full', 'full'],
+    ];
+    const wrong = [];
+    for (const [label, options, init, query, want] of cases) {
+      const context = await isolated(browser, { viewport: { width: 390, height: 844 }, ...options });
+      if (init) await context.addInitScript(init);
+      const page = await context.newPage();
+      await page.goto(`${base}/index.html${query}`);
+      const got = await tierOf(page);
+      if (got !== want) wrong.push(`${label}: ${got} (want ${want})`);
+      if (query) { // the override lasts for the session (QA, sharing a lite view)
+        await page.goto(`${base}/work.html`);
+        if ((await tierOf(page)) !== want) wrong.push(`${label}: not kept on the next page`);
+      }
+      await context.close();
+    }
+    assert.deepEqual(wrong, []);
+  });
+
+  for (const [label, options, query] of [['?tier=lite', { device: 'capable' }, '?tier=lite'], ['emulated low device (2 GB, 4 cores)', { device: 'low' }, '']]) {
+    await check(`lite tier (${label}): no clips requested, no custom cursor, no pins or scrub, no backdrop blur, ambient light at rest; the robot and every link still work`, async () => {
+      const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference', ...options });
+      const page = await context.newPage();
+      const errors = watch(page);
+      const clips = [];
+      page.on('request', request => { if (/\.(mp4|webm)(\?|$)/.test(request.url())) clips.push(request.url().split('/').pop()); });
+      await page.goto(`${base}/index.html${query}`, { waitUntil: 'networkidle' });
+      assert.equal(await tierOf(page), 'lite');
+      await page.mouse.move(700, 400); await page.mouse.move(760, 430, { steps: 3 });
+      await page.hover('[data-robot-hi]');
+      await page.hover('.door--work'); // a [data-open] link: no gate clip warm-up on lite
+      for (let y = 0; y < 9000; y += 900) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(120); }
+      await page.waitForTimeout(600);
+      const state = await page.evaluate(() => {
+        const pin = document.querySelector('.hero-pin'), gallery = document.querySelector('[data-hgallery]');
+        const blur = [...document.querySelectorAll('body *')].filter(el => { const cs = getComputedStyle(el); return (cs.backdropFilter && cs.backdropFilter !== 'none') || (cs.webkitBackdropFilter && cs.webkitBackdropFilter !== 'none'); }).length;
+        return {
+          ring: !!document.querySelector('.cursor-ring'),
+          pinTall: pin.offsetHeight > innerHeight * 1.2,
+          heroSticky: getComputedStyle(document.querySelector('.hero')).position === 'sticky',
+          pinned: getComputedStyle(gallery).getPropertyValue('--pinned').trim() === '1',
+          track: getComputedStyle(document.querySelector('[data-hgallery-track]')).overflowX,
+          scrubbing: document.getAnimations().filter(a => a.effect?.target?.hasAttribute?.('data-scrub') && a.playState !== 'idle').length,
+          blur,
+          beams: document.getAnimations().filter(a => /beam-sweep|label-float|glow-a|glow-b|slide|band-drift/.test(a.animationName) && a.playState === 'running').map(a => a.animationName),
+          haze: [...document.querySelectorAll('.haze')].every(el => getComputedStyle(el).display === 'none'),
+          blend: getComputedStyle(document.querySelector('.hero__robot')).mixBlendMode,
+          tilt: getComputedStyle(document.querySelector('.door')).transform,
+          playing: [...document.querySelectorAll('video')].filter(v => !v.paused).length,
+          neon: [...document.querySelectorAll('.neon-line path')].slice(0, 4).map(el => parseFloat(getComputedStyle(el).strokeDashoffset)),
+        };
+      });
+      assert.deepEqual(clips, [], 'no video requested on load, scroll or hover');
+      assert.ok(!state.ring, 'no custom cursor ring');
+      assert.ok(!state.pinTall && !state.heroSticky && !state.pinned && state.track === 'auto', `no pinned hero or gallery: a native snap scroller (${JSON.stringify(state)})`);
+      assert.equal(state.scrubbing, 0, 'no scroll scrub');
+      assert.equal(state.blur, 0, 'no backdrop-filter');
+      assert.deepEqual(state.beams, [], 'ambient light and marquees at rest');
+      assert.ok(state.haze && state.blend === 'normal', 'no noise layer, no lighten blending on the robot');
+      assert.ok(state.tilt === 'none', `no tilt (${state.tilt})`);
+      assert.equal(state.playing, 0, 'no preview video plays');
+      assert.ok(state.neon.every(v => v === 0), `neon lines drawn at rest (${state.neon})`);
+      // The robot works on an explicit tap only: then (and only then) his first move is fetched.
+      await page.evaluate(() => scrollTo(0, 0));
+      await page.waitForTimeout(300);
+      await page.click('[data-robot-hi]');
+      await page.waitForFunction(() => ['playing', 'done', 'failed'].includes(document.querySelector('[data-robot-stage]').dataset.greet), null, { timeout: 5000 });
+      assert.ok(clips.length === 1 && /0d5a7893/.test(clips[0]), `the tap fetched WAVE only (${clips})`);
+      // A door still opens through the light (CSS seams; no clip).
+      await Promise.all([page.waitForURL(/work\.html$/, { timeout: 5000 }), page.click('.door--work')]);
+      assert.equal(await tierOf(page), 'lite', 'the tier holds on the next page');
+      assert.deepEqual(errors, []);
+      await context.close();
+    });
+  }
+
+  await check('lite tier intro end to end: the CSS assemble (orb → Otto), the question with its light hint, Yes through the CSS gate; no clip, no per-frame drawing', async () => {
+    for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+      const context = await isolated(browser, { intro: true, device: 'low', viewport, reducedMotion: 'no-preference' });
+      await context.addInitScript(() => { const raf = window.requestAnimationFrame.bind(window); window.__draws = 0; const draw = CanvasRenderingContext2D.prototype.drawImage; CanvasRenderingContext2D.prototype.drawImage = function (...args) { if (this.canvas.closest?.('[data-intro]')) window.__draws++; return draw.apply(this, args); }; window.requestAnimationFrame = raf; });
+      const page = await context.newPage();
+      const errors = watch(page);
+      const clips = [];
+      page.on('request', request => { if (/\.(mp4|webm)(\?|$)/.test(request.url())) clips.push(request.url()); });
+      await page.goto(`${base}/index.html`);
+      await page.waitForFunction(() => document.querySelector('[data-intro]')?.dataset.stage === 'assemble', null, { timeout: 4000 });
+      const assembling = await page.evaluate(() => ({ path: document.querySelector('[data-intro]').dataset.path, scan: document.getAnimations().some(a => a.animationName === 'intro-scan'), reveal: document.getAnimations().some(a => a.animationName === 'intro-assemble'), status: document.querySelector('[data-intro-status]').textContent }));
+      assert.ok(assembling.path === 'lite' && assembling.scan && assembling.reveal && assembling.status === 'Assembling', `assembling in CSS (${JSON.stringify(assembling)})`);
+      await asked(page, 6000);
+      await page.waitForTimeout(500);
+      const state = await page.evaluate(() => ({ draws: window.__draws, hint: Number(getComputedStyle(document.querySelector('.intro__hint')).opacity), robot: Number(getComputedStyle(document.querySelector('.intro__screen--b')).opacity), orb: Number(getComputedStyle(document.querySelector('.intro__screen:not(.intro__screen--b)')).opacity), live: document.querySelector('[data-intro-live]').textContent, active: document.activeElement?.hasAttribute('data-intro-yes') }));
+      assert.ok(state.draws <= 2, `each still painted once, nothing per frame (${state.draws} draws)`);
+      assert.ok(state.robot > .99 && state.orb < .01, `Otto has replaced the orb (${JSON.stringify(state)})`);
+      assert.ok(state.hint > .9, 'the light hint presents the question');
+      assert.match(state.live, /Hi — I’m Otto, Omar’s robot\. Do you want to see his work\?/);
+      assert.ok(state.active, 'focus on Yes');
+      await page.click('[data-intro-yes]');
+      await page.waitForFunction(() => document.querySelector('[data-gate]')?.dataset.state === 'open' || !document.querySelector('[data-intro]'), null, { timeout: 2000 });
+      await introGone(page, 3000);
+      assert.ok(await page.locator('#hero-title').isVisible());
+      assert.deepEqual(clips, [], 'no clip requested');
+      assert.deepEqual(errors, []);
+      await context.close();
+    }
+  });
+
+  await check('moves: hero clips are fetched only on intent (hover, focus or press on Otto), never during load; the next move is warmed after a press', async () => {
+    if (!robotMedia) return;
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
+    const page = await context.newPage();
+    const clips = [];
+    page.on('request', request => { const m = /(0d5a7893|86ab53ef|37408964|df410d0c)/.exec(request.url()); if (m) clips.push(m[1]); });
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1500);
+    assert.deepEqual(clips, [], 'nothing fetched during load');
+    assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('[data-robot-video]')].map(v => v.preload)), ['none', 'none', 'none'], 'every move is preload="none" until asked');
+    await page.hover('[data-robot-hi]');
+    await page.waitForFunction(() => document.querySelector('[data-robot-video="wave"]').preload === 'auto', null, { timeout: 2000 });
+    await page.waitForTimeout(300);
+    assert.deepEqual([...new Set(clips)], ['0d5a7893'], `hovering Otto prefetches his next move only (${clips})`);
+    await page.click('[data-robot-hi]');
+    await page.waitForTimeout(2200);
+    assert.ok(clips.includes('86ab53ef'), 'while he waves, HEART (the next move) is warmed');
+    const focusOnly = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
+    const second = await focusOnly.newPage();
+    const more = [];
+    second.on('request', request => { if (/0d5a7893/.test(request.url())) more.push(request.url()); });
+    await second.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await second.locator('[data-robot-hi]').focus();
+    await second.waitForTimeout(600);
+    assert.equal(more.length > 0, true, 'keyboard focus prefetches too');
+    await context.close(); await focusOnly.close();
+  });
+
+  for (const viewport of [{ width: 360, height: 640 }, { width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+    await check(`intro question is big and clear at ${viewport.width}×${viewport.height}: in 2–3 lines, clear of his head, no overflow; Yes is the biggest button`, async () => {
+      const context = await isolated(browser, { intro: true, viewport, isMobile: viewport.width < 600, hasTouch: viewport.width < 600, reducedMotion: 'reduce' });
+      const page = await context.newPage();
+      await page.goto(`${base}/index.html`);
+      await asked(page, 3000);
+      await page.waitForTimeout(400);
+      const m = await page.evaluate(() => {
+        const q = document.querySelector('#intro-q'), box = q.getBoundingClientRect(), cs = getComputedStyle(q);
+        const yes = document.querySelector('[data-intro-yes]').getBoundingClientRect(), contact = document.querySelector('[data-intro-contact]').getBoundingClientRect();
+        const frame = document.querySelector('.intro__frame').getBoundingClientRect();
+        return { size: parseFloat(cs.fontSize), lines: Math.round(box.height / parseFloat(cs.lineHeight)), top: box.top, left: box.left, right: box.right, bottom: box.bottom,
+          headBottom: frame.top + frame.height * .4, headLeft: frame.left + frame.width * .55,
+          yes: { h: yes.height, w: yes.width, fs: parseFloat(getComputedStyle(document.querySelector('[data-intro-yes]')).fontSize), bottom: yes.bottom, right: yes.right }, contact: { h: contact.height, fs: parseFloat(getComputedStyle(document.querySelector('[data-intro-contact]')).fontSize), bottom: contact.bottom, right: contact.right },
+          scroll: document.documentElement.scrollWidth, w: innerWidth, h: innerHeight };
+      });
+      const phone = viewport.width < 600;
+      assert.ok(m.size >= (phone ? (viewport.height < 700 ? 38 : 44) : 88), `question font ${m.size}px`);
+      assert.ok(m.lines >= 2 && m.lines <= (phone ? 3 : 3), `${m.lines} lines`);
+      assert.ok(m.right <= m.w - 8 && m.left >= 8 && m.scroll <= m.w + 1, `no overflow (${JSON.stringify(m)})`);
+      if (phone) assert.ok(m.top >= m.headBottom - 4, `clear of his head (question top ${Math.round(m.top)} vs head bottom ${Math.round(m.headBottom)})`);
+      else assert.ok(m.right <= m.headLeft + 4, `left of his head (question right ${Math.round(m.right)} vs head ${Math.round(m.headLeft)})`);
+      assert.ok(m.yes.h >= 60 && m.yes.fs >= 18 && m.yes.h > m.contact.h && m.contact.h >= 56, `Yes is big (${JSON.stringify(m.yes)}), Contact Omar a bit bigger than a normal button (${JSON.stringify(m.contact)})`);
+      assert.ok(m.yes.bottom <= m.h && m.contact.bottom <= m.h && m.yes.right <= m.w && m.contact.right <= m.w, 'both buttons on screen');
+      await context.close();
+    });
+  }
 
   await check('no Pause control anywhere; with motion every interior page has ambient motion; with reduced motion no loop runs on any page', async () => {
     const on = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
@@ -849,7 +1066,8 @@ async function pixelContrast(page, selectors) {
     const page = await on.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     const live = await state(page);
-    assert.ok(live.scrubbing > 3 && live.pinTall && live.pinned && live.heroSticky, `motion on: scrub, pin and gallery active (${JSON.stringify(live)})`);
+    // (Scrubs in blocks not yet rendered, content-visibility, have no animation yet.)
+    assert.ok(live.scrubbing >= 3 && live.pinTall && live.pinned && live.heroSticky, `motion on: scrub, pin and gallery active (${JSON.stringify(live)})`);
     // Halfway through the gallery the track has moved sideways.
     await page.evaluate(() => { const g = document.querySelector('[data-hgallery]'); scrollTo(0, g.getBoundingClientRect().top + scrollY + (g.offsetHeight - innerHeight) / 2); });
     await page.waitForTimeout(300);
@@ -1082,8 +1300,13 @@ async function pixelContrast(page, selectors) {
     const problems = [];
     for (const route of [...routes, ...tours]) {
       await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
-      const total = await page.evaluate(() => document.body.scrollHeight);
-      for (let y = 0; y < total; y += 400) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(50); }
+      // The page grows as content-visibility renders each block (v9): keep
+      // going until the real bottom.
+      for (let y = 0; y < await page.evaluate(() => document.body.scrollHeight); y += 400) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(50); }
+      // Blocks scrolled past are skipped (content-visibility) and their
+      // reveal transitions wait until they are on screen again; render them
+      // all to see every reveal finish.
+      await page.addStyleTag({ content: '*{content-visibility:visible!important}' });
       await page.waitForTimeout(1300);
       const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.closest('[hidden]') && (!el.classList.contains('is-in') || Number(getComputedStyle(el).opacity) < .99 || !/^(none|inset\((0(px|%)?\s*)+( round [^)]*)?\))$/.test(getComputedStyle(el).clipPath))).map(el => el.className || el.tagName));
       if (hidden.length) problems.push(`${route}: ${hidden.slice(0, 3).join(' | ')}`);
@@ -1275,7 +1498,11 @@ async function pixelContrast(page, selectors) {
      intro (first homepage view) and without it (later views), with the
      stand-ins and with the robot CDN blocked. Third-party media must never be
      the LCP (the stills and clips are drawn into canvases; text is LCP). */
-  for (const [label, viewport, mobile, intro, mode, posterDelay] of [
+  /* v9: the lite tier on a weak phone (6× CPU, Slow 4G) also keeps Total
+     Blocking Time ≤ 200 ms. */
+  for (const [label, viewport, mobile, intro, mode, posterDelay, device = 'capable', cpu = mobile ? 4 : 1] of [
+    ['lite phone (2 GB, 4 cores), 6× CPU, later view', { width: 390, height: 844 }, true, false, 'play', 0, 'low', 6],
+    ['lite phone (2 GB, 4 cores), 6× CPU, intro', { width: 390, height: 844 }, true, true, 'play', 0, 'low', 6],
     ['phone, intro', { width: 390, height: 844 }, true, true, 'play', 0],
     ['phone, intro, CDN blocked', { width: 390, height: 844 }, true, true, 'block', 0],
     ['desktop, intro', { width: 1440, height: 900 }, false, true, 'play', 0],
@@ -1284,16 +1511,17 @@ async function pixelContrast(page, selectors) {
     ['phone, later view, robot still 2 s late', { width: 390, height: 844 }, true, false, 'play', 2000],
     ['desktop, later view', { width: 1440, height: 900 }, false, false, 'play', 0],
   ]) {
-    await check(`performance ${label}: LCP <= 2.5s, CLS <= 0.05, LCP never third-party media`, async () => {
-      const context = await isolated(browser, { intro, viewport, isMobile: mobile, reducedMotion: 'no-preference' }, mode);
+    await check(`performance ${label}: LCP <= 2.5s, CLS <= 0.05${device === 'low' ? ', TBT <= 200ms' : ''}, LCP never third-party media`, async () => {
+      const context = await isolated(browser, { intro, device, viewport, isMobile: mobile, hasTouch: mobile, reducedMotion: 'no-preference' }, mode);
       if (posterDelay) await routeRobot(context, 'play', { posterDelay });
       const page = await context.newPage();
       const cdp = await context.newCDPSession(page);
       await cdp.send('Network.enable');
       await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 1.6 * 1024 * 1024 / 8, uploadThroughput: 750 * 1024 / 8 });
-      await cdp.send('Emulation.setCPUThrottlingRate', { rate: mobile ? 4 : 1 });
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpu });
       await page.addInitScript(() => {
-        window.__lcp = 0; window.__cls = 0;
+        window.__lcp = 0; window.__cls = 0; window.__long = [];
+        new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__long.push([entry.startTime, entry.duration]); }).observe({ type: 'longtask', buffered: true });
         new PerformanceObserver(list => { for (const entry of list.getEntries()) { window.__lcp = entry.startTime; window.__lcpEl = `${entry.element?.tagName ?? ''}.${entry.element?.className ?? ''}`.slice(0, 60); window.__lcpUrl = entry.url; } }).observe({ type: 'largest-contentful-paint', buffered: true });
         new PerformanceObserver(list => { for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.__cls += entry.value; }).observe({ type: 'layout-shift', buffered: true });
       });
@@ -1302,10 +1530,11 @@ async function pixelContrast(page, selectors) {
       // is still being recorded), or for the late still.
       if (intro) await page.waitForFunction(() => document.querySelector('[data-intro]')?.hasAttribute('data-asked'), null, { timeout: 20000 }).catch(() => {});
       await page.waitForTimeout(2500 + posterDelay);
-      const metrics = await page.evaluate(() => ({ lcp: Math.round(window.__lcp), element: window.__lcpEl, url: window.__lcpUrl || '', cls: Number(window.__cls.toFixed(3)), asked: document.querySelector('[data-intro]')?.hasAttribute('data-asked') ?? null }));
+      const metrics = await page.evaluate(() => { const fcp = performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? 0; return { lcp: Math.round(window.__lcp), element: window.__lcpEl, url: window.__lcpUrl || '', cls: Number(window.__cls.toFixed(3)), tbt: Math.round(window.__long.filter(([start]) => start >= fcp).reduce((sum, [, d]) => sum + Math.max(0, d - 50), 0)), tier: document.documentElement.dataset.tier, asked: document.querySelector('[data-intro]')?.hasAttribute('data-asked') ?? null }; });
       results.push({ name: `performance ${label} metrics`, status: 'info', message: JSON.stringify(metrics) });
       assert.ok(metrics.lcp <= 2500, `LCP ${metrics.lcp}ms`);
       assert.ok(metrics.cls <= 0.05, `CLS ${metrics.cls}`);
+      if (device === 'low') { assert.equal(metrics.tier, 'lite'); assert.ok(metrics.tbt <= 200, `TBT ${metrics.tbt}ms`); }
       assert.ok(!/^(VIDEO|CANVAS|IMG)/.test(metrics.element) && !/cloudfront/.test(metrics.url), `LCP is not third-party media (${metrics.element} ${metrics.url})`);
       await context.close();
     });

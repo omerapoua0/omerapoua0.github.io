@@ -244,9 +244,23 @@ Project concept images and videos must not be described as screenshots of a live
 - Robot media slot: if Omar adds his own robot images or clips to `public/robot/` (for example generated with Higgsfield), they are Omar's supplied content, used under the terms of the service that generated them. They depict a robot, not Omar. Until such files exist, only the placeholder above is shipped.
 - Omar's portrait on About & CV and the lessons page is his real photograph, cropped only; it is not generated or altered.
 
+## v9: Otto's moves (October 2026)
+
+- The robot is named Otto ("Omar's robot") at Omar's request. Three more
+  short clips of the same robot were generated for Omar with Higgsfield from
+  its still: ASK (he turns to you and presents the intro's question with an
+  open hand), WAVE (he waves hello) and HEART (he makes a heart with his
+  hands that glows red). Like the v8 media they are AI-generated, the same
+  original design, depict no real person and are not Omar; they are Omar's
+  supplied content, used under the terms of the service that generated them,
+  served from Higgsfield's CDN (d8j0ntlcm91z4.cloudfront.net) and not
+  redistributed by this repository. Their audio tracks are never played.
+- The lite tier's CSS "assemble" and light hint are original CSS made for
+  this portfolio; no dependency was added.
+
 ## v8: the opening intro and the new robot (October 2026)
 
-- OA-01, "Omar's robot" (a glossy black humanoid with red neon contour lines
+- Otto, "Omar's robot" (a glossy black humanoid with red neon contour lines
   and a red ring emitter on the side of its head), its sphere-head start
   frame and two clips (the sphere transforming into the robot; the robot
   looking at you, raising its hands and opening a burst of light) were

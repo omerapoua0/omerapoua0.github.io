@@ -37,7 +37,7 @@ const doors = [
   { id: 'contact', label: 'Contact', href: '/contact.html', promise: 'Projects, roles, research or lessons: one short message is enough.', proof: 'Email · LinkedIn · GitHub', glyph: 'M3 6h18v12H3zM3 6l9 7 9-7', preview: ['Projects', 'Roles', 'Research', 'Lessons'] },
 ];
 const labels = [
-  { text: 'OA-01 · Omar’s robot', x: '58%', y: '15%', d: '0s' },
+  { text: 'Otto · Omar’s robot', x: '58%', y: '15%', d: '0s' },
   { text: '51.5072° N · 0.1276° W', x: '82%', y: '13%', d: '-3s', red: true },
   { text: 'Mode · build / reason / teach', x: '60%', y: '80%', d: '-6s' },
 ];
@@ -281,29 +281,29 @@ const labels = [
     /* Clear lanes: every title line exits left at its own speed while a
        clip wipes it away from the right (never pushed off the screen edge);
        the robot scales in place and drifts right and up, away from the text. */
-    :global(html.js) .hero__line { width: fit-content; translate: calc(var(--p) * -3vw) 0; clip-path: inset(-.1em calc(var(--p) * 100%) -.1em 0); opacity: calc(1 - var(--p) * 1.2); }
-    :global(html.js) .hero__line:nth-child(even) { translate: calc(var(--p) * -6vw) 0; clip-path: inset(-.1em calc(min(1, var(--p) * 1.25) * 100%) -.1em 0); }
-    :global(html.js) .hero__robot-scrub { scale: calc(1 + var(--p) * .16); translate: calc(var(--p) * 2vw) calc(var(--p) * -4vh); }
-    :global(html.js) .hero__mark { translate: calc(-50% - var(--p) * 18vw) -50%; }
-    :global(html.js) .beams { opacity: calc(.8 + var(--p) * .6); }
+    :global(html.js:not([data-tier='lite'])) .hero__line { width: fit-content; translate: calc(var(--p) * -3vw) 0; clip-path: inset(-.1em calc(var(--p) * 100%) -.1em 0); opacity: calc(1 - var(--p) * 1.2); }
+    :global(html.js:not([data-tier='lite'])) .hero__line:nth-child(even) { translate: calc(var(--p) * -6vw) 0; clip-path: inset(-.1em calc(min(1, var(--p) * 1.25) * 100%) -.1em 0); }
+    :global(html.js:not([data-tier='lite'])) .hero__robot-scrub { scale: calc(1 + var(--p) * .16); translate: calc(var(--p) * 2vw) calc(var(--p) * -4vh); }
+    :global(html.js:not([data-tier='lite'])) .hero__mark { translate: calc(-50% - var(--p) * 18vw) -50%; }
+    :global(html.js:not([data-tier='lite'])) .beams { opacity: calc(.8 + var(--p) * .6); }
   }
   /* Pin and release (desktop): half a screen of scroll while the hero plays.
      Only here do the copy and chips fade: on phones they stay solid (the
      buttons are still on screen and tappable while the title splits). */
   @media (prefers-reduced-motion: no-preference) and (min-width: 1000px) {
-    :global(html.js) :is(.hero__sub, .hero__chips, .hero__eyebrow) { translate: 0 calc(var(--p) * -60px); opacity: calc(1 - var(--p) * 1.8); }
-    :global(html.js) .hero-pin { height: calc(min(100svh, 1000px) + 55vh); }
-    :global(html.js) .hero { position: sticky; top: 0; }
+    :global(html.js:not([data-tier='lite'])) :is(.hero__sub, .hero__chips, .hero__eyebrow) { translate: 0 calc(var(--p) * -60px); opacity: calc(1 - var(--p) * 1.8); }
+    :global(html.js:not([data-tier='lite'])) .hero-pin { height: calc(min(100svh, 1000px) + 55vh); }
+    :global(html.js:not([data-tier='lite'])) .hero { position: sticky; top: 0; }
   }
   @media (max-width: 999px) { .hero-pin { --scrub-mode: exit; } }
   @media (prefers-reduced-motion: no-preference) and (max-width: 999px) {
     @supports (animation-timeline: view()) {
-      :global(html.js) .hero-pin { animation-range: exit 0% exit 100%; }
+      :global(html.js:not([data-tier='lite'])) .hero-pin { animation-range: exit 0% exit 100%; }
     }
   }
   /* Keyboard focus inside the hero always shows the hero in full (the hero is
      sticky, so the browser never scrolls it back into view). */
-  :global(html.js) .hero-pin:focus-within :is(.hero__sub, .hero__eyebrow, .hero__chips, .hero__line) { opacity: 1; translate: none; clip-path: none; }
+  :global(html.js:not([data-tier='lite'])) .hero-pin:focus-within :is(.hero__sub, .hero__eyebrow, .hero__chips, .hero__line) { opacity: 1; translate: none; clip-path: none; }
   @keyframes word-up { from { transform: translateY(105%); } }
   @keyframes fade-up { from { opacity: 0; transform: translateY(26px); } }
   @keyframes robot-up { from { opacity: 0; transform: translateY(80px) scale(.92); } }

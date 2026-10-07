@@ -31,7 +31,7 @@ const deck = caseStudies.filter(project => project.media).slice(0, 3).reverse();
     <div slot="aside" class="deck" aria-hidden="true">
       {deck.map((project, at) => (
         <a class="deck__card" style={`--k:${at}`} href={`/inside/${project.id}.html`} tabindex="-1" data-open={project.name}>
-          <span class="plate"><img src={project.media!.image} alt="" width="640" height="400" loading="eager" decoding="async" /></span>
+          <span class="plate"><picture><source type="image/webp" srcset={`${project.media!.image.replace(/\.jpg$/, '-800.webp')} 800w, ${project.media!.image.replace(/\.jpg$/, '-1120.webp')} 1120w`} sizes="(min-width: 1000px) 22vw, 60vw" /><img src={project.media!.image} alt="" width="640" height="400" loading="eager" decoding="async" /></picture></span>
           <span class="deck__cap"><b>{project.name}</b><span>{project.org === 'Founder' ? 'Founder' : project.org}</span></span>
         </a>
       ))}

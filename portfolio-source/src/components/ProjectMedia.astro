@@ -1,15 +1,21 @@
 ---
 import Figure from './Figure.astro';
 import type { Project } from '../data/projects';
-/** captionId: lets a whole-card link describe itself with the honesty label (aria-describedby). */
-interface Props { project: Project; video?: boolean; eager?: boolean; class?: string; captionId?: string; }
-const { project, video = true, eager = false, class: className, captionId } = Astro.props;
+/** captionId: lets a whole-card link describe itself with the honesty label (aria-describedby).
+ *  sizes: the plate's displayed width, for the responsive WebP sources (v9:
+ *  each concept visual also ships as 800w and 1120w WebP, from the JPEG). */
+interface Props { project: Project; video?: boolean; eager?: boolean; class?: string; captionId?: string; sizes?: string }
+const { project, video = true, eager = false, class: className, captionId, sizes = '(min-width: 1000px) 46vw, 92vw' } = Astro.props;
+const webp = (image: string) => `${image.replace(/\.jpg$/, '-800.webp')} 800w, ${image.replace(/\.jpg$/, '-1120.webp')} 1120w`;
 const media = project.media;
 const figureKind = project.id === 'bitget' ? 'bitget' : project.id === 'bp' ? 'bp' : 'ai-he';
 ---
 {media ? (
   <figure class:list={['plate', className]} data-fx="zoom">
-    <img src={media.image} alt={media.alt} width="1600" height="900" loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    <picture>
+      <source type="image/webp" srcset={webp(media.image)} sizes={sizes} />
+      <img src={media.image} alt={media.alt} width="1120" height="700" loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    </picture>
     {video && media.video && <video data-preview data-src={media.video} muted loop playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture></video>}
     {media.logo && <img class:list={['plate__logo', { 'plate__logo--dark': media.logoOnDark }]} src={media.logo} alt="" width="40" height="40" loading="lazy" />}
     <figcaption class="plate__caption" id={captionId}>Concept visual, not product footage</figcaption>

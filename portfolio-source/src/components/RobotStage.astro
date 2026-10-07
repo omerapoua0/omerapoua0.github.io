@@ -1,5 +1,5 @@
 ---
-/* The hero robot: OA-01, Omar's robot (the site's mascot, not Omar; a
+/* The hero robot: Otto, Omar's robot (the site's mascot, not Omar; a
    glossy black humanoid with red neon contour lines and a red ring emitter
    on the side of its head, generated for Omar with Higgsfield). Media and
    timings live in src/data/robot.ts (remote on Higgsfield's CDN; files in
@@ -11,12 +11,14 @@
      while the still loads and stays if it fails (CDN down, URL gone); the
      <img>'s inline onload/onerror set data-poster on the stage;
    - the robot (aria-hidden): the ROBOT still <img> (with JavaScript painted
-     into a canvas, see below) with the LOOK <video> over it, edges
+     into a canvas, see below) with the gesture <video>s over it (WAVE,
+     HEART, LOOK; fetched only on intent), edges
      dissolved into the page by a soft mask, plus light layers: a
      pointer-following light, the red neon and ring glow pulsing, the haze;
-   - a real <button> over the figure, "Say hi to OA-01, Omar's robot": he
-     turns his head and looks at you (LOOK 0 → 1.6 s, then holds). Its focus
-     ring is a HUD frame around the head (an outline in forced colours);
+   - a real <button> over the figure, "Say hi to Otto, Omar's robot": each
+     press plays his next move, WAVE → HEART → LOOK (0 → 1.6 s, then holds,
+     facing you). Its focus ring is a HUD frame around the head (an outline
+     in forced colours);
    - "Replay intro" (homepage intro, intro.ts): shown only with JavaScript.
    robot.ts: no autoplay (the homepage intro is the greeting); a breathing
    idle; fine pointers turn it toward the pointer (spring-smoothed 3D tilt),
@@ -24,13 +26,21 @@
    still stays and every interaction still works on it. */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { robot, ROBOT_LABEL, LOOK, RING } from '../data/robot';
+import { robot, gestures, ROBOT_LABEL, ROBOT_NAME, LOOK, RING } from '../data/robot';
 interface Props { class?: string }
 const { class: className } = Astro.props;
 const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
 const poster = local('robot.webp') ? '/robot/robot.webp' : robot.still.src;
 const lookMp4 = local('look.mp4') ? '/robot/look.mp4' : robot.look.mp4;
 const lookWebm = local('look.webm') ? '/robot/look.webm' : undefined;
+/* v9 moves (src/data/robot.ts): only those with a clip (remote or local). */
+const moves = (['wave', 'heart'] as const).map(name => ({
+  name,
+  mp4: local(`${name}.mp4`) ? `/robot/${name}.mp4` : gestures[name].mp4,
+  webm: local(`${name}.webm`) ? `/robot/${name}.webm` : undefined,
+  fit: gestures[name].fit,
+})).filter(move => move.mp4 || move.webm);
+const fitStyle = (f: { s: number; dx: number; dy: number }) => (f.s === 1 && !f.dx && !f.dy ? undefined : `transform:translate(${(f.dx / 13.44).toFixed(2)}%,${(f.dy / 7.52).toFixed(2)}%) scale(${f.s})`);
 const stage = "this.closest('[data-robot-stage]')";
 ---
 <div class:list={['robot-stage', className]} data-robot-stage data-poster="loading">
@@ -52,7 +62,13 @@ const stage = "this.closest('[data-robot-stage]')";
       <div class="robot__breath">
         <div class="robot__frame"><div class="robot__canvas">
           <img class="robot__poster" src={poster} alt="" width={robot.still.width} height={robot.still.height} loading="eager" decoding="async" fetchpriority="low" onload={`${stage}.dataset.poster='ok'`} onerror={`${stage}.dataset.poster='failed'`} />
-          <video class="robot__video" data-robot-video data-hold={LOOK.hold} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
+          {moves.map(move => (
+            <video class="robot__video" data-robot-video={move.name} style={fitStyle(move.fit)} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
+              {move.webm && <source data-src={move.webm} type="video/webm" />}
+              {move.mp4 && <source data-src={move.mp4} type="video/mp4" />}
+            </video>
+          ))}
+          <video class="robot__video" data-robot-video="look" data-hold={LOOK.hold} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
             {lookWebm && <source data-src={lookWebm} type="video/webm" />}
             <source data-src={lookMp4} type="video/mp4" />
           </video>
@@ -64,7 +80,8 @@ const stage = "this.closest('[data-robot-stage]')";
     </div>
   </div>
   <button class="robot-stage__hit" type="button" aria-label={ROBOT_LABEL} data-robot-hi data-cursor-label="Say hi"><span class="robot-stage__focus" aria-hidden="true"></span></button>
-  <span class="robot-stage__tag" aria-hidden="true"><b>OA-01</b><span>Omar’s robot · say hi</span></span>
+  <span class="robot-stage__tag" aria-hidden="true"><b>{ROBOT_NAME}</b><span>Omar’s robot · say hi</span></span>
+  <span class="sr-only" aria-live="polite" data-robot-said></span>
   <button class="robot-stage__replay" type="button" data-intro-replay hidden><span aria-hidden="true">↺</span> Replay intro</button>
 </div>
 
@@ -101,13 +118,15 @@ const stage = "this.closest('[data-robot-stage]')";
      by script, so it has no scoped-style attribute: hence :global(). */
   .robot__poster, .robot__canvas :global(.robot__still) { opacity: 0; transition: opacity 700ms var(--ease-out); }
   :global(html:not(.js)) .robot__poster, .robot-stage[data-still='img'] .robot__poster, .robot-stage[data-still='canvas'] :global(.robot__still) { opacity: 1; }
-  /* The video is shown only while it really has frames: robot.ts sets
-     data-video="on" on 'playing' (its first frame is the poster, so the cut
-     is invisible) and back to "off" to cross-fade to the poster for a replay. */
+  /* A clip is shown only while it really has frames: robot.ts sets data-on
+     on it (and data-video="on" on the stage) on 'playing' (every move starts
+     on the still, so the cut is invisible), and takes it away to cross-fade
+     back to the still (WAVE and HEART end on it too). */
   .robot__video { opacity: 0; transition: opacity 220ms linear; }
-  .robot-stage[data-video='on'] .robot__video { opacity: 1; }
+  .robot-stage[data-video='on'] .robot__video[data-on] { opacity: 1; }
   /* Light layers, screen-blended over the robot. */
   .robot__canvas > span { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
+  :global(html[data-tier='lite']) .robot__canvas > span { mix-blend-mode: normal; }
   /* A soft cool light that follows the pointer across the robot. */
   .robot__light { background: radial-gradient(circle 22vmax at var(--lx, 66%) var(--ly, 30%), #8fb0ff2e, #2f6bff14 40%, transparent 70%); opacity: 0; transition: opacity 600ms; }
   .robot-stage[data-pointer] .robot__light { opacity: 1; }
@@ -204,7 +223,7 @@ const stage = "this.closest('[data-robot-stage]')";
     .robot-stage[data-still] .orb :is(.orb__sphere, .orb__ring i, .orb__sweep), .robot-stage[data-still] .orb__slit::after { animation: none; }
     .robot-stage[data-poster='failed'] :is(.robot__breath, .robot__neon, .robot__beam, .robot__tilt) { animation: none; }
   }
-  @keyframes robot-hi { 0% { opacity: .5; } 25% { opacity: 1; filter: brightness(1.8); } 100% { opacity: .5; } }
+  @keyframes robot-hi { 0% { opacity: .5; } 25% { opacity: 1; } 100% { opacity: .5; } }
   @keyframes robot-breathe { 0%, 100% { scale: 1; translate: 0 0; } 50% { scale: 1.014; translate: 0 -.5%; } }
   @keyframes robot-neon { from { opacity: .25; } to { opacity: .8; } }
   @keyframes robot-beam { from { opacity: .15; } to { opacity: .6; } }

@@ -3,12 +3,12 @@
    grows over links, becomes a labelled pill ("Open") only over large targets
    (doors, gallery cards, [data-cursor-label]), shrinks to a dot over buttons
    (their own fill-wipe is the hover effect), steps aside over text fields and
-   squeezes on press. Off for touch and reduced motion
-   (also if the preference changes while the page is open). */
+   squeezes on press. Off for touch, reduced motion (also if the preference
+   changes while the page is open) and the lite tier (html[data-tier="lite"]). */
 const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-if (fine.matches && !reduce.matches) {
+if (fine.matches && !reduce.matches && document.documentElement.dataset.tier !== 'lite') {
   const ring = document.createElement('div');
   ring.className = 'cursor-ring';
   ring.setAttribute('aria-hidden', 'true');

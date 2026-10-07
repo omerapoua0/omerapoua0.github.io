@@ -139,6 +139,14 @@ document.querySelectorAll<HTMLElement>('[data-scrolly]').forEach(block => {
   steps.forEach(step => observer.observe(step));
 });
 
+/* Heroes pause their ambient loops (beams, glows, labels, the robot's idle)
+   while scrolled off screen: [data-offscreen] (tier.css). Sections further
+   down are skipped by content-visibility, which stops theirs. */
+if ('IntersectionObserver' in window) {
+  const heroes = new IntersectionObserver(entries => entries.forEach(entry => entry.target.toggleAttribute('data-offscreen', !entry.isIntersecting)), { rootMargin: '120px 0px' });
+  document.querySelectorAll('.hero, .phero, .tour-hero').forEach(hero => heroes.observe(hero));
+}
+
 /* Live London time in the homepage status line (not shown without JavaScript). */
 const londonTime = document.querySelector<HTMLTimeElement>('[data-london-time]');
 if (londonTime) {

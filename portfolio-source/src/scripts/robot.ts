@@ -1,35 +1,50 @@
 /*
- * The hero robot (RobotStage.astro): OA-01, Omar's robot. The homepage intro
- * (intro.ts) is its greeting on the first homepage view of a session; here,
- * in the hero, it stands in three-quarter profile (the ROBOT still) with a
- * breathing idle (CSS). On fine pointers it turns toward the pointer
- * (spring-smoothed 3D tilt) and a soft light follows the pointer across it;
- * touch gets a slow ambient sway (CSS). "Say hi to OA-01" plays the LOOK clip
- * from 0 to LOOK.hold (he turns his head and looks at you) and holds there;
- * pressing again cross-fades back to the still and plays it again.
+ * The hero robot (RobotStage.astro): Otto, Omar's robot. The homepage intro
+ * (intro.ts) is his greeting on the first homepage view of a session; here,
+ * in the hero, he stands in three-quarter profile (the ROBOT still) with a
+ * breathing idle (CSS). On fine pointers he turns toward the pointer
+ * (spring-smoothed 3D tilt) and a soft light follows the pointer across him;
+ * touch gets a slow ambient sway (CSS).
  *
- * Nothing plays on its own, so neither the clip nor the third-party still
- * can become the page's Largest Contentful Paint (the still is painted into
- * a canvas; the clip only ever starts after a press, and LCP stops at the
- * first input). The clip is fetched only on the first press. A source error
- * (no H.264, CDN gone), a refused play() or a stall leaves the still in
- * place; the tilt, light and button keep working on it. If the still itself
- * failed (the orb fallback shows), a press only flashes the orb.
+ * "Say hi to Otto" plays his next move, in turn (v9): WAVE (he waves hello),
+ * HEART (a heart with his hands, glowing red), LOOK (from 0 to LOOK.hold: he
+ * turns and looks at you, and holds there). WAVE and HEART end on the
+ * three-quarter pose, so he cuts back to the still invisibly; a press after
+ * LOOK cross-fades from the held frame to the still first. A move without a
+ * clip (no URL), or one that failed, is skipped.
  *
- * State for CSS and QA on the stage: data-video "on" | "off" and data-greet
- * "still" | "playing" | "done" | "failed".
+ * Nothing plays on its own during load, so neither the clips nor the
+ * third-party still can become the page's Largest Contentful Paint (the
+ * still is painted into a canvas; a clip only ever starts after a press, and
+ * LCP stops at the first input). Clips are fetched on intent only: hovering,
+ * focusing or pressing Otto prefetches his next move (preload="auto"); on
+ * the lite tier (html[data-tier="lite"]) only the tap itself fetches it.
+ * One idle surprise on capable devices: after ~20 s of the hero in view with
+ * no input, he waves once (never on lite, reduced motion or Save-Data, never
+ * during the intro, at most once per page view, not after a press).
+ * A source error (no H.264, CDN gone), a refused play() or a stall leaves
+ * the still in place; the tilt, light and button keep working on it. If the
+ * still itself failed (the orb fallback shows), a press only flashes the orb.
+ *
+ * State for CSS and QA on the stage: data-video "on" | "off", data-greet
+ * "still" | "playing" | "done" | "failed", data-move (the clip on screen or
+ * last played: wave | heart | look), data-moves (the cycle, e.g.
+ * "wave heart look"); on each video: data-on while shown.
  */
 const stage = document.querySelector<HTMLElement>('[data-robot-stage]');
-const video = stage?.querySelector<HTMLVideoElement>('[data-robot-video]');
+const all = stage ? [...stage.querySelectorAll<HTMLVideoElement>('[data-robot-video]')] : [];
 
-if (stage && video) {
+if (stage && all.length) {
+  const root = document.documentElement;
+  const lite = root.dataset.tier === 'lite';
   const tilt = stage.querySelector<HTMLElement>('[data-robot-tilt]');
   const hero = stage.closest<HTMLElement>('[data-hero]') ?? stage;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
-  const hold = Number(video.dataset.hold) || 1.6;
-  const sources = [...video.querySelectorAll<HTMLSourceElement>('source[data-src]')];
-  const set = (key: 'video' | 'greet', value: string) => { stage.dataset[key] = value; };
+  const saveData = !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+  const said = stage.querySelector<HTMLElement>('[data-robot-said]');
+  const set = (key: 'video' | 'greet' | 'move' | 'moves', value: string) => { stage.dataset[key] = value; };
+  const lines: Record<string, string> = { wave: 'Otto waves hello.', heart: 'Otto makes a heart with his hands.', look: 'Otto turns and looks at you.' };
 
   // The still: painted into a canvas once decoded (see RobotStage.astro).
   const img = stage.querySelector<HTMLImageElement>('.robot__poster');
@@ -52,42 +67,70 @@ if (stage && video) {
     else img.addEventListener('load', () => void img.decode().then(paint, paint), { once: true });
   }
 
-  let attached = false, failed = false, stall = 0, swap = 0, watch = 0;
+  /* ---------- the moves ---------- */
+  type Move = { name: string; video: HTMLVideoElement; hold: number; attached: boolean; failed: boolean };
+  const moves: Move[] = ['wave', 'heart', 'look']
+    .map(name => all.find(video => video.dataset.robotVideo === name))
+    .filter((video): video is HTMLVideoElement => !!video)
+    .map(video => ({ name: video.dataset.robotVideo!, video, hold: Number(video.dataset.hold) || 0, attached: false, failed: false }));
+  let turn = 0, current: Move | null = null, stall = 0, swap = 0, watch = 0, pressed = false;
+  const usable = () => moves.filter(move => !move.failed);
+  /** The move the next press plays (skipping failed ones). */
+  const upcoming = () => { const list = usable(); return list.length ? list[turn % list.length] : null; };
   set('video', 'off');
   set('greet', 'still');
+  set('moves', moves.map(move => move.name).join(' '));
 
-  const attach = () => {
-    if (attached) return;
-    attached = true;
-    sources.forEach(source => { source.src = source.dataset.src!; });
-    video.preload = 'auto';
-    video.load();
+  const attach = (move: Move | null) => {
+    if (!move || move.attached) return;
+    move.attached = true;
+    move.video.querySelectorAll<HTMLSourceElement>('source[data-src]').forEach(source => { source.src = source.dataset.src!; });
+    move.video.preload = 'auto';
+    move.video.load();
   };
-  /** Back to the still. `hard`: the media cannot play here at all. */
-  const fallBack = (hard: boolean) => {
+  /** Back to the still. `hard`: this clip cannot play here at all. */
+  const fallBack = (move: Move, hard: boolean) => {
     window.clearTimeout(stall);
     cancelAnimationFrame(watch);
-    if (hard) failed = true;
-    if (!video.paused) video.pause();
-    set('video', 'off');
-    set('greet', 'failed');
+    if (hard) move.failed = true;
+    if (!move.video.paused) move.video.pause();
+    move.video.removeAttribute('data-on');
+    if (current === move) { current = null; set('video', 'off'); set('greet', 'failed'); }
   };
-  // With <source> children the error fires on the last source, not the
-  // video. Before attach() the sources have no src, and the browser's
-  // resource selection reports exactly that as an error (possibly late):
-  // only a video left with no usable source, or a media error, has failed.
-  const failHard = () => window.setTimeout(() => { if (attached && (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) fallBack(true); }, 0);
-  video.addEventListener('error', failHard);
-  sources.at(-1)?.addEventListener('error', failHard);
-  video.addEventListener('playing', () => { window.clearTimeout(stall); set('video', 'on'); set('greet', 'playing'); });
-  const watchdog = (ms: number) => { window.clearTimeout(stall); stall = window.setTimeout(() => fallBack(false), ms); };
-  video.addEventListener('waiting', () => { if (stage.dataset.greet === 'playing') watchdog(2500); });
-  /** Pause on the frame where he looks at you, and hold it. */
-  const holdAt = () => {
+  const watchdog = (move: Move, ms: number) => { window.clearTimeout(stall); stall = window.setTimeout(() => fallBack(move, false), ms); };
+  moves.forEach(move => {
+    const { video } = move;
+    // With <source> children the error fires on the last source, not the
+    // video. Before attach() the sources have no src, and the browser's
+    // resource selection reports exactly that as an error (possibly late):
+    // only a video left with no usable source, or a media error, has failed.
+    const failHard = () => window.setTimeout(() => { if (move.attached && (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) fallBack(move, true); }, 0);
+    video.addEventListener('error', failHard);
+    video.querySelector('source:last-of-type')?.addEventListener('error', failHard);
+    video.addEventListener('playing', () => {
+      if (current !== move) return;
+      window.clearTimeout(stall);
+      video.setAttribute('data-on', '');
+      set('video', 'on');
+      set('greet', 'playing');
+    });
+    video.addEventListener('waiting', () => { if (current === move && stage.dataset.greet === 'playing') watchdog(move, 2500); });
+    // WAVE and HEART end on the three-quarter pose: back to the still.
+    video.addEventListener('ended', () => {
+      if (current !== move || move.hold) return;
+      window.clearTimeout(stall);
+      set('greet', 'done');
+      video.removeAttribute('data-on');
+      set('video', 'off');
+    });
+  });
+  /** LOOK: pause on the frame where he looks at you, and hold it. */
+  const holdAt = (move: Move) => {
     cancelAnimationFrame(watch);
     const step = () => {
-      if (video.currentTime >= hold || video.ended) {
-        video.pause();
+      if (current !== move) return;
+      if (move.video.currentTime >= move.hold || move.video.ended) {
+        move.video.pause();
         window.clearTimeout(stall);
         set('greet', 'done');
         return;
@@ -97,33 +140,77 @@ if (stage && video) {
     watch = requestAnimationFrame(step);
   };
 
-  /** Turn and look at you: LOOK from 0 to `hold`. A replay first cross-fades
-   *  from the held frame to the still (LOOK's first frame), then plays. */
-  const look = () => {
-    if (failed || stage.dataset.poster === 'failed') return;
-    if (stage.dataset.greet === 'playing' && !video.paused) return;
-    attach();
+  /** Play the next move. A held LOOK frame first cross-fades to the still. */
+  const play = () => {
+    if (stage.dataset.poster === 'failed') return;
+    if (current && stage.dataset.greet === 'playing' && !current.video.paused) return; // let him finish
+    const move = upcoming();
+    if (!move) return;
+    turn++;
+    attach(move);
+    const previous = current;
+    current = move;
+    set('move', move.name);
+    if (said) said.textContent = lines[move.name] ?? '';
     const start = () => {
+      if (current !== move) return;
+      const { video } = move;
       // Seek only when needed: a redundant seek can leave play() pending.
       if (video.currentTime > 0) { try { video.currentTime = 0; } catch { /* not seekable yet */ } }
-      watchdog(8000);
-      video.play().then(holdAt, () => fallBack(false));
+      watchdog(move, 8000);
+      video.play().then(() => { if (move.hold) holdAt(move); }, () => fallBack(move, false));
     };
     window.clearTimeout(swap);
-    if (stage.dataset.video === 'on') { set('video', 'off'); swap = window.setTimeout(start, 240); }
-    else start();
+    if (previous && previous.video.hasAttribute('data-on')) {
+      previous.video.removeAttribute('data-on');
+      if (!previous.video.paused) previous.video.pause();
+      set('video', 'off');
+      swap = window.setTimeout(start, 240);
+    } else start();
+    // Fetch the one after this, so a second press is ready (not on lite).
+    if (!lite) window.setTimeout(() => { if (current === move) attach(upcoming()); }, 1500);
   };
 
-  // Say hi: he looks at you (also with reduced motion or Save-Data: the
+  // Say hi: his next move (also with reduced motion or Save-Data: the
   // visitor asked for it). A short neon flash acknowledges every press (the
   // orb flares instead when it stands in for the still).
-  stage.querySelector('[data-robot-hi]')?.addEventListener('click', () => {
+  const hit = stage.querySelector<HTMLElement>('[data-robot-hi]');
+  hit?.addEventListener('click', () => {
+    pressed = true;
     stage.removeAttribute('data-hi');
     void stage.offsetWidth;
     stage.setAttribute('data-hi', '');
     window.setTimeout(() => stage.removeAttribute('data-hi'), 900);
-    look();
+    play();
   });
+  // Intent: hovering, focusing or pressing Otto fetches his next move.
+  if (hit && !lite) {
+    const intent = () => { if (stage.dataset.poster !== 'failed' && (!saveData || pressed)) attach(upcoming()); };
+    hit.addEventListener('pointerenter', intent, { passive: true });
+    hit.addEventListener('pointerdown', intent, { passive: true });
+    hit.addEventListener('focus', intent);
+  }
+
+  // One idle surprise: after ~20 s with the hero in view and no input, he
+  // waves (capable devices only, once per page view).
+  const wave = moves.find(move => move.name === 'wave');
+  if (wave && !lite && !saveData && !reduce.matches && 'IntersectionObserver' in window) {
+    let visible = false, idle = 0, spent = false;
+    const arm = () => {
+      window.clearTimeout(idle);
+      if (spent || pressed || !visible || document.hidden) return;
+      idle = window.setTimeout(() => {
+        if (spent || pressed || !visible || document.hidden || reduce.matches || root.dataset.introOn !== undefined || stage.dataset.poster === 'failed' || wave.failed) return;
+        if (current && !current.video.paused) return;
+        spent = true;
+        if (upcoming() !== wave) return; // only as his first move
+        play();
+      }, 20000);
+    };
+    new IntersectionObserver(entries => { visible = entries.some(entry => entry.isIntersecting); arm(); }, { threshold: .4 }).observe(stage);
+    for (const type of ['pointermove', 'pointerdown', 'keydown', 'scroll', 'wheel', 'touchstart']) addEventListener(type, arm, { passive: true });
+    document.addEventListener('visibilitychange', arm);
+  }
 
   // Replay the homepage intro (intro.ts): clear its session flag and reload.
   const replay = stage.querySelector<HTMLButtonElement>('[data-intro-replay]');
@@ -136,11 +223,11 @@ if (stage && video) {
     });
   }
 
-  // Pointer: turn toward it (fine pointers, no reduced motion). The stage's
-  // box is cached (refreshed on resize and scroll), so a pointer move never
-  // forces a layout; the handler only stores the pointer, and the rAF step
-  // does the maths and the style writes.
-  if (tilt && fine.matches) {
+  // Pointer: turn toward it (fine pointers, no reduced motion, full tier).
+  // The stage's box is cached (refreshed on resize and scroll), so a pointer
+  // move never forces a layout; the handler only stores the pointer, and the
+  // rAF step does the maths and the style writes.
+  if (tilt && fine.matches && !lite) {
     const spring = { x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0 };
     let raf = 0, box: DOMRect | null = null, pointer: { x: number; y: number } | null = null, over = false;
     const measure = () => { box = null; };

@@ -7,12 +7,21 @@
  * never shown.
  *
  * Paths:
- * - full motion: ORB still → TRANSFORM clip (the orb becomes the robot) →
- *   LOOK clip from 0, cross-faded over the shared robot frame, paused at
- *   LOOK.hold (he looks at you) → he asks → "Yes": LOOK from LOOK.resume to
- *   LOOK.white (hands together, light, white) → the white hands over to the
- *   light gate (gate.ts reveal), which dissolves into the homepage while the
- *   hero staggers in.
+ * - full motion: ORB still → TRANSFORM clip (the orb becomes Otto) → ASK
+ *   clip (v9), cross-faded over the shared robot frame: he turns to you, the
+ *   line "Hi — I'm Otto, Omar's robot." types out from ASK.say, and the
+ *   question appears at ASK.question as his open hand presents it; he then
+ *   holds on the clip's last frame, facing you → "Yes": cross-fade into LOOK
+ *   at LOOK.resume (parked there while he waits), on to LOOK.white (hands
+ *   together, light, white) → the white hands over to the light gate
+ *   (gate.ts reveal), which dissolves into the homepage while the hero
+ *   staggers in. Without a playable ASK (no URL yet, an error, not buffered
+ *   when the transform ends): the v8 path, LOOK from 0 paused at LOOK.hold.
+ * - lite (html[data-tier="lite"], Base.astro): no clips and no per-frame
+ *   canvas drawing. The ORB and ROBOT stills are painted once each into two
+ *   canvases; a CSS assemble (stage "assemble": clip reveal, scan line, ring
+ *   glow) turns the orb into Otto; the question comes with a CSS light hint;
+ *   Yes plays the gate's CSS open.
  * - still: prefers-reduced-motion (Yes = a 200 ms fade), Save-Data or a
  *   2g/3g connection, a transform that has not started within 2.5 s, or a
  *   video error: no clips; the ROBOT still (or, if the CDN is unreachable,
@@ -25,8 +34,10 @@
  * at the end focus moves to <main>. Every picture is drawn into one canvas
  * (never an LCP candidate), each source with its measured framing
  * (src/data/robot.ts).
- * State for CSS/QA on [data-intro]: data-stage boot | transform | look |
- * ask | go | white, data-path video | still, data-asking, data-asked.
+ * State for CSS/QA on [data-intro]: data-stage boot | transform | assemble |
+ * look | ask | go | white, data-path video | still | lite, data-clip ask |
+ * look (the clip that brought him to the question), data-moving (ASK still
+ * playing), data-asking, data-asked.
  */
 import { cover, reveal } from './gate';
 
@@ -48,20 +59,23 @@ function run(intro: HTMLElement) {
   const still = $<HTMLImageElement>('[data-intro-still]');
   const transform = $<HTMLVideoElement>('[data-intro-transform]');
   const look = $<HTMLVideoElement>('[data-intro-look]');
+  const askClip = intro.querySelector<HTMLVideoElement>('[data-intro-ask]');
   const yes = $<HTMLButtonElement>('[data-intro-yes]');
   const tiltEl = $<HTMLElement>('[data-intro-tilt]');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lite = root.dataset.tier === 'lite';
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   const slow = !!connection?.saveData || /^(slow-2g|2g|3g)$/.test(connection?.effectiveType ?? '');
-  const num = (el: HTMLElement, key: string, fallback: number) => Number(el.dataset[key]) || fallback;
+  const num = (el: HTMLElement | null, key: string, fallback: number) => Number(el?.dataset[key]) || fallback;
   const fitOf = (el: HTMLElement): Fit => { try { return JSON.parse(el.dataset.fit || ''); } catch { return { s: 1, dx: 0, dy: 0 }; } };
   const HOLD = num(look, 'hold', 1.6), RESUME = num(look, 'resume', 2.3), WHITE = num(look, 'white', 4.6);
+  const SAY = num(askClip, 'say', 1), QUESTION = num(askClip, 'question', 2.1);
   const set = (key: string, value: string | null) => { if (value === null) delete intro.dataset[key]; else intro.dataset[key] = value; };
   const stage = (value: string) => set('stage', value);
   const status = (text: string) => { $<HTMLElement>('[data-intro-status]').textContent = text; };
   const timers: number[] = [];
   const later = (fn: () => void, ms: number) => { timers.push(window.setTimeout(fn, ms)); };
-  let done = false, lookReady = false;
+  let done = false, lookReady = false, askReady = false;
 
   // The page underneath: inert, and it does not scroll while the intro shows.
   const inerted = [...document.body.children].filter((el): el is HTMLElement => el instanceof HTMLElement && el !== intro && !el.matches('[data-gate], script') && !el.inert);
@@ -80,13 +94,14 @@ function run(intro: HTMLElement) {
   const W = canvas.width, H = canvas.height;
   let cur: Src | null = null, prev: Src | null = null, fadeFrom = 0, fadeMs = 0, raf = 0;
   const ready = (el: Src['el']) => el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete && el.naturalWidth > 0;
-  const draw = (src: Src, alpha: number) => {
-    if (!ctx || !ready(src.el)) return false;
+  const draw = (src: Src, alpha: number, into = ctx) => {
+    if (!into || !ready(src.el)) return false;
     const w = src.el instanceof HTMLVideoElement ? src.el.videoWidth : src.el.naturalWidth;
     const h = src.el instanceof HTMLVideoElement ? src.el.videoHeight : src.el.naturalHeight;
     const k = Math.max(W / w, H / h) * src.fit.s, dw = w * k, dh = h * k;
-    ctx.globalAlpha = alpha;
-    ctx.drawImage(src.el, (W - dw) / 2 + src.fit.dx, (H - dh) / 2 + src.fit.dy, dw, dh);
+    into.globalAlpha = alpha;
+    into.imageSmoothingQuality = 'high';
+    into.drawImage(src.el, (W - dw) / 2 + src.fit.dx, (H - dh) / 2 + src.fit.dy, dw, dh);
     return true;
   };
   const frame = (now: number) => {
@@ -118,8 +133,8 @@ function run(intro: HTMLElement) {
   };
 
   /* ---------- video helpers ---------- */
-  const attach = (video: HTMLVideoElement, preload: 'auto' | 'metadata') => {
-    if (video.dataset.attached) return;
+  const attach = (video: HTMLVideoElement | null, preload: 'auto' | 'metadata') => {
+    if (!video || video.dataset.attached !== undefined) return;
     video.dataset.attached = '';
     video.querySelectorAll<HTMLSourceElement>('source[data-src]').forEach(source => { source.src = source.dataset.src!; });
     video.preload = preload;
@@ -132,33 +147,72 @@ function run(intro: HTMLElement) {
     video.addEventListener('error', check);
     video.querySelector('source:last-of-type')?.addEventListener('error', check);
   };
+  const playable = (video: HTMLVideoElement | null): video is HTMLVideoElement => !!video && video.dataset.attached !== undefined && video.readyState >= 3 && !video.error;
 
   /* ---------- per-frame checks (while a clip plays) ---------- */
   function tick() {
-    if (intro.dataset.stage === 'look' && look.currentTime >= HOLD) { look.pause(); ask(); }
-    else if (intro.dataset.stage === 'go' && (look.currentTime >= WHITE - .05 || look.ended)) whiteOut();
+    const at = intro.dataset.stage;
+    if (at === 'look' && look.currentTime >= HOLD) { look.pause(); ask(); }
+    else if (at === 'ask' && askClip && cur?.el === askClip) {
+      if (askClip.currentTime >= SAY) say();
+      if (askClip.currentTime >= QUESTION) asked();
+      if (askClip.ended || askClip.paused) set('moving', null);
+    }
+    else if (at === 'go' && (look.currentTime >= WHITE - .05 || look.ended)) whiteOut();
   }
 
   /* ---------- the stages ---------- */
-  // Boot: the orb still (drawn as soon as it is decoded).
-  onDecoded(orb, () => { if (!cur) show(orb); });
-
+  // (Declared before any path starts: a reduced-motion visitor is asked at once.)
+  const line = $<HTMLElement>('.intro__say-full').textContent ?? '';
+  const typed = $<HTMLElement>('[data-intro-say]');
+  let saying = false, hasAsked = false;
   /** No clips: the robot still (if it loads) and the question. */
   function stillPath() {
     if (done || intro.dataset.path === 'still' || intro.dataset.stage === 'ask') return;
     set('path', 'still');
     lookReady = false;
+    askReady = false;
     transform.pause();
     look.pause();
+    askClip?.pause();
     onDecoded(still, () => show(still, reduce ? 0 : 500));
     ask();
   }
 
-  if (reduce || slow) stillPath();
+  /** Lite: each still painted once (canvas a: the orb, canvas b: Otto), and
+   *  a CSS assemble between them. Never a per-frame draw. */
+  function litePath() {
+    set('path', 'lite');
+    const canvasB = $<HTMLCanvasElement>('[data-intro-screen-b]');
+    const paint = (into: HTMLCanvasElement, img: HTMLImageElement, fit: Fit) => {
+      const c = into.getContext('2d');
+      if (c && draw({ el: img, fit }, 1, c) && into === canvas) set('drawn', '');
+    };
+    onDecoded(orb, () => paint(canvas, orb, fitOf(orb)));
+    let assembled = false;
+    const assemble = () => {
+      if (done || assembled) return;
+      assembled = true;
+      stage('assemble');
+      status('Assembling');
+      later(() => { status('Online'); ask(); }, 2100);
+    };
+    // A beat on the orb, then he assembles once his still is ready (or the
+    // question comes on the dark HUD stage if the still never loads).
+    later(() => onDecoded(still, () => { paint(canvasB, still, { s: 1, dx: 0, dy: 0 }); assemble(); }), 900);
+    later(() => { if (!assembled) ask(); }, 4000);
+  }
+
+  // Boot: the orb still (drawn as soon as it is decoded).
+  if (!lite) onDecoded(orb, () => { if (!cur) show(orb); });
+
+  if (lite && !reduce) litePath();
+  else if (reduce || slow || lite) stillPath();
   else {
     set('path', 'video');
     onFail(transform, stillPath);
     onFail(look, () => { lookReady = false; });
+    if (askClip) onFail(askClip, () => { askReady = false; });
     const start = window.setTimeout(stillPath, 2500);
     transform.addEventListener('playing', () => {
       window.clearTimeout(start);
@@ -166,21 +220,30 @@ function run(intro: HTMLElement) {
       stage('transform');
       status('Assembling');
       show(transform);
-      // LOOK is 5.7 MB: fetch it only now, and only on a fast connection.
-      if (!slow) attach(look, 'auto');
+      // ASK first (he asks with it), then LOOK (5.7 MB, for Yes) once ASK
+      // plays; without ASK, LOOK straight away (v8).
+      if (askClip) attach(askClip, 'auto'); else attach(look, 'auto');
     }, { once: true });
+    askClip?.addEventListener('playing', () => attach(look, 'auto'), { once: true });
+    // He holds on ASK's last frame, facing you (breathing resumes).
+    askClip?.addEventListener('ended', () => { set('moving', null); asked(); kick(); });
+    // While he waits, LOOK is parked on the frame Yes continues from.
+    look.addEventListener('canplay', () => {
+      if (intro.dataset.clip === 'ask' && intro.dataset.stage === 'ask' && look.paused && Math.abs(look.currentTime - RESUME) > .05) { try { look.currentTime = RESUME; } catch { /* not seekable yet */ } }
+    });
     transform.addEventListener('ended', () => {
       if (intro.dataset.path !== 'video') return;
       status('Online');
-      if (look.readyState >= 3 && !look.error) {
-        stage('look');
-        look.currentTime = 0;
-        look.play().then(() => { lookReady = true; show(look, 220); }, () => { show(still, 300); ask(); });
-      } else {
-        // LOOK is not playable yet: hold the robot (the transform ends on it).
-        onDecoded(still, () => show(still, 300));
-        ask();
-      }
+      if (playable(askClip)) {
+        set('clip', 'ask');
+        askClip.currentTime = 0;
+        askClip.play().then(() => {
+          askReady = true;
+          show(askClip, 220);
+          ask(true);
+          attach(look, 'auto');
+        }, () => lookPath());
+      } else lookPath();
     });
     // A stall mid-transform: give it a moment, then the still path.
     transform.addEventListener('waiting', () => later(() => { if (intro.dataset.stage === 'transform' && transform.readyState < 3) stillPath(); }, 2500));
@@ -188,34 +251,60 @@ function run(intro: HTMLElement) {
     transform.play().catch(stillPath);
   }
 
+  /** v8: LOOK from 0, paused at HOLD (he looks at you), then he asks. */
+  function lookPath() {
+    if (done || intro.dataset.stage === 'ask' || intro.dataset.stage === 'look') return;
+    set('clip', 'look');
+    attach(look, 'auto');
+    if (playable(look)) {
+      stage('look');
+      look.currentTime = 0;
+      look.play().then(() => { lookReady = true; show(look, 220); }, () => { show(still, 300); ask(); });
+    } else {
+      // LOOK is not playable yet: hold the robot (the transform ends on it).
+      onDecoded(still, () => show(still, 300));
+      ask();
+    }
+  }
+
   /* ---------- he asks ---------- */
-  function ask() {
+  /** `timed`: the ASK clip drives the line and the question (tick() at
+   *  ASK.say / ASK.question, with timers as a safety net for a stall). */
+  function ask(timed = false) {
     if (done || intro.dataset.stage === 'ask') return;
     stage('ask');
     set('asking', '');
-    const line = $<HTMLElement>('.intro__say-full').textContent ?? '';
-    const typed = $<HTMLElement>('[data-intro-say]');
-    const question = $<HTMLElement>('#intro-q').textContent?.replace(/ /g, ' ') ?? '';
-    const asked = () => {
-      if (done) return;
-      typed.textContent = line;
-      set('asked', '');
-      $<HTMLElement>('[data-intro-live]').textContent = `${line} ${question}`;
-      yes.focus({ preventScroll: true });
-    };
     if (reduce) { asked(); return; }
+    if (timed) {
+      set('moving', '');
+      later(say, SAY * 1000 + 700);
+      later(asked, QUESTION * 1000 + 1200);
+    } else later(say, 240);
+  }
+  function say() {
+    if (done || saying || hasAsked) return;
+    saying = true;
     let i = 0;
     const type = () => {
-      if (done) return;
+      if (done || hasAsked) return;
       typed.textContent = line.slice(0, ++i);
       if (i < line.length) later(type, 34);
-      else later(asked, 260);
+      else if (intro.dataset.clip !== 'ask' || intro.dataset.path !== 'video') later(asked, 260);
     };
-    later(type, 240);
+    type();
+  }
+  function asked() {
+    if (done || hasAsked) return;
+    hasAsked = true;
+    typed.textContent = line;
+    set('asked', '');
+    const question = $<HTMLElement>('#intro-q').textContent?.replace(/ /g, ' ') ?? '';
+    $<HTMLElement>('[data-intro-live]').textContent = `${line} ${question}`;
+    yes.focus({ preventScroll: true });
   }
 
-  // Pointer tilt while he waits (fine pointers, motion allowed).
-  if (!reduce && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  // Pointer tilt while he waits (fine pointers, motion allowed, full tier).
+  if (!reduce && !lite && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
     let tx = 0, ty = 0, x = 0, y = 0, spin = 0;
     const step = () => {
       x += (tx - x) * .08; y += (ty - y) * .08;
@@ -235,7 +324,20 @@ function run(intro: HTMLElement) {
   yes.addEventListener('click', async () => {
     if (done || intro.dataset.stage === 'go' || intro.dataset.stage === 'white') return;
     if (reduce) { leave(200); return; }
-    if (lookReady && intro.dataset.path === 'video' && !look.error) {
+    if (intro.dataset.path === 'video' && intro.dataset.clip === 'ask' && askReady && playable(look)) {
+      // From ASK's last frame (facing you) into LOOK at RESUME, cross-faded.
+      stage('go');
+      set('moving', null);
+      askClip?.pause();
+      const go = () => look.play().then(() => show(look, 260), () => void fallbackOpen());
+      if (Math.abs(look.currentTime - RESUME) > .05 || look.seeking) {
+        look.addEventListener('seeked', go, { once: true });
+        try { look.currentTime = RESUME; } catch { void fallbackOpen(); return; }
+      } else go();
+      later(whiteOut, (WHITE - RESUME) * 1000 + 2500);
+      return;
+    }
+    if (lookReady && intro.dataset.path === 'video' && intro.dataset.clip === 'look' && !look.error) {
       stage('go');
       try { look.currentTime = RESUME; } catch { /* keeps playing from the hold */ }
       look.play().then(kick, () => void fallbackOpen());
@@ -280,7 +382,7 @@ function run(intro: HTMLElement) {
     inerted.forEach(el => { el.inert = false; });
     scrollTo(0, 0);
     delete root.dataset.introOn;
-    [transform, look].forEach(video => video.pause());
+    [transform, look, askClip].forEach(video => video?.pause());
     intro.remove();
     document.getElementById('main')?.focus({ preventScroll: true });
   }

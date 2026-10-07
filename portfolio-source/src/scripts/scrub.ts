@@ -30,7 +30,8 @@ function progress(el: HTMLElement, mode: string, vh: number) {
   return clamp((vh - box.top) / Math.max(1, vh + box.height));
 }
 
-if (!nativeScrub && 'IntersectionObserver' in window) {
+// The lite tier (html[data-tier="lite"]) has no scrub: the page rests static.
+if (!nativeScrub && 'IntersectionObserver' in window && document.documentElement.dataset.tier !== 'lite') {
   const items = [...document.querySelectorAll<HTMLElement>('[data-scrub]')];
   const live = new Set<HTMLElement>();
   const modes = new Map<HTMLElement, string>();

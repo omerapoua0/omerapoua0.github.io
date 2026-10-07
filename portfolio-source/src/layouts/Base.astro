@@ -6,6 +6,7 @@ import '../styles/base.css';
 import '../styles/layout.css';
 import '../styles/studio.css';
 import '../styles/neon.css';
+import '../styles/tier.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import CommandPalette from '../components/CommandPalette.astro';
@@ -60,6 +61,19 @@ const person = {
          (plus data-gate-mode="quick" for ordinary links) so LightGate paints its
          opaque layer on the first frame (white after an open, dark after a quick
          change) and then dissolves it. -->
+    <!-- Capability tier (v9), before first paint: html[data-tier="lite"] on a
+         low/mid device or a slow or data-saving connection (deviceMemory <= 4 GB,
+         <= 4 cores, Save-Data, effectiveType slow-2g/2g/3g), else "full". Apple
+         WebKit caps hardwareConcurrency for privacy (and has no deviceMemory),
+         so the core count is not a signal there. ?tier=lite|full overrides it for
+         the rest of the session (QA). Lite: no robot clips, cursor, tilt, pins,
+         backdrop blur or heavy loops (see tier.css). -->
+    <script is:inline>
+      (function(){var d=document.documentElement,n=navigator,c=n.connection||{},q=/[?&]tier=(lite|full)\b/.exec(location.search),t=q?q[1]:'';
+      try{if(q)sessionStorage.setItem('omar-tier',t);else t=sessionStorage.getItem('omar-tier')||''}catch(e){}
+      if(t!=='lite'&&t!=='full')t=(n.deviceMemory&&n.deviceMemory<=4)||(!/iP(hone|ad|od)|Macintosh/.test(n.userAgent)&&n.hardwareConcurrency&&n.hardwareConcurrency<=4)||c.saveData||/^(slow-2g|2g|3g)$/.test(c.effectiveType||'')?'lite':'full';
+      d.dataset.tier=t})();
+    </script>
     <script is:inline>
       (function(){var d=document.documentElement;d.classList.add('js');
       try{var g=JSON.parse(sessionStorage.getItem('omar-gate')||'null'),p=location.pathname==='/'?'/index.html':location.pathname,n=Date.now();sessionStorage.removeItem('omar-gate');

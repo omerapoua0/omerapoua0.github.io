@@ -67,7 +67,7 @@ const clip = () => gate?.querySelector<HTMLVideoElement>('[data-gate-clip]') ?? 
    and could never be ready in time. */
 const saveData = () => !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
 const coarse = window.matchMedia('(pointer: coarse)');
-const clipAllowed = () => !saveData() && !coarse.matches;
+const clipAllowed = () => !saveData() && !coarse.matches && root.dataset.tier !== 'lite';
 const playOf = (video: HTMLVideoElement) => Number(video.dataset.play) || 700;
 const seekOf = (video: HTMLVideoElement) => Math.min(Number(video.dataset.seek) || 0, Math.max(0, (video.duration || 0) - playOf(video) / 1000 - .1));
 /** Attach the clip's sources, load it and park it on the hands-together

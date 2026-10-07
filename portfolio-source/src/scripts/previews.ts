@@ -1,8 +1,8 @@
-/* Concept-visual previews: play only while visible, never with reduced motion
-   or data saving, and only for the
-   active item inside a project pane. */
+/* Concept-visual previews: play only while visible, never with reduced motion,
+   data saving or on the lite tier (html[data-tier="lite"]: the poster image
+   stays), and only for the active item inside a project pane. */
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true || document.documentElement.dataset.tier === 'lite';
 const videos = [...document.querySelectorAll<HTMLVideoElement>('video[data-preview]')];
 const visible = new Set<HTMLVideoElement>();
 

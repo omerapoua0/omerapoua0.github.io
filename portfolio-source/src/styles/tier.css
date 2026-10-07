@@ -1,0 +1,35 @@
+/* v9 performance: render-on-demand sections (every tier) and the lite tier.
+
+   Below the fold, whole blocks are rendered only as they near the screen
+   (content-visibility: auto; `auto` remembers each block's real height once
+   it has been seen, the second value is the estimate until then). Skipped
+   blocks also run none of their animations, so marquees, bands and drifting
+   light stop while off screen. site.ts pauses the heroes' loops the same
+   way when they scroll away ([data-offscreen]). */
+:is(.marquee, .mq) { content-visibility: auto; contain-intrinsic-size: auto 150px; }
+:is(.story, .work, .skills, .lessons, .about, .contact-band, main > .stage, main > .band, .footer) { content-visibility: auto; contain-intrinsic-size: auto 1000px; }
+[data-offscreen] *, [data-offscreen] *::before, [data-offscreen] *::after { animation-play-state: paused !important; }
+
+/* The lite tier (html[data-tier="lite"], set before first paint by the
+   Base.astro head script on low/mid devices and slow or data-saving
+   connections): the same design, minus what costs most on a weak phone.
+   No backdrop blur (solid glass instead), no screen/lighten blending or
+   noise, ambient light at rest (no sweeping beams, drifting glows, floating
+   labels or sliding marquees), no tilt, short opacity/translate reveals, no
+   scroll-driven decoration. JavaScript does the rest: no cursor ring,
+   magnetic pull, pins, scrub, robot clips, idle wave or preview videos. */
+html[data-tier='lite'] * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-tier='lite'] .header { background: #0b0d12f2; }
+html[data-tier='lite'] .haze { display: none; }
+html[data-tier='lite'] .hero__robot { mix-blend-mode: normal; }
+html[data-tier='lite'] :is(.beams > i, .spec-label, .hero__glow, .phero__blob, .band__bg span, .contact-band__bg span, .tour-hero__blob, .marquee__track, .mq__track, [data-fx], [data-fx] img, .about__photo img, .contact-band__title) { animation: none !important; will-change: auto; }
+html[data-tier='lite'] .scroll-progress { display: none; }
+html[data-tier='lite'] [data-tilt] { transform: none !important; }
+html[data-tier='lite'] [data-tilt]::after { display: none; }
+html[data-tier='lite'].reveal-ready [data-reveal] { clip-path: none !important; transition: opacity 450ms var(--ease-out), transform 450ms var(--ease-out) !important; transition-delay: min(var(--reveal-delay, 0ms), 240ms) !important; }
+html[data-tier='lite'].reveal-ready [data-reveal]:not(.is-in) { opacity: 0; transform: translateY(20px) !important; }
+/* The gate: the same seams and burst, lighter glows, no expanding rim. */
+html[data-tier='lite'] .gate__ring { display: none; }
+html[data-tier='lite'] .gate__seam--l::after { box-shadow: 0 0 8px 2px #ffd6db, 0 0 24px 6px #ff2d46d9; }
+html[data-tier='lite'] .gate__seam--r::after { box-shadow: 0 0 8px 2px #dbe6ff, 0 0 24px 6px #2f6bffd9; }
+html[data-tier='lite'] .gate__flare { box-shadow: 0 0 40px 16px #e6eeffd9; }
