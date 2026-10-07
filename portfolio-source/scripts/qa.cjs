@@ -729,7 +729,14 @@ async function pixelContrast(page, selectors) {
     const context = await isolated(browser, { intro: true, viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     await context.addInitScript(() => { window.__shift = 0; new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__shift += entry.value; }).observe({ type: 'layout-shift', buffered: true }); });
     // When the question appears, where is ASK? (It is timed to his open palm.)
-    await context.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { const intro = document.querySelector('[data-intro]'); if (intro) new MutationObserver(() => { if (intro.hasAttribute('data-asked') && window.__askedAt === undefined) window.__askedAt = document.querySelector('[data-intro-ask]')?.currentTime ?? -1; }).observe(intro, { attributes: true }); }));
+    // Also: the speech box only with its first letter (never an empty box
+    // while he turns), the ring glow only once he holds still, and Yes's
+    // flare (the cut from ASK into LOOK under its peak).
+    await context.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { const intro = document.querySelector('[data-intro]'); window.__flares = []; if (intro) new MutationObserver(() => {
+      if (intro.hasAttribute('data-asked') && window.__askedAt === undefined) { window.__askedAt = document.querySelector('[data-intro-ask]')?.currentTime ?? -1; window.__ringAtAsk = Number(getComputedStyle(intro.querySelector('.intro__ring')).opacity); }
+      if (intro.hasAttribute('data-asking') && window.__askingTyped === undefined) window.__askingTyped = { typed: intro.querySelector('[data-intro-say]').textContent.length, at: document.querySelector('[data-intro-ask]')?.currentTime ?? -1 };
+      if (intro.dataset.flare && window.__flares.at(-1) !== intro.dataset.flare) window.__flares.push(intro.dataset.flare);
+    }).observe(intro, { attributes: true }); }));
     const page = await context.newPage();
     const errors = watch(page);
     await page.goto(`${base}/index.html`);
@@ -746,6 +753,14 @@ async function pixelContrast(page, selectors) {
     assert.match(ask.live, /Hi — I’m Otto, Omar’s robot\. Do you want to see his work\?/, 'question announced');
     const askedAt = await page.evaluate(() => window.__askedAt);
     assert.ok(askedAt >= 1.9 && askedAt < 2.9, `the question appears as his palm presents it (ASK at ${askedAt} s)`);
+    const asking = await page.evaluate(() => window.__askingTyped);
+    assert.ok(asking && asking.typed >= 1 && asking.at >= .9, `the speech box appears with its first letter, as he faces you (${JSON.stringify(asking)})`);
+    assert.ok((await page.evaluate(() => window.__ringAtAsk)) < .05, 'no ring glow while he moves (the real ring is elsewhere)');
+    // The camera pans with ASK so his open palm (frame x 7–22%) is on screen
+    // beside the copy, and the copy stays clear of his helmet (ASK: x ≥ 45%).
+    await page.waitForTimeout(1500);
+    const pan = await page.evaluate(() => { const f = document.querySelector('.intro__frame').getBoundingClientRect(), q = document.querySelector('#intro-q').getBoundingClientRect(); return { palm: f.left + f.width * .07, head: f.left + f.width * .45, q: q.right }; });
+    assert.ok(pan.palm >= 0 && pan.q <= pan.head + 4, `palm on screen, question clear of his helmet (${JSON.stringify(pan)})`);
     // He finishes the gesture and holds, facing you; LOOK waits, parked where Yes continues.
     await page.waitForFunction(() => { const intro = document.querySelector('[data-intro]'), v = document.querySelector('[data-intro-ask]'); return v.ended && !intro.hasAttribute('data-moving'); }, null, { timeout: 6000 });
     await page.waitForFunction(() => Math.abs(document.querySelector('[data-intro-look]').currentTime - 2.3) < .1, null, { timeout: 4000 });
@@ -753,6 +768,8 @@ async function pixelContrast(page, selectors) {
     const before = await page.evaluate(() => window.__shift);
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.querySelector('[data-intro]')?.dataset.stage === 'go', null, { timeout: 2000 });
+    await page.waitForFunction(() => window.__flares.includes('down'), null, { timeout: 3000 });
+    assert.deepEqual(await page.evaluate(() => window.__flares), ['up', 'down'], 'Yes from ASK: the flare rises, LOOK cuts in under it, the flare falls');
     await page.waitForFunction(() => !document.querySelector('[data-intro]') || document.querySelector('[data-intro-look]').currentTime > 2.5, null, { timeout: 3000 });
     await introGone(page, 6000);
     const after = await introState(page);
@@ -979,8 +996,45 @@ async function pixelContrast(page, selectors) {
     await context.close(); await focusOnly.close();
   });
 
-  for (const viewport of [{ width: 360, height: 640 }, { width: 390, height: 844 }, { width: 1440, height: 900 }]) {
-    await check(`intro question is big and clear at ${viewport.width}×${viewport.height}: in 2–3 lines, clear of his head, no overflow; Yes is the biggest button`, async () => {
+  await check('moves: a touch scroll that starts on Otto fetches no clip (only a tap does)', async () => {
+    if (!robotMedia) return;
+    const context = await isolated(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'no-preference' });
+    const page = await context.newPage();
+    const clips = [];
+    page.on('request', request => { const m = /(0d5a7893|86ab53ef|37408964)/.exec(request.url()); if (m) clips.push(m[1]); });
+    await page.goto(`${base}/index.html?tier=full`, { waitUntil: 'networkidle' });
+    const box = await page.locator('[data-robot-hi]').boundingBox();
+    const cdp = await context.newCDPSession(page);
+    // A finger lands on Otto and drags up (a scroll, no tap).
+    const x = Math.round(box.x + box.width / 2); let y = Math.round(box.y + box.height / 2);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    for (let i = 0; i < 12; i++) { y -= 30; await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] }); await page.waitForTimeout(16); }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(2500);
+    assert.ok(await page.evaluate(() => scrollY > 100), 'the page scrolled');
+    assert.deepEqual(clips, [], 'no gesture clip fetched by a scroll');
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.tap('[data-robot-hi]');
+    await page.waitForTimeout(800);
+    assert.deepEqual([...new Set(clips)], ['0d5a7893'], 'the tap fetches his move');
+    await context.close();
+  });
+
+  await check('moves: the idle wave (≈ 20 s, no input) plays WAVE once and fetches nothing else', async () => {
+    if (!robotMedia) return;
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
+    const page = await context.newPage();
+    const clips = [];
+    page.on('request', request => { const m = /(0d5a7893|86ab53ef|37408964)/.exec(request.url()); if (m) clips.push(m[1]); });
+    await page.goto(`${base}/index.html?tier=full`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.move === 'wave', null, { timeout: 26000 });
+    await page.waitForTimeout(3000);
+    assert.deepEqual([...new Set(clips)], ['0d5a7893'], `only WAVE fetched (${clips})`);
+    await context.close();
+  });
+
+  for (const viewport of [{ width: 360, height: 640 }, { width: 390, height: 844 }, { width: 1000, height: 800 }, { width: 1440, height: 900 }]) {
+    await check(`intro question is big and clear at ${viewport.width}×${viewport.height}: in 2–3 lines, clear of his head (the still and ASK's frontal pose), no overflow; Yes is the biggest button`, async () => {
       const context = await isolated(browser, { intro: true, viewport, isMobile: viewport.width < 600, hasTouch: viewport.width < 600, reducedMotion: 'reduce' });
       const page = await context.newPage();
       await page.goto(`${base}/index.html`);
@@ -996,13 +1050,22 @@ async function pixelContrast(page, selectors) {
           scroll: document.documentElement.scrollWidth, w: innerWidth, h: innerHeight };
       });
       const phone = viewport.width < 600;
-      assert.ok(m.size >= (phone ? (viewport.height < 700 ? 38 : 44) : 88), `question font ${m.size}px`);
+      assert.ok(m.size >= (phone ? (viewport.height < 700 ? 38 : 44) : viewport.width >= 1280 ? 88 : 60), `question font ${m.size}px`);
       assert.ok(m.lines >= 2 && m.lines <= (phone ? 3 : 3), `${m.lines} lines`);
       assert.ok(m.right <= m.w - 8 && m.left >= 8 && m.scroll <= m.w + 1, `no overflow (${JSON.stringify(m)})`);
       if (phone) assert.ok(m.top >= m.headBottom - 4, `clear of his head (question top ${Math.round(m.top)} vs head bottom ${Math.round(m.headBottom)})`);
       else assert.ok(m.right <= m.headLeft + 4, `left of his head (question right ${Math.round(m.right)} vs head ${Math.round(m.headLeft)})`);
       assert.ok(m.yes.h >= 60 && m.yes.fs >= 18 && m.yes.h > m.contact.h && m.contact.h >= 56, `Yes is big (${JSON.stringify(m.yes)}), Contact Omar a bit bigger than a normal button (${JSON.stringify(m.contact)})`);
       assert.ok(m.yes.bottom <= m.h && m.contact.bottom <= m.h && m.yes.right <= m.w && m.contact.right <= m.w, 'both buttons on screen');
+      // ASK's framing (data-clip="ask"; he faces you): helmet x 45–75%, y 4–50%
+      // of the frame (measured on the real clip, ≈ 2.1 s to its last frame).
+      await page.evaluate(() => { document.querySelector('[data-intro]').dataset.clip = 'ask'; });
+      await page.waitForTimeout(1700);
+      const a = await page.evaluate(() => { const f = document.querySelector('.intro__frame').getBoundingClientRect(), q = document.querySelector('#intro-q').getBoundingClientRect(), say = document.querySelector('.intro__say').getBoundingClientRect();
+        return { headLeft: f.left + f.width * .45, headBottom: f.top + f.height * .5, q: { right: q.right, left: q.left }, sayTop: say.top, size: parseFloat(getComputedStyle(document.querySelector('#intro-q')).fontSize), scroll: document.documentElement.scrollWidth, w: innerWidth }; });
+      if (phone) assert.ok(a.sayTop >= a.headBottom - 4, `ASK: the speech line is below his chin (${Math.round(a.sayTop)} vs ${Math.round(a.headBottom)})`);
+      else assert.ok(a.q.right <= a.headLeft + 4, `ASK: the question is left of his helmet (${Math.round(a.q.right)} vs ${Math.round(a.headLeft)})`);
+      assert.ok(a.size >= (phone ? (viewport.height < 700 ? 38 : 44) : viewport.width >= 1280 ? 86 : 60) && a.q.left >= 8 && a.scroll <= a.w + 1, `ASK: still big, no overflow (${JSON.stringify(a)})`);
       await context.close();
     });
   }
@@ -1536,6 +1599,28 @@ async function pixelContrast(page, selectors) {
       assert.ok(metrics.cls <= 0.05, `CLS ${metrics.cls}`);
       if (device === 'low') { assert.equal(metrics.tier, 'lite'); assert.ok(metrics.tbt <= 200, `TBT ${metrics.tbt}ms`); }
       assert.ok(!/^(VIDEO|CANVAS|IMG)/.test(metrics.element) && !/cloudfront/.test(metrics.url), `LCP is not third-party media (${metrics.element} ${metrics.url})`);
+      await context.close();
+    });
+  }
+
+  // v9: on the lite tier the interior heroes and tours show their copy and
+  // media at first paint (no delayed fade holding back LCP).
+  for (const route of ['work', 'inside/katana']) {
+    await check(`performance lite phone (2 GB, 4 cores), 6× CPU, /${route}: LCP <= 2.5s, CLS <= 0.05`, async () => {
+      const context = await isolated(browser, { device: 'low', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'no-preference' });
+      const page = await context.newPage();
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Network.enable');
+      await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: 1.6 * 1024 * 1024 / 8, uploadThroughput: 750 * 1024 / 8 });
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
+      await page.addInitScript(() => { window.__lcp = 0; window.__cls = 0; new PerformanceObserver(list => { for (const entry of list.getEntries()) { window.__lcp = entry.startTime; window.__lcpEl = `${entry.element?.tagName ?? ''}.${entry.element?.className ?? ''}`.slice(0, 60); } }).observe({ type: 'largest-contentful-paint', buffered: true }); new PerformanceObserver(list => { for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.__cls += entry.value; }).observe({ type: 'layout-shift', buffered: true }); });
+      await page.goto(`${base}/${route}.html`, { waitUntil: 'load' });
+      await page.waitForTimeout(3000);
+      const metrics = await page.evaluate(() => ({ lcp: Math.round(window.__lcp), element: window.__lcpEl, cls: Number(window.__cls.toFixed(3)), tier: document.documentElement.dataset.tier }));
+      results.push({ name: `performance lite /${route} metrics`, status: 'info', message: JSON.stringify(metrics) });
+      assert.equal(metrics.tier, 'lite');
+      assert.ok(metrics.lcp <= 2500, `LCP ${metrics.lcp}ms (${metrics.element})`);
+      assert.ok(metrics.cls <= 0.05, `CLS ${metrics.cls}`);
       await context.close();
     });
   }

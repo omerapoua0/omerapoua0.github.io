@@ -17,8 +17,11 @@
  * third-party still can become the page's Largest Contentful Paint (the
  * still is painted into a canvas; a clip only ever starts after a press, and
  * LCP stops at the first input). Clips are fetched on intent only: hovering,
- * focusing or pressing Otto prefetches his next move (preload="auto"); on
- * the lite tier (html[data-tier="lite"]) only the tap itself fetches it.
+ * focusing or pressing Otto with a mouse or pen prefetches his next move
+ * (preload="auto"; on touch only the tap fetches it, as a finger landing on
+ * him may be a scroll), and a real press warms the move after it (the idle
+ * wave does not); on the lite tier (html[data-tier="lite"]) only the tap
+ * itself fetches a clip.
  * One idle surprise on capable devices: after ~20 s of the hero in view with
  * no input, he waves once (never on lite, reduced motion or Save-Data, never
  * during the intro, at most once per page view, not after a press).
@@ -48,8 +51,9 @@ if (stage && all.length) {
 
   // The still: painted into a canvas once decoded (see RobotStage.astro).
   const img = stage.querySelector<HTMLImageElement>('.robot__poster');
+  let painted = false;
   const paint = () => {
-    if (!img || stage.dataset.still || !img.naturalWidth) return;
+    if (!img || painted || stage.dataset.still || !img.naturalWidth) return;
     try {
       const canvas = document.createElement('canvas');
       canvas.className = 'robot__still';
@@ -58,8 +62,11 @@ if (stage && all.length) {
       canvas.setAttribute('aria-hidden', 'true');
       canvas.getContext('2d')!.drawImage(img, 0, 0);
       img.after(canvas);
-      void canvas.offsetWidth; // start the fade from 0
-      stage.dataset.still = 'canvas';
+      painted = true;
+      // Start the fade from 0 two frames on (no forced layout: behind the
+      // intro the whole homepage is unrendered, and a synchronous layout
+      // read here would lay it all out in one long task).
+      requestAnimationFrame(() => requestAnimationFrame(() => { stage.dataset.still = 'canvas'; }));
     } catch { stage.dataset.still = 'img'; }
   };
   if (img) {
@@ -141,7 +148,7 @@ if (stage && all.length) {
   };
 
   /** Play the next move. A held LOOK frame first cross-fades to the still. */
-  const play = () => {
+  const play = (fromUser = false) => {
     if (stage.dataset.poster === 'failed') return;
     if (current && stage.dataset.greet === 'playing' && !current.video.paused) return; // let him finish
     const move = upcoming();
@@ -167,8 +174,9 @@ if (stage && all.length) {
       set('video', 'off');
       swap = window.setTimeout(start, 240);
     } else start();
-    // Fetch the one after this, so a second press is ready (not on lite).
-    if (!lite) window.setTimeout(() => { if (current === move) attach(upcoming()); }, 1500);
+    // Fetch the one after this, so a second press is ready (not on lite, and
+    // only after a real press: the idle wave never pulls a second clip).
+    if (!lite && fromUser) window.setTimeout(() => { if (current === move) attach(upcoming()); }, 1500);
   };
 
   // Say hi: his next move (also with reduced motion or Save-Data: the
@@ -181,13 +189,17 @@ if (stage && all.length) {
     void stage.offsetWidth;
     stage.setAttribute('data-hi', '');
     window.setTimeout(() => stage.removeAttribute('data-hi'), 900);
-    play();
+    play(true);
   });
   // Intent: hovering, focusing or pressing Otto fetches his next move.
   if (hit && !lite) {
     const intent = () => { if (stage.dataset.poster !== 'failed' && (!saveData || pressed)) attach(upcoming()); };
-    hit.addEventListener('pointerenter', intent, { passive: true });
-    hit.addEventListener('pointerdown', intent, { passive: true });
+    // Mouse and pen only: a finger that lands on him may just be starting a
+    // scroll (touch fires pointerenter and pointerdown too); a tap fetches
+    // the clip itself, in play().
+    const pointerIntent = (event: PointerEvent) => { if (event.pointerType !== 'touch') intent(); };
+    hit.addEventListener('pointerenter', pointerIntent, { passive: true });
+    hit.addEventListener('pointerdown', pointerIntent, { passive: true });
     hit.addEventListener('focus', intent);
   }
 

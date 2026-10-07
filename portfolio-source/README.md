@@ -119,8 +119,13 @@ and optionally look-h264.mp4). Never commit stand-in media. Checks run as a
 capable device (8 cores, 8 GB) unless they ask for the lite tier; v9 adds
 the tier detection and overrides, the lite homepage (no clips requested, no
 cursor, pins, scrub or blur), the lite intro end to end, the ASK-timed
-question, the hero's WAVE → HEART → LOOK cycle and on-intent prefetch, the
-question size and fit at 360/390/1440, and lite LCP/CLS/TBT budgets.
+question, the hero's WAVE → HEART → LOOK cycle and on-intent prefetch (a
+touch scroll starting on Otto fetches nothing; the idle wave fetches only
+WAVE), the speech box with its first letter, the ring glow only after ASK,
+the ASK pan (palm on screen, copy clear of his helmet), Yes's flare cut into
+LOOK, the question size and fit at 360/390/1000/1440 for the still and ASK
+framings, and lite LCP/CLS/TBT budgets (homepage with and without the
+intro, /work and /inside/katana).
 
 ## Performance (v9)
 
@@ -154,6 +159,27 @@ compositing work (blur, blending), so real GPUs do better on every row.
 | Desktop 1440, homepage, 4× CPU | full | 50 → **50** | 29.5% → **27.2%** |
 
 Intro on the low phone: question asked after 11244 ms → 5551 ms, clips requested 2 → 0, main-thread script 5377 → 108 ms.
+
+Review fixes (same harness, median of 5, the first v9 build → now; Fast 3G
+added because its 562 ms round trips exposed the gaps): lite interior heroes
+and tours no longer fade their copy/media in (LCP no longer waits for the
+fade), and `<main>` is not rendered under the intro (`content-visibility:
+hidden`) with the hero still's forced reflow removed (it laid out the whole
+hidden homepage in one long task).
+
+| Low phone (lite), 6× CPU | LCP ms | TBT ms | Question asked |
+|---|---|---|---|
+| /work, Fast 3G | 3372 → **2148** | 72 → 67 | |
+| /inside/katana, Fast 3G | 2932 → **2116** | 27 → 31 | |
+| /inside/katana, Slow 4G | 1452 → **1356** | 38 → 19 | |
+| Homepage first view (intro), Fast 3G | 2312 → **1940** | 141 → **15** (runs 5–51) | 7114 → **6568** ms |
+| Homepage first view (intro), Slow 4G | 1832 → **1388** | 0 → 5 | 5734 → **5288** ms |
+| Homepage later view, Slow 4G | 1644 → **1548** | 0 → 11 | |
+
+Full tier unchanged or better (capable phone LCP 856 → 844 ms; desktop
+432 → 416 ms, TBT 67 → 14 ms; scroll p95 the same). On a full-tier phone a
+touch scroll that starts on Otto no longer fetches WAVE (≈ 1.2 MB), and the
+idle wave no longer pulls HEART (≈ 1.3 MB).
 
 Budgets: lite phone (6× CPU, Slow 4G) homepage LCP ≤ 2.5 s, TBT ≤ 200 ms,
 CLS ≤ 0.05 (checked by `qa.cjs` too), scroll p95 ≤ 20 ms at 4× CPU on lite,
