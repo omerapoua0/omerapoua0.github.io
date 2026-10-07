@@ -4,11 +4,11 @@
 
 ## Work and study
 
-- AI Product Engineer at Digis Squared (Jan 2026 – present): technical strategy for the KATANA network-autonomy programme, closed-loop MAPE-K reasoning with Bayesian inference, TCO modelling, security auditing, sprint planning and LangGraph workflows. Level 4 autonomy is the programme's direction, not a completed deployment.
+- AI Product Engineer at Digis Squared (Jan 2026 – present), working on KATANA, INOS and OctiMind: technology selection, technical and security audits, and business and product strategy. For KATANA also: technical strategy for the network-autonomy programme, closed-loop MAPE-K reasoning with Bayesian inference, TCO modelling, sprint planning and LangGraph workflows. Level 4 autonomy is the programme's direction, not a completed deployment.
 - Founder of NOOKBASE, an agentic study platform for iOS, Android and web with a conversational tutoring agent. Pre-launch, around 150 beta users; not yet generally available.
 - AI Product Intern at Bitget (Feb – May 2026): exchange telemetry and predictive models of Bitcoin price movement. No claim of trading performance.
 - Market Intelligence Research Intern at BP (Jun – Sep 2024): automated weekly competitor-intelligence pipeline for offshore-wind market intelligence.
-- R&D Engineering Trainee at Digis Squared (Sep 2024 – Mar 2025): network systems, hardware/software integration, part of wider R&D on INOS and OctiMind.
+- R&D Engineering Trainee at Digis Squared (Sep 2024 – Mar 2025): network systems, hardware/software integration, part of wider R&D on INOS and OctiMind (Digis Squared's network testing and optimisation products, deployed to O2), which Omar works on again now as AI Product Engineer.
 - Mathematics & Physics Teaching Assistant at Southfields Academy (Mar 2026 – present).
 - BSc (Hons) Computer Science & Mathematics, Birkbeck, University of London, expected 2028, targeting First Class Honours. Access to HE Engineering (Distinction). Certifications: IBM Data Science, Google Mathematics for Machine Learning, Microsoft Fabric.
 - Incoming: Santander Fintech Research Placement, Optimisation & ML, Summer 2027 (upcoming, not completed).
@@ -27,4 +27,4 @@ Online maths and science lessons for GCSE Foundation, GCSE Higher and A-level. E
 
 ## Website attribution
 
-The homepage introduces Omar in one line and offers four doors: Work, Skills, Lessons and Contact. There is no chat. Each project has a short static tour: /inside/katana.html, /inside/nookbase.html, /inside/inos.html, /inside/bitget.html and /inside/bp.html. Every page closes with a contact band (email, the contact form, LinkedIn, GitHub) and a link to the next page, and the header has a Contact button on every page. A ⌘K / Ctrl+K command menu reaches every page. Enquiry forms only prepare an email the visitor sends themselves. Project images and videos are concept visuals, not product footage. See /THIRD-PARTY-NOTICES.txt for credits and licences.
+The homepage introduces Omar in one line, with his robot mascot (AI-generated with Higgsfield; it depicts no real person) greeting visitors, and offers four doors: Work, Skills, Lessons and Contact. There is no chat. Each project has a short static tour: /inside/katana.html, /inside/nookbase.html, /inside/inos.html, /inside/bitget.html and /inside/bp.html. Every page closes with a contact band (email, the contact form, LinkedIn, GitHub) and a link to the next page, and the header has a Contact button on every page. A ⌘K / Ctrl+K command menu reaches every page. Enquiry forms only prepare an email the visitor sends themselves. Project images and videos are concept visuals, not product footage. See /THIRD-PARTY-NOTICES.txt for credits and licences.
