@@ -73,7 +73,7 @@ function run(intro: HTMLElement) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const lite = root.dataset.tier === 'lite';
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-  const slow = !!connection?.saveData || /^(slow-2g|2g|3g)$/.test(connection?.effectiveType ?? '');
+  const slow = !!connection?.saveData || /^(slow-2g|2g)$/.test(connection?.effectiveType ?? '');
   const num = (el: HTMLElement | null, key: string, fallback: number) => Number(el?.dataset[key]) || fallback;
   const fitOf = (el: HTMLElement): Fit => { try { return JSON.parse(el.dataset.fit || ''); } catch { return { s: 1, dx: 0, dy: 0 }; } };
   const HOLD = num(look, 'hold', 1.6), RESUME = num(look, 'resume', 2.3), WHITE = num(look, 'white', 4.6);
@@ -224,16 +224,22 @@ function run(intro: HTMLElement) {
   }
 
   // Boot: the orb still (drawn as soon as it is decoded).
-  if (!lite) onDecoded(orb, () => { if (!cur) show(orb); });
+  // v9.1: every tier gets the real transformation (the user's call: keep the
+  // transition everywhere; lite only trims other effects). Only Save-Data /
+  // 2g get the CSS assemble, and reduced motion the still.
+  if (reduce || !slow) onDecoded(orb, () => { if (!cur) show(orb); });
 
-  if (lite && !reduce) litePath();
-  else if (reduce || slow || lite) stillPath();
+  if (slow && !reduce) litePath();
+  else if (reduce) stillPath();
   else {
     set('path', 'video');
     onFail(transform, stillPath);
     onFail(look, () => { lookReady = false; });
     if (askClip) onFail(askClip, () => { askReady = false; });
-    const start = window.setTimeout(stillPath, 2500);
+    // Mobile networks can take a few seconds to start a 1 MB clip: wait on
+    // the orb (status "Waking up") rather than giving up early.
+    let start = window.setTimeout(stillPath, 8000);
+    status('Waking up');
     transform.addEventListener('playing', () => {
       window.clearTimeout(start);
       if (intro.dataset.path !== 'video' || intro.dataset.stage !== 'boot') return;
@@ -266,9 +272,28 @@ function run(intro: HTMLElement) {
       } else lookPath();
     });
     // A stall mid-transform: give it a moment, then the still path.
-    transform.addEventListener('waiting', () => later(() => { if (intro.dataset.stage === 'transform' && transform.readyState < 3) stillPath(); }, 2500));
+    transform.addEventListener('waiting', () => later(() => { if (intro.dataset.stage === 'transform' && transform.readyState < 3) stillPath(); }, 5000));
     attach(transform, 'auto');
-    transform.play().catch(stillPath);
+    // Autoplay can be refused (iOS Low Power Mode, some data savers): then a
+    // tap on the orb wakes him (a user gesture always may play), instead of
+    // dropping the transformation.
+    const wake = $<HTMLButtonElement>('[data-intro-wake]');
+    transform.play().catch((error: unknown) => {
+      if (!(error instanceof DOMException && error.name === 'NotAllowedError') || !wake) { stillPath(); return; }
+      window.clearTimeout(start);
+      wake.hidden = false;
+      set('wake', '');
+      status('Tap to wake');
+      wake.addEventListener('click', () => {
+        wake.hidden = true;
+        set('wake', null);
+        status('Waking up');
+        start = window.setTimeout(stillPath, 8000);
+        transform.play().catch(stillPath);
+        // Prime the next clips inside the same gesture so iOS lets them play.
+        [askClip, look].forEach(video => { if (video) { video.muted = true; video.play().then(() => video.pause(), () => undefined); } });
+      }, { once: true });
+    });
   }
 
   /** v8: LOOK from 0, paused at HOLD (he looks at you), then he asks. */

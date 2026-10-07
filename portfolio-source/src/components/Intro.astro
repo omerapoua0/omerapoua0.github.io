@@ -68,6 +68,7 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   <span class="hud intro__hud" aria-hidden="true"></span>
   <span class="ticks intro__ticks" aria-hidden="true"><i></i></span>
   <span class="intro__white" aria-hidden="true"></span>
+  <button class="intro__wake" type="button" data-intro-wake hidden><span class="intro__wake-ring" aria-hidden="true"></span>Tap to wake Otto</button>
 
   <div class="intro__bar">
     <p class="intro__status" aria-hidden="true"><span class="intro__dot"></span><b>Otto</b><span data-intro-status>Online</span></p>
@@ -297,4 +298,9 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   @keyframes intro-hint-x { from { translate: 100% 0; } to { translate: -260% 0; } }
   @keyframes intro-yes { from { opacity: .2; scale: 1; } to { opacity: .75; scale: 1.04; } }
   @media (prefers-reduced-motion: no-preference) and (min-aspect-ratio: 5/4) and (min-width: 600px) { .intro[data-path='lite'][data-asked] .intro__hint::after { animation-name: intro-hint-x; } }
+  .intro__wake { position: absolute; left: 50%; top: 58%; translate: -50% 0; z-index: 6; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 22px; border: 1px solid #fff4; border-radius: 99px; background: #07080bcc; color: #f4f6fb; font: 600 15px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 0 40px #ff2d4640; }
+  .intro__wake[hidden] { display: none; }
+  .intro__wake-ring { width: 12px; height: 12px; border-radius: 50%; background: #ff2d46; }
+  @media (prefers-reduced-motion: no-preference) { .intro__wake-ring { animation: intro-wake 1.6s ease-in-out infinite; } }
+  @keyframes intro-wake { 50% { opacity: .35; } }
 </style>

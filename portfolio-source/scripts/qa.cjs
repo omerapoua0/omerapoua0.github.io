@@ -119,7 +119,9 @@ async function routeRobot(context, mode = 'play', { posterDelay = 0 } = {}) {
 /** Every robot clip a context requested (file names), for the on-demand checks. */
 const robotLog = [];
 /** Later homepage views: the intro has already played in this session. */
-const introSeen = context => context.addInitScript(() => { try { sessionStorage.setItem('omar-intro', '1'); } catch { /* blocked */ } });
+/* v9.1: the intro plays on every fresh open or reload, not when the homepage
+   is reached from another page of the site: "seen" = arrived from inside. */
+const introSeen = context => context.addInitScript(() => { try { Object.defineProperty(Document.prototype, 'referrer', { configurable: true, get: () => `${location.origin}/work.html` }); } catch { /* ignore */ } });
 
 const only = process.env.QA_ONLY ? new RegExp(process.env.QA_ONLY, 'i') : null; // e.g. QA_ONLY=orbit
 /* Contexts a check opened: a failing check must not leave pages running
@@ -141,7 +143,7 @@ async function check(name, run) {
    capable device (8 cores, 8 GB) unless it asks for device 'low' (4 cores,
    2 GB: the lite tier) or 'native' (whatever this machine reports). */
 const emulateDevice = (context, device) => device === 'native' ? null : context.addInitScript(low => {
-  Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => (low ? 4 : 8) });
+  Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => (low ? 2 : 8) });
   Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => (low ? 2 : 8) });
 }, device === 'low');
 async function isolated(browser, { intro = false, device = 'capable', ...options } = {}, robot = 'play') {
@@ -796,8 +798,11 @@ async function pixelContrast(page, selectors) {
     assert.ok(await page.locator('#hero-title').isVisible(), 'the hero is there');
     assert.ok(await page.evaluate(() => Number(getComputedStyle(document.querySelector('.hero__word > span')).opacity) > .99 && !document.querySelector('[data-gate]').dataset.state), 'hero shown, the light gone');
     assert.ok((await page.evaluate(() => window.__shift)) - before <= .01, 'no layout shift when the intro is removed');
-    await page.reload({ waitUntil: 'networkidle' });
-    assert.ok(!(await introState(page)).present, 'no intro on the next homepage view');
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle', referer: `${base}/work.html` });
+    assert.ok(!(await introState(page)).present, 'no intro when the homepage is reached from another page of the site');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.documentElement.dataset.introOn === '' && !!document.querySelector('[data-intro]'), null, { timeout: 5000 });
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle', referer: `${base}/work.html` });
     await page.locator('[data-intro-replay]').click({ force: true }); // the robot breathes: never "stable"
     await page.waitForLoadState('domcontentloaded');
     await page.waitForFunction(() => document.documentElement.dataset.introOn === '' && !!document.querySelector('[data-intro]'), null, { timeout: 5000 });
@@ -1053,15 +1058,18 @@ async function pixelContrast(page, selectors) {
 
   /* v9: the capability tier (Base.astro head script) and the lite tier. */
   const tierOf = page => page.evaluate(() => document.documentElement.dataset.tier);
-  await check('tier: capable devices get "full"; ≤ 4 GB memory, ≤ 4 cores, Save-Data or a 3g connection get "lite"; ?tier= overrides it for the session', async () => {
+  await check('tier: capable devices get "full"; ≤ 2 GB memory, ≤ 2 cores, Save-Data or a 2g connection get "lite" (4 GB / 4 cores / 3g stay "full"); ?tier= overrides it for the session', async () => {
     const cases = [
       ['capable (8 cores, 8 GB)', {}, null, '', 'full'],
-      ['low (4 cores, 2 GB)', { device: 'low' }, null, '', 'lite'],
-      ['4 GB only', {}, () => Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => 4 }), '', 'lite'],
-      ['4 cores only', {}, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'lite'],
+      ['low (2 cores, 2 GB)', { device: 'low' }, null, '', 'lite'],
+      ['4 GB only', {}, () => Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => 4 }), '', 'full'],
+      ['2 GB only', {}, () => Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => 2 }), '', 'lite'],
+      ['4 cores only', {}, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'full'],
+      ['2 cores only', {}, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 2 }), '', 'lite'],
       ['4 cores, iPhone (WebKit caps the count)', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' }, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'full'],
       ['Save-Data', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ saveData: true }) }), '', 'lite'],
-      ['3g', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ effectiveType: '3g' }) }), '', 'lite'],
+      ['3g (noisy on mobile)', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ effectiveType: '3g' }) }), '', 'full'],
+      ['2g', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ effectiveType: '2g' }) }), '', 'lite'],
       ['?tier=lite on a capable device', {}, null, '?tier=lite', 'lite'],
       ['?tier=full on a low device', { device: 'low' }, null, '?tier=full', 'full'],
     ];
@@ -1139,9 +1147,10 @@ async function pixelContrast(page, selectors) {
     });
   }
 
-  await check('lite tier intro end to end: the CSS assemble (orb → Otto), the question with its light hint, Yes through the CSS gate; no clip, no per-frame drawing', async () => {
+  await check('Save-Data intro end to end (v9.1: weak devices keep the real transformation; only Save-Data / 2g get this): the CSS assemble (orb → Otto), the question with its light hint, Yes through the CSS gate; no clip, no per-frame drawing', async () => {
     for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
-      const context = await isolated(browser, { intro: true, device: 'low', viewport, reducedMotion: 'no-preference' });
+      const context = await isolated(browser, { intro: true, viewport, reducedMotion: 'no-preference' });
+      await context.addInitScript(() => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ saveData: true }) }));
       await context.addInitScript(() => { const raf = window.requestAnimationFrame.bind(window); window.__draws = 0; const draw = CanvasRenderingContext2D.prototype.drawImage; CanvasRenderingContext2D.prototype.drawImage = function (...args) { if (this.canvas.closest?.('[data-intro]')) window.__draws++; return draw.apply(this, args); }; window.requestAnimationFrame = raf; });
       const page = await context.newPage();
       const errors = watch(page);

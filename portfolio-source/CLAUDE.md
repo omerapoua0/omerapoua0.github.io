@@ -52,12 +52,15 @@ required. This is a static portfolio, not a hosted backend.
   everywhere (the pill covered copy on phones).
 - **Capability tier (v9, performance on weaker phones).** Before first
   paint the head script sets `html[data-tier="lite"]` when
-  `navigator.deviceMemory <= 4`, `hardwareConcurrency <= 4` (ignored on
+  `navigator.deviceMemory <= 2`, `hardwareConcurrency <= 2` (ignored on
   Apple WebKit, which caps it for privacy: iPhones stay full), Save-Data, or
-  `effectiveType` slow-2g/2g/3g; otherwise `"full"`. `?tier=lite|full`
+  `effectiveType` slow-2g/2g; otherwise `"full"` (v9 used 4 GB / 4 cores / 3g,
+  which put good phones on lite: the user lost the transition). The user's
+  rule (Oct 2026): keep the transition on every device; lite only trims other
+  effects. `?tier=lite|full`
   overrides it for the session (sessionStorage `omar-tier`; QA). Full tier =
-  the unchanged experience. Lite (`src/styles/tier.css` + script checks): no
-  intro clips (CSS assemble path, see Intro), no canvas video drawing, no
+  the unchanged experience. Lite (`src/styles/tier.css` + script checks): the
+  intro still plays the real clips (v9.1), no
   cursor ring / magnetic pull / tilt (`cursor.ts`, `fx.ts`), no
   backdrop-filter, no screen/lighten blending or haze, beams/glows/labels/
   marquees at rest, no pinned/scrubbed hero or gallery (native snap
@@ -170,10 +173,13 @@ required. This is a static portfolio, not a hosted backend.
   Never commit stand-in media. The user loves the robot and the design: do
   not redesign either.
   The v7 media (design #1) are gone everywhere (qa-content checks).
-  - **Intro** (`Intro.astro`, `src/scripts/intro.ts`): first homepage view of
-    a browser session. An inline head script in `index.astro` sets
-    `html[data-intro-on]` before first paint when sessionStorage
-    `omar-intro` is unset (storage blocked → no intro); without JS the layer
+  - **Intro** (`Intro.astro`, `src/scripts/intro.ts`): every fresh open or
+    reload of the homepage (v9.1, "whenever you open"): an inline head script
+    in `index.astro` sets `html[data-intro-on]` before first paint unless the
+    navigation is back/forward or the referrer is another page of this site.
+    The transform may take up to 8 s to start on mobile data (status "Waking
+    up") before the still path; if autoplay is refused (NotAllowedError, e.g.
+    iOS Low Power Mode) a "Tap to wake Otto" button on the orb plays it; without JS the layer
     is `display:none`. Stages (`data-stage`): boot (ORB still, HUD, "Otto ·
     online" typing, Skip intro + Contact top right) → transform (clip, red
     scan line, ticks, "Assembling") → ask with the ASK clip (`data-clip=
@@ -206,13 +212,13 @@ required. This is a static portfolio, not a hosted backend.
     `content-visibility: hidden` under it (not laid out or painted until the
     hand-over; no script may force its layout meanwhile, e.g. no
     `offsetWidth` reads in robot.ts).
-  - Lite path (`data-path="lite"`, lite tier without reduced motion): no
+  - Lite path (`data-path="lite"`, Save-Data or 2g without reduced motion; v9.1): no
     clips; the ORB and ROBOT stills painted once each into two canvases, a
     CSS assemble (stage `assemble`: clip reveal in step with the scan line,
     ring glow, ≈ 2 s), the question with a CSS light hint running from Otto
     to it, Yes = the gate's CSS open (`cover()`).
   - Fallback ("still" path, `data-path="still"`): reduced motion (Yes = 200 ms
-    fade), Save-Data or 2g/3g on a forced full tier, the transform not playing within 2.5 s, or a
+    fade), the transform not playing within 8 s, or a
     video error: no clips, the ROBOT still (or the dark HUD stage if the CDN
     is unreachable) with the question; Yes plays the gate's CSS open
     (`cover()`) and the same reveal. LOOK is fetched only once the transform
