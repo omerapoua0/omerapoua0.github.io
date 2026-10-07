@@ -244,7 +244,21 @@ Project concept images and videos must not be described as screenshots of a live
 - Robot media slot: if Omar adds his own robot images or clips to `public/robot/` (for example generated with Higgsfield), they are Omar's supplied content, used under the terms of the service that generated them. They depict a robot, not Omar. Until such files exist, only the placeholder above is shipped.
 - Omar's portrait on About & CV and the lessons page is his real photograph, cropped only; it is not generated or altered.
 
-## v7: the hero robot (October 2026)
+## v8: the opening intro and the new robot (October 2026)
+
+- OA-01, "Omar's robot" (a glossy black humanoid with red neon contour lines
+  and a red ring emitter on the side of its head), its sphere-head start
+  frame and two clips (the sphere transforming into the robot; the robot
+  looking at you, raising its hands and opening a burst of light) were
+  generated for Omar with Higgsfield. They are AI-generated, an original
+  design (inspired by a reference image Omar supplied, not copied from it),
+  depict no real person and are not Omar; they are Omar's supplied content,
+  used under the terms of the service that generated them. The files are
+  served from Higgsfield's CDN (d8j0ntlcm91z4.cloudfront.net); this
+  repository does not redistribute them. They replace the v7 robot media,
+  which are no longer used.
+
+## v7: the hero robot (October 2026) (media replaced in v8)
 
 - The robot mascot on the homepage hero (a still and two short clips: "greet",
   the head turn and wave, and "open", hands together and a burst of light,

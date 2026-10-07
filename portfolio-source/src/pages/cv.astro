@@ -12,7 +12,7 @@ const split = (items: string) => items.split(/,\s*(?![^()]*\))/).map(item => ite
 const allSkills = skillGroups.flatMap(group => split(group.items)).map(item => item.replace(/\s*\(.*\)$/, ''));
 const half = Math.ceil(allSkills.length / 2);
 ---
-<Base title="About & CV" description="About Omar Aboelella: AI Product Engineer at Digis Squared (KATANA, INOS &amp; OctiMind), BSc Computer Science & Mathematics student at Birkbeck, Maths & Physics Teaching Assistant. Experience, education, certifications and CV.">
+<Base title="About & CV" description="About Omar Aboelella: AI Product Engineer at Digis Squared (KATANA, INOS & OctiMind), BSc Computer Science & Mathematics student at Birkbeck, Maths & Physics Teaching Assistant. Experience, education, certifications and CV.">
   <PageHero
     index={4}
     section="About & CV"

@@ -4,7 +4,7 @@
 
 ## Work and study
 
-- AI Product Engineer at Digis Squared (Jan 2026 – present), working on KATANA, INOS and OctiMind: technology selection, technical and security audits, and business and product strategy. For KATANA also: technical strategy for the network-autonomy programme, closed-loop MAPE-K reasoning with Bayesian inference, TCO modelling, security auditing, sprint planning and LangGraph workflows. Level 4 autonomy is the programme's direction, not a completed deployment.
+- AI Product Engineer at Digis Squared (Jan 2026 – present), working on KATANA, INOS and OctiMind: technology selection, technical and security audits, and business and product strategy. For KATANA also: technical strategy for the network-autonomy programme, closed-loop MAPE-K reasoning with Bayesian inference, TCO modelling, sprint planning and LangGraph workflows. Level 4 autonomy is the programme's direction, not a completed deployment.
 - Founder of NOOKBASE, an agentic study platform for iOS, Android and web with a conversational tutoring agent. Pre-launch, around 150 beta users; not yet generally available.
 - AI Product Intern at Bitget (Feb – May 2026): exchange telemetry and predictive models of Bitcoin price movement. No claim of trading performance.
 - Market Intelligence Research Intern at BP (Jun – Sep 2024): automated weekly competitor-intelligence pipeline for offshore-wind market intelligence.

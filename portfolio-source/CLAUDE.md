@@ -13,7 +13,7 @@ Preserve user changes. Do not reset, clean, or delete unrelated work. Inspect
 before editing; use small, reviewable changes. No Supabase or paid service is
 required. This is a static portfolio, not a hosted backend.
 
-## Active architecture (v6 "Neon" dark redesign on the v4/v5 structure, October 2026; v7 adds the hero robot)
+## Active architecture (v6 "Neon" dark redesign on the v4/v5 structure, October 2026; v7 adds the hero robot, v8 the opening intro)
 
 - Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React and three.js
   remain declared for lockfile stability, but no page ships a React island or
@@ -122,53 +122,64 @@ required. This is a static portfolio, not a hosted backend.
   white. There is no cross-document view transition (removed on purpose).
   Reduced motion: a 160 ms fade out, 200 ms fade in.
   `window.__gate(href, mode)` is used by the command menu.
-- **The hero robot** (v7, `RobotStage.astro` + `src/scripts/robot.ts`,
-  media and timings in `src/data/robot.ts`). Omar's mascot (not Omar): a
-  glossy black humanoid with a black visor, white eye lights, red neon on its
-  left and blue on its right, generated for Omar with Higgsfield. The poster
-  (1344×752 webp) and two H.264 clips (greet: head turn + wave, 5.04 s; open:
-  hands together → burst of light) are public, immutable files on
-  Higgsfield's CDN (`d8j0ntlcm91z4.cloudfront.net`, range requests OK);
-  visitors' browsers load them from there (the homepage preconnects; gate.ts
-  adds a preconnect on the first pointer move elsewhere). Files in
-  `public/robot/` (hero.webp, greet.mp4/.webm, open.mp4/.webm) override the
-  remote ones at build time (existsSync). Never commit stand-in media.
-  - Layout: desktop, big on the right, its frame bleeding behind the copy,
-    sized so the waving hand clears the copy; phones/tablets, full width
-    above the copy (a taller crop via `--canvas-right`). Edges dissolve via
-    an intersected linear+radial mask and `.hero__robot` is blended with
-    `mix-blend-mode: lighten`, so the media's near-black backdrop gives way to
-    the hero's own beams and glows (no frame edge); the hero grid has a soft
-    hole where the robot stands.
-  - "Interacts whenever you open": robot.ts attaches the clip after the load
-    event and plays greet once from 0 on every load (also via the gate), on a
-    bfcache restore and when the hero re-enters view after leaving it; then it
-    holds the last frame (facing you) with a CSS idle (breathing scale, neon
-    rim and beam pulsing). Fine pointers: spring-smoothed 3D turn toward the
-    pointer (`--rx/--ry`) and a light that follows it; touch: a slow ambient
-    sway. The `<button>` "Say hi to the robot" (cursor label "Say hi"; a HUD
-    focus frame) replays the wave. A replay cross-fades from the held frame
-    to the poster (the first frame) first.
-  - Fallbacks: reduced motion or Save-Data → poster only, the wave plays only
-    when pressed; no H.264 / source error / refused play / stall → the poster
-    stays, the button and tilt keep working; poster fails (CDN down) → the
-    abstract CSS orb (PLACEHOLDER, kept on purpose) shows instead. With JS
-    the decoded poster is painted into a `<canvas>` so the third-party image
-    is never an LCP candidate (the page's LCP stays text); without JS the
-    `<img>` shows. State attributes: `data-poster`, `data-still`,
-    `data-video`, `data-greet`.
-  - Gate: `LightGate.astro` always carries the open clip (`data-seek` =
-    OPEN_SEEK 3.2 s, palms pressed; `data-play` = 1400 ms through the burst,
-    then the gate's white takes over). Warmed and parked on hover/focus of a
-    `[data-open]` link (fine pointers, no Save-Data); it plays only if
-    buffered and parked on that frame, otherwise the CSS seams play. A stale
-    "missing src" source error is ignored (only no usable source or a media
-    error counts). Layer order: clip < white < HUD.
+- **The robot and the opening** (v7 hero robot, v8 intro; media, framing
+  and timings in `src/data/robot.ts`). OA-01, "Omar's robot" (the mascot,
+  never Omar; keep "Omar's robot" in copy): a glossy black humanoid with red
+  neon contour lines and a red ring emitter on the side of its head,
+  generated for Omar with Higgsfield (AI-generated, original design). Public,
+  immutable files on Higgsfield's CDN (`d8j0ntlcm91z4.cloudfront.net`, range
+  requests OK; the homepage preconnects, gate.ts adds a preconnect on the
+  first pointer move elsewhere): ORB still (sphere head, start frame), ROBOT
+  still (end frame; the hero poster), TRANSFORM clip (1280×720, 5.06 s: orb
+  → robot) and LOOK clip (1344×768, 5.18 s, 5.7 MB: turns to you 0–1 s,
+  holds to 2.3, hands up, palms together ≈ 3.0–3.5, light burst, white by
+  ≈ 4.6). `public/robot/` files (orb.webp, robot.webp, transform.mp4/.webm,
+  look.mp4/.webm) override them at build time. Never commit stand-in media.
+  The v7 media (design #1) are gone everywhere (qa-content checks).
+  - **Intro** (`Intro.astro`, `src/scripts/intro.ts`): first homepage view of
+    a browser session. An inline head script in `index.astro` sets
+    `html[data-intro-on]` before first paint when sessionStorage
+    `omar-intro` is unset (storage blocked → no intro); without JS the layer
+    is `display:none`. Stages (`data-stage`): boot (ORB still, HUD, "OA-01 ·
+    online" typing, Skip intro + Contact top right) → transform (clip, red
+    scan line, ticks, "Assembling") → look (LOOK from 0, cross-faded over the
+    shared robot frame) → ask (paused at LOOK.hold 1.6 s, breathing, ring
+    glow, pointer tilt; "Hi — I'm OA-01, Omar's robot." types out, then "Do
+    you want to see the work?" with "Yes, show me" (focused) and "Contact
+    Omar" (gate to /contact.html), announced in an aria-live region) → go
+    (LOOK from 2.3 s to white at 4.6 s) → white → `gate.ts` `reveal()`: the
+    gate's white dissolves into the homepage while the hero's paused
+    entrance animations play (they are paused under `html[data-intro-on]`).
+    Then the intro is removed, the page un-inerted, focus on `<main>`. Skip /
+    Esc: 300 ms fade. All pictures are drawn into one canvas with each
+    source's measured fit (s, dx, dy) so hand-overs line up and no
+    third-party media is ever the LCP (text is). The rest of the page is
+    inert and does not scroll during the intro.
+  - Fallback ("still" path, `data-path="still"`): reduced motion (Yes = 200 ms
+    fade), Save-Data or 2g/3g, the transform not playing within 2.5 s, or a
+    video error: no clips, the ROBOT still (or the dark HUD stage if the CDN
+    is unreachable) with the question; Yes plays the gate's CSS open
+    (`cover()`) and the same reveal. LOOK is fetched only once the transform
+    plays; if it is not playable at the end, the still holds and Yes uses the
+    CSS open.
+  - **Hero** (`RobotStage.astro`, `src/scripts/robot.ts`): the ROBOT still
+    (painted into a canvas, so never LCP), big on the right on desktop, full
+    width above the copy on phones, edges dissolved by masks and `lighten`
+    blending; breathing idle, red ring/neon glow, spring pointer tilt
+    (cached rect), touch sway. No autoplay. "Say hi to OA-01, Omar's robot"
+    (a real button; HUD focus frame, a real outline in forced colours) plays
+    LOOK 0 → 1.6 s and holds, facing you. "Replay intro" clears the flag and
+    reloads. Fallbacks: no H.264 / error / stall → the still stays; still
+    fails → the abstract CSS orb (PLACEHOLDER), which "Say hi" flares.
+  - Gate: `LightGate.astro` carries LOOK (`data-seek` OPEN_SEEK 3.4 s,
+    `data-play` OPEN_PLAY_MS 700, white over the last 260 ms, ≈ 0.8 s to
+    navigation, within the qa.cjs click → pagehide budget). Warmed and parked
+    on hover/focus of a `[data-open]` link (fine pointers, no Save-Data);
+    plays only if buffered and parked, otherwise the CSS seams.
   - QA: the CDN is unreachable from CI containers; `qa.cjs` answers it with
-    local stand-ins (VP9-in-MP4, which Playwright's Chromium accepts for the
-    .mp4 URLs, plus an H.264 copy for the "unsupported" path) generated with
-    ffmpeg into `.qa/robot` or taken from `QA_ROBOT_MEDIA`, with byte-range
-    support so the gate can seek.
+    ffmpeg stand-ins in `.qa/robot8` (VP9-in-MP4 plus an H.264 copy for the
+    "unsupported" path) with byte ranges, or blocks it ('block' mode). Every
+    check runs as a later homepage view unless it asks for the intro.
   Never draw a cartoon robot or bring back the old Otto.
 - Header (`SiteHeader.astro`): dark glass bar, black-orb brand mark, pill
   nav, ⌘K search, blue Contact pill on every width, mobile sheet. Footer:
@@ -185,7 +196,7 @@ required. This is a static portfolio, not a hosted backend.
   must stay complete: every infinite loop sits behind
   `prefers-reduced-motion: no-preference`, and reduced motion also releases
   the hero pin, the pinned gallery and every scroll scrub, hides the cursor
-  ring, stops count-ups and robot autoplay (QA checks
+  ring, stops count-ups and plays the intro without clips (QA checks
   `document.getAnimations()` on every page and a dedicated scroll test).
 - Other: `ProjectIndex`, `CaseStudy`, `ProjectMedia` (duotone plates),
   `CapabilityMatrix`, `Timeline`, `Figure`, `SectionHead`;
@@ -235,7 +246,7 @@ KATANA: technology selection, (technical and security) audits, and business
 and product strategy. His earlier INOS/OctiMind traineeship (Sep 2024 – Mar
 2025) was part of wider R&D; the products are Digis Squared's, built by a
 wider team. No invented metrics, clients or outcomes. The CV PDF predates
-this and is not edited. The hero robot is an AI-generated mascot, not Omar.
+this and is not edited. The robot (OA-01, "Omar's robot") is an AI-generated mascot, not Omar.
 Do not claim trading performance or provide investment recommendations.
 
 Project videos are concept visuals, not actual product recordings. Omar's real

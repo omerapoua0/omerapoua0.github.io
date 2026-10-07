@@ -2,12 +2,19 @@
 import Base from '../layouts/Base.astro';
 import HomeHero from '../components/HomeHero.astro';
 import HomeSections from '../components/HomeSections.astro';
+import Intro from '../components/Intro.astro';
 import { ROBOT_ORIGIN } from '../data/robot';
 ---
 <Base title="AI product engineer, mathematician & tutor" home description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
-  {/* The hero robot's poster and greeting come from Higgsfield's CDN (plain
-      media requests, so no crossorigin on the preconnect). */}
+  {/* The robot's stills and clips come from Higgsfield's CDN (plain media
+      requests, so no crossorigin on the preconnect). */}
   <link slot="head" rel="preconnect" href={ROBOT_ORIGIN} />
+  {/* The intro (Intro.astro, intro.ts) plays on the first homepage view of a
+      browser session: decided here, before first paint, so neither the
+      homepage nor the intro flashes. Only with JavaScript; storage blocked
+      means no intro. "Replay intro" in the hero clears the flag. */}
+  <script slot="head" is:inline>(function(){try{if(!sessionStorage.getItem('omar-intro'))document.documentElement.dataset.introOn=''}catch(e){}})();</script>
+  <Intro slot="overlay" />
   <HomeHero />
   <HomeSections />
 </Base>

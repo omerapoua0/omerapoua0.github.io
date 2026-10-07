@@ -1,0 +1,163 @@
+---
+/* The homepage intro: the sphere head transforms into OA-01, Omar's robot,
+   which looks at you and asks "Do you want to see the work?". Shown on the
+   first homepage view of a browser session (sessionStorage omar-intro),
+   only with JavaScript: the inline script in index.astro sets
+   html[data-intro-on] before first paint; without it this layer is
+   display:none and never hides anything. scripts/intro.ts runs it; media
+   and timings are in src/data/robot.ts.
+
+   Stages (data-stage): boot (ORB still, HUD, "OA-01 · online" typing) →
+   transform (the clip, scan line, ticks, "assembling") → ask (LOOK paused
+   on the frame where he faces you, breathing, ring glow, pointer tilt; the
+   speech line types out, the question and buttons appear, focus on Yes) →
+   go (LOOK continues: hands together, light, white) → handed to the light
+   gate, which dissolves into the homepage. Skip / Esc: a 300 ms fade.
+   Every picture is drawn into one <canvas> (the stills and both clips, each
+   with its measured framing), so the third-party media are never the page's
+   Largest Contentful Paint, and the hand-overs line up exactly. */
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { robot, FRAME, LOOK, RING } from '../data/robot';
+const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
+const pick = (file: string, remote: string) => (local(file) ? `/robot/${file}` : remote);
+const fit = (f: { s: number; dx: number; dy: number }) => JSON.stringify(f);
+const transformWebm = local('transform.webm') ? '/robot/transform.webm' : undefined;
+const lookWebm = local('look.webm') ? '/robot/look.webm' : undefined;
+---
+<div class="intro" data-intro data-stage="boot" role="dialog" aria-modal="true" aria-labelledby="intro-q" style={`--ring-x:${RING.ask.x}%;--ring-y:${RING.ask.y}%`}>
+  <div class="intro__frame" aria-hidden="true">
+    <div class="intro__tilt" data-intro-tilt>
+      <div class="intro__breath">
+        <canvas class="intro__screen" data-intro-screen width={FRAME.width} height={FRAME.height}></canvas>
+        <span class="intro__ring"></span>
+      </div>
+    </div>
+    <div class="intro__media">
+      <img data-intro-orb src={pick('orb.webp', robot.orb.src)} data-fit={fit(robot.orb.fit)} alt="" width={robot.orb.width} height={robot.orb.height} decoding="async" fetchpriority="high" />
+      <img data-intro-still src={pick('robot.webp', robot.still.src)} alt="" width={robot.still.width} height={robot.still.height} decoding="async" fetchpriority="low" />
+      <video data-intro-transform data-fit={fit(robot.transform.fit)} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
+        {transformWebm && <source data-src={transformWebm} type="video/webm" />}
+        <source data-src={pick('transform.mp4', robot.transform.mp4)} type="video/mp4" />
+      </video>
+      <video data-intro-look data-fit={fit(robot.look.fit)} data-hold={LOOK.hold} data-resume={LOOK.resume} data-white={LOOK.white} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
+        {lookWebm && <source data-src={lookWebm} type="video/webm" />}
+        <source data-src={pick('look.mp4', robot.look.mp4)} type="video/mp4" />
+      </video>
+    </div>
+  </div>
+  <span class="intro__shade" aria-hidden="true"></span>
+  <span class="intro__scan" aria-hidden="true"></span>
+  <span class="hud intro__hud" aria-hidden="true"></span>
+  <span class="ticks intro__ticks" aria-hidden="true"><i></i></span>
+  <span class="intro__white" aria-hidden="true"></span>
+
+  <div class="intro__bar">
+    <p class="intro__status" aria-hidden="true"><span class="intro__dot"></span><b>OA-01</b><span data-intro-status>Online</span></p>
+    <div class="intro__skip">
+      <a class="intro__link" href="/contact.html" data-open="Contact">Contact</a>
+      <button class="intro__link intro__link--skip" type="button" data-intro-skip>Skip intro <span aria-hidden="true">→</span></button>
+    </div>
+  </div>
+
+  <div class="intro__talk">
+    <p class="intro__say" aria-hidden="true"><span class="intro__say-full">Hi — I’m OA-01, Omar’s robot.</span><span class="intro__say-typed" data-intro-say></span></p>
+    <p class="intro__q" id="intro-q">Do you want to see the&nbsp;work?</p>
+    <div class="intro__actions">
+      <button class="btn btn--accent intro__yes" type="button" data-intro-yes>Yes, show me <span class="arrow" aria-hidden="true">↗</span></button>
+      <a class="btn btn--ghost intro__contact" href="/contact.html" data-open="Contact" data-intro-contact>Contact Omar</a>
+    </div>
+    <p class="sr-only" aria-live="polite" data-intro-live></p>
+  </div>
+</div>
+
+<script>import '../scripts/intro';</script>
+
+<style is:global>
+  /* Hidden unless the head script chose to play it (never without JS). */
+  .intro { display: none; }
+  html[data-intro-on] .intro { display: block; }
+  /* The homepage waits underneath: its entrance animations hold their first
+     frame (hero copy hidden, so it can stagger in when the intro hands over)
+     and nothing loops behind the intro. */
+  html[data-intro-on] main *, html[data-intro-on] main *::before, html[data-intro-on] main *::after { animation-play-state: paused !important; }
+
+  .intro { position: fixed; inset: 0; z-index: 200; overflow: hidden; container-type: size; background: #040506; color: var(--ink); transition: opacity 300ms ease-out; }
+  .intro[data-leaving] { opacity: 0; pointer-events: none; }
+  /* The frame: the stills' 1344 × 752, covering the screen; --px/--py choose
+     the crop (head centred on phones, robot right of the copy on desktop). */
+  .intro__frame { --fw: max(100cqw, 100cqh * 1344 / 752); --fh: calc(var(--fw) * 752 / 1344); --px: .68; --py: .3; position: absolute; width: var(--fw); height: var(--fh); left: calc((100cqw - var(--fw)) * var(--px)); top: calc((100cqh - var(--fh)) * var(--py)); }
+  @media (min-aspect-ratio: 1/1) { .intro__frame { --px: .7; } }
+  .intro__tilt, .intro__breath, .intro__screen, .intro__media, .intro__media > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .intro__tilt { transform: perspective(1600px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg)); transform-origin: 62% 40%; }
+  .intro__breath { transform-origin: 62% 100%; }
+  .intro__screen { opacity: 0; transition: opacity 500ms ease-out; }
+  .intro[data-drawn] .intro__screen { opacity: 1; }
+  /* Sources only: the canvas shows them. Kept rendered (videos decode) but
+     invisible, so they are never LCP candidates either. */
+  .intro__media { opacity: 0; pointer-events: none; }
+  .intro__media img { object-fit: cover; }
+  /* The ring emitter on the side of his head, glowing while he waits. */
+  .intro__ring { left: var(--ring-x); top: var(--ring-y); width: 9%; aspect-ratio: 1; translate: -50% -50%; position: absolute; border-radius: 50%; background: radial-gradient(circle, #ff2d4659 0, #ff2d4626 35%, transparent 70%); mix-blend-mode: screen; opacity: 0; transition: opacity 700ms; }
+  .intro[data-stage='ask'] .intro__ring { opacity: 1; }
+  /* Legibility under the copy: a dark fall-off at the bottom (phones) or on
+     the left (desktop). */
+  .intro__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #040506cc 0, transparent 16%, transparent 46%, #040506e6 74%, #040506); }
+  @media (min-width: 900px) { .intro__shade { background: linear-gradient(90deg, #040506 0, #040506d9 24%, transparent 52%), linear-gradient(180deg, #04050699 0, transparent 18%, transparent 80%, #040506b3); } }
+  .intro__hud { --hud-inset: max(14px, env(safe-area-inset-top)) clamp(10px, 2vw, 28px) max(14px, env(safe-area-inset-bottom)); --hl: 22px; --hc: #ffffff38; }
+  .intro__ticks { position: absolute; left: clamp(24px, 4vw, 56px); right: clamp(24px, 4vw, 56px); bottom: max(26px, calc(env(safe-area-inset-bottom) + 12px)); opacity: .5; overflow: hidden; }
+  .intro__ticks i { position: absolute; inset: 0; background: linear-gradient(90deg, transparent, #ff4d62 45%, #e6eeff 50%, #4d84ff 55%, transparent); translate: -100% 0; opacity: 0; }
+  .intro__scan { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, #ff4d62 25%, #fff 50%, #ff4d62 75%, transparent); box-shadow: 0 0 18px 2px #ff2d4680, 0 0 50px 8px #ff2d4626; opacity: 0; pointer-events: none; }
+  .intro__white { position: absolute; inset: 0; background: radial-gradient(60% 60% at 50% 50%, #fff, #f2f6ff 55%, #e6eeff); opacity: 0; pointer-events: none; }
+  .intro[data-stage='white'] .intro__white { opacity: 1; transition: opacity 220ms ease-in; }
+
+  .intro__bar { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(24px, calc(env(safe-area-inset-top) + 12px)) clamp(24px, 4vw, 56px) 0; }
+  .intro__status { display: inline-flex; align-items: center; gap: 10px; font: 500 11.5px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+  .intro__status b { color: #ff6b7d; font-weight: 600; }
+  .intro__status b::after { content: '·'; margin-left: 10px; color: var(--muted); }
+  .intro__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 3px var(--red-soft), 0 0 12px var(--red); }
+  .intro__skip { display: flex; gap: 8px; }
+  .intro__link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: #0b0d12b3; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--ink); font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-color 200ms, background-color 200ms; }
+  .intro__status, .intro__link { white-space: nowrap; }
+  @media (max-width: 520px) {
+    .intro__bar { padding-inline: 20px; }
+    .intro__link { min-height: 40px; padding: 0 12px; font-size: 11px; }
+  }
+  .intro__link:hover { border-color: var(--accent); background: #12151ccc; }
+  .intro__link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* The robot speaks: bottom of the screen on phones, the dark left third on
+     desktop. */
+  .intro__talk { position: absolute; left: clamp(24px, 6vw, 96px); right: clamp(24px, 6vw, 96px); bottom: max(56px, calc(env(safe-area-inset-bottom) + 44px)); display: grid; gap: 14px; justify-items: start; }
+  @media (min-width: 900px) { .intro__talk { right: auto; width: min(40vw, 560px); bottom: auto; top: 50%; translate: 0 -40%; } }
+  .intro__say { position: relative; display: inline-grid; padding: 10px 14px; border-radius: 4px; border: 1px solid #ff4d6259; background: #0b0d12cc; font: 500 13px/1.4 var(--font-mono); letter-spacing: .04em; color: var(--ink-2); }
+  .intro__say::before { content: ''; position: absolute; inset: -4px; background: var(--hud); --hc: #ff4d62b3; --hl: 8px; background-repeat: no-repeat; pointer-events: none; }
+  /* The full line reserves the box (no layout shift); the typed copy sits on it. */
+  .intro__say > span { grid-area: 1 / 1; }
+  .intro__say-full { visibility: hidden; }
+  .intro__q { font-size: clamp(2.1rem, 1.2rem + 3.6vw, 4.6rem); font-weight: 760; letter-spacing: -.05em; line-height: .95; text-transform: uppercase; max-width: 12ch; text-wrap: balance; }
+  .intro__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  @media (max-width: 520px) { .intro__actions .btn { flex: 1 1 auto; } }
+  /* Hidden until he asks. */
+  .intro__say, .intro__q, .intro__actions { opacity: 0; translate: 0 14px; visibility: hidden; transition: opacity 600ms var(--ease-out), translate 600ms var(--ease-out), visibility 0s 600ms; }
+  .intro[data-asking] .intro__say { opacity: 1; translate: none; visibility: visible; transition-delay: 0s; }
+  .intro[data-asked] :is(.intro__q, .intro__actions) { opacity: 1; translate: none; visibility: visible; transition-delay: 0s; }
+  .intro[data-asked] .intro__actions { transition-delay: 160ms, 160ms, 0s; }
+  .intro:is([data-stage='go'], [data-stage='white']) :is(.intro__talk, .intro__shade, .intro__bar, .intro__hud, .intro__ticks) { opacity: 0; transition: opacity 400ms; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .intro__status [data-intro-status] { animation: intro-type 900ms steps(12, end) 200ms both; display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom; }
+    .intro[data-stage='transform'] .intro__scan { animation: intro-scan 2.4s cubic-bezier(.5, 0, .3, 1) 1.9s 1 both; }
+    .intro[data-stage='transform'] .intro__ticks i { animation: intro-ticks 1.8s ease-in-out .7s 2 both; }
+    .intro[data-stage='transform'] .intro__hud { --hc: #ff4d62b3; }
+    .intro[data-stage='ask'] .intro__breath { animation: intro-breathe 5.6s ease-in-out infinite; }
+    .intro[data-stage='ask'] .intro__ring { animation: intro-ring 2.8s ease-in-out infinite alternate; }
+    .intro__dot { animation: intro-blink 1.6s steps(2, jump-none) infinite; }
+  }
+  @keyframes intro-type { from { max-width: 0; } to { max-width: 14ch; } }
+  @keyframes intro-scan { 0% { opacity: 0; transform: translateY(0); } 10%, 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(100cqh); } }
+  @keyframes intro-ticks { 0% { opacity: 1; translate: -100% 0; } 100% { opacity: 1; translate: 100% 0; } }
+  @keyframes intro-breathe { 0%, 100% { scale: 1; } 50% { scale: 1.012; } }
+  @keyframes intro-ring { from { opacity: .45; } to { opacity: 1; } }
+  @keyframes intro-blink { 50% { opacity: .35; } }
+</style>

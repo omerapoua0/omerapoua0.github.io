@@ -15,7 +15,10 @@
  * burst, and the robot in the hero (when on screen) flares (RobotStage
  * [data-opening]; the fallback orb snaps its rings shut).
  * Timing (full motion): leave ≈ 600 ms (hands 0–270, flare 220–440, burst
- * 260–550, then navigate); arrive: white dissolves 60–480 ms after first paint.
+ * 260–550, then navigate), or ≈ 800 ms with the robot's LOOK clip (from
+ * OPEN_SEEK 3.4 s for OPEN_PLAY_MS 700, the white over its last 260 ms);
+ * arrive: white dissolves 60–480 ms after first paint.
+ * The homepage intro (intro.ts) uses cover() and reveal() below.
  * Reduced motion: a 160 ms fade out, a 200 ms fade in.
  * The robot's clip is fetched early, when a [data-open] link is hovered or
  * focused, so it can seek to the hands-together moment without a stall.
@@ -65,7 +68,7 @@ const clip = () => gate?.querySelector<HTMLVideoElement>('[data-gate-clip]') ?? 
 const saveData = () => !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
 const coarse = window.matchMedia('(pointer: coarse)');
 const clipAllowed = () => !saveData() && !coarse.matches;
-const playOf = (video: HTMLVideoElement) => Number(video.dataset.play) || 1400;
+const playOf = (video: HTMLVideoElement) => Number(video.dataset.play) || 700;
 const seekOf = (video: HTMLVideoElement) => Math.min(Number(video.dataset.seek) || 0, Math.max(0, (video.duration || 0) - playOf(video) / 1000 - .1));
 /** Attach the clip's sources, load it and park it on the hands-together
  *  frame (once), so a door can play it the moment it is chosen. A source
@@ -120,6 +123,29 @@ async function playOpen(start: number): Promise<void> {
 }
 
 const robot = () => document.querySelector<HTMLElement>('[data-robot-stage]');
+
+const label = (text: string) => gate?.style.setProperty('--gate-label', JSON.stringify(text));
+/** The homepage intro's fallback "Yes": the CSS open (hands, burst) from
+ *  `point`; resolves once the white is opaque. */
+export async function cover(point: { x: number; y: number }, text: string): Promise<void> {
+  if (!gate) return;
+  label(text);
+  gate.style.setProperty('--gx', `${Math.round(point.x)}px`);
+  gate.style.setProperty('--gy', `${Math.round(point.y)}px`);
+  gate.removeAttribute('data-clip-on');
+  gate.dataset.state = 'open';
+  await (still() ? layerDone(160, 600) : layerDone(550, 850));
+}
+/** Opaque white now, dissolving into the page (the intro's last step: its
+ *  own white frame becomes the gate's). */
+export async function reveal(text: string): Promise<void> {
+  if (!gate) return;
+  label(text);
+  gate.removeAttribute('data-clip-on');
+  gate.dataset.state = 'reveal';
+  await sleep(still() ? 280 : 520);
+  if (gate.dataset.state === 'reveal') gate.removeAttribute('data-state');
+}
 
 /** Where the light starts: the pointer, else the link's centre, else the screen's. */
 function origin(link?: Element | null, point?: { x: number; y: number }) {

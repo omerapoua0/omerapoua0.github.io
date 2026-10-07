@@ -9,12 +9,15 @@
      line trailing soft coloured light; they meet where the visitor clicked
      (--gx/--gy); a cool-white burst blooms from that point and fills the
      screen with a red/blue rim, while the label and a line run. The page is
-     fully white before the browser navigates (≈ 650 ms). The hero robot
-     flares at the same moment. When the robot's open clip (src/data/robot.ts:
-     Higgsfield's CDN, or public/robot/open.* if present) is buffered and
-     parked, it plays full-bleed instead of the seams: from the palms-pressed
-     moment (data-seek, seconds) through the burst of light (data-play, ms),
-     then the white takes over.
+     fully white before the browser navigates (≈ 600 ms). The hero robot
+     flares at the same moment. When the robot's LOOK clip (src/data/robot.ts:
+     Higgsfield's CDN, or public/robot/look.* if present) is buffered and
+     parked, it plays full-bleed instead of the seams: from just before the
+     palms meet (data-seek = OPEN_SEEK, 3.4 s) into the burst of light
+     (data-play = OPEN_PLAY_MS, 700 ms), the white taking over in the last
+     260 ms (≈ 0.8 s to navigation, inside the qa.cjs click → pagehide budget).
+   - "reveal": the homepage intro (intro.ts) also hands over to this layer:
+     its white becomes the gate's white, which dissolves into the homepage.
    - "quick" (menus and ordinary links): a near-black veil rises with a thin
      cool-white scan line (≈ 300 ms).
    Arriving: the inline head script in Base.astro reads the sessionStorage
@@ -29,8 +32,8 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { robot, OPEN_SEEK, OPEN_PLAY_MS } from '../data/robot';
 const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
-const openMp4 = local('open.mp4') ? '/robot/open.mp4' : robot.open.mp4;
-const openWebm = local('open.webm') ? '/robot/open.webm' : undefined;
+const openMp4 = local('look.mp4') ? '/robot/look.mp4' : robot.look.mp4;
+const openWebm = local('look.webm') ? '/robot/look.webm' : undefined;
 ---
 <div class="gate" data-gate aria-hidden="true" data-clip>
   <span class="gate__veil"></span>
@@ -100,8 +103,8 @@ const openWebm = local('open.webm') ? '/robot/open.webm' : undefined;
   /* Leave with the robot's own clip. gate.ts sets data-clip-on when it plays. */
   .gate[data-state='open'][data-clip-on] :is(.gate__seam, .gate__flare, .gate__veil, .gate__ring) { animation: none; opacity: 0; }
   .gate[data-state='open'][data-clip-on] .gate__clip { animation: g-fade-to 140ms ease-out both; }
-  .gate[data-state='open'][data-clip-on] .gate__white { animation: g-fade-to 260ms ease-in var(--clip-white, 1100ms) both; }
-  .gate[data-state='open'][data-clip-on] .gate__hud { animation: g-fade-to 200ms ease-out calc(var(--clip-white, 1100ms) + 260ms) both; }
+  .gate[data-state='open'][data-clip-on] .gate__white { animation: g-fade-to 260ms ease-in var(--clip-white, 540ms) both; }
+  .gate[data-state='open'][data-clip-on] .gate__hud { animation: g-fade-to 200ms ease-out calc(var(--clip-white, 540ms) + 260ms) both; }
 
   /* Leave, "quick": the dark rises (0–300) while a scan line runs down. */
   .gate[data-state='quick'] .gate__dark { animation: g-fade-to 300ms cubic-bezier(.4, 0, .2, 1) both; }

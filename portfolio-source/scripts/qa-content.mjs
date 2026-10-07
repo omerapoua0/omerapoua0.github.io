@@ -136,19 +136,32 @@ const media = await readdir(dist);
 const ROBOT_CDN = 'https://d8j0ntlcm91z4.cloudfront.net';
 expect(html.index.includes(`<link rel="preconnect" href="${ROBOT_CDN}"`), 'index: preconnect to the robot CDN missing');
 expect(/<img class="robot__poster[^"]*" src="https:\/\/d8j0ntlcm91z4\.cloudfront\.net\/[^"]+\.webp"[^>]*width="1344" height="752"/.test(html.index), 'index: robot poster with width/height missing');
-expect(/<button class="robot-stage__hit[^"]*" type="button" aria-label="Say hi to the robot"/.test(html.index), 'index: "Say hi to the robot" button missing');
-expect(/<video class="robot__video[^"]*"[^>]*muted[^>]*playsinline[^>]*preload="metadata"/.test(html.index) && /data-src="https:\/\/d8j0ntlcm91z4\.cloudfront\.net\/[^"]+\.mp4"/.test(html.index), 'index: greet clip (muted, playsinline, preload=metadata) missing');
+expect(/<button class="robot-stage__hit[^"]*" type="button" aria-label="Say hi to OA-01, Omar’s robot"/.test(html.index), 'index: "Say hi to OA-01, Omar’s robot" button missing');
+expect(/<video class="robot__video[^"]*"[^>]*muted[^>]*playsinline[^>]*preload="none"/.test(html.index) && html.index.includes(`data-src="${ROBOT_CDN}/user_3Hu8nuHpTz0mXVPyD5jCOMXRDom/hf_20261007_090943_37408964-1dfa-49d9-a00e-9e3274b9c883.mp4"`), 'index: LOOK clip (muted, playsinline, preload=none) missing');
+// v8 intro: the transform and LOOK clips, both stills, the question, Skip,
+// hidden without JavaScript (display:none unless html[data-intro]), the
+// first-paint session check, and the v7 design #1 media gone everywhere.
+expect(/<div class="intro"[^>]*data-intro[^>]*role="dialog"/.test(html.index), 'index: intro layer missing');
+for (const id of ['0df9aeb7-1ee7-410b-b9d0-dbd0f0a3aa7c_min.webp', '69dabef2-b785-4918-bc7a-1b0cf9704c6f_min.webp', '99e661a7-2a3e-4037-b3b8-deb8ab7062f1.mp4', '37408964-1dfa-49d9-a00e-9e3274b9c883.mp4']) expect(html.index.includes(id), `index: intro media ${id} missing`);
+expect(/Do you want to see the(&nbsp;|\s| )work\?/.test(html.index) && /Yes, show me/.test(html.index) && /Skip intro/.test(html.index) && /Omar’s robot/.test(html.index), 'index: intro question, Yes, Skip or "Omar’s robot" missing');
+expect(/sessionStorage\.getItem\('omar-intro'\)/.test(html.index), 'index: intro session check missing');
+const css = (await Promise.all((await readdir(path.join(dist, '_astro'))).filter(file => file.endsWith('.css')).map(file => readFile(path.join(dist, '_astro', file), 'utf8')))).join('\n') + Object.values(html).join('\n');
+expect(/\.intro\{display:none\}/.test(css.replace(/\s/g, '')) && /html\[data-intro-on\]\s*\.intro\{display:block/.test(css.replace(/\s/g, '')), 'intro must be display:none unless html[data-intro]');
+for (const [name, source] of everyPage) expect(!/4f700f9c|e5e9ccdb|4dfd8994/.test(source), `${name}: the v7 robot media (design #1) must be gone`);
 expect(/data-orb/.test(html.index), 'index: the orb fallback missing');
-for (const [name, source] of everyPage) expect(/data-gate-clip[^>]*data-seek="3\.2"[^>]*data-play="1400"/.test(source) && source.includes(`${ROBOT_CDN}/`), `${name}: gate open clip missing`);
+for (const [name, source] of everyPage) expect(/data-gate-clip[^>]*data-seek="3\.4"[^>]*data-play="700"/.test(source) && source.includes('37408964-1dfa-49d9-a00e-9e3274b9c883.mp4'), `${name}: gate open clip missing`);
 expect(!media.includes('robot'), 'public/robot/ must not ship stand-in media');
 const notices = await readFile(path.join(dist, 'THIRD-PARTY-NOTICES.txt'), 'utf8');
 expect(/generated for Omar with Higgsfield/.test(notices) && /depicts no real person/.test(notices), 'THIRD-PARTY-NOTICES: robot credit missing');
 // Current Digis Squared work (user-stated, Oct 2026).
 expect(/INOS/.test(text.index) && /OctiMind/.test(text.index), 'index: current INOS & OctiMind work missing');
+expect(/Network autonomy, network testing \(INOS & OctiMind\)/.test(text.index) && /network testing and optimisation \(INOS & OctiMind\)/.test(text.index), 'index: the work summaries must mention INOS & OctiMind');
+expect(/iOS · Android · Web/.test(text.index) && /LangGraph workflows/.test(text.index), 'index: Build chapter NOOKBASE / LangGraph chips missing');
+for (const [name, source] of everyPage) expect(!source.includes('&amp;amp;'), `${name}: double-escaped ampersand`);
 expect(/technology selection/i.test(text.cv) && /business and product strategy/i.test(text.cv), 'cv: current Digis role (technology selection, strategy) missing');
 expect(/technology selection/i.test(insideHtml.inos) && /audits/i.test(insideHtml.inos), 'inside/inos: current work missing');
 expect(/class="direct"/.test(html.contact) && /class="quick__list"/.test(html.contact), 'contact: direct card or topic shortcuts missing');
-expect(!/class="intro[\s"]|section-mark">§/.test(Object.values(html).join(' ') + Object.values(insideHtml).join(' ')), 'An old v3 page intro remains');
+expect(!/class="intro[\s"](?![^>]*data-intro)|section-mark">§/.test(Object.values(html).join(' ') + Object.values(insideHtml).join(' ')), 'An old v3 page intro remains');
 expect(!/preview-(otto|3d)/.test(Object.values(html).join(' ')), 'A link to a retired preview page remains');
 for (const id of inside) {
   const source = insideHtml[id];

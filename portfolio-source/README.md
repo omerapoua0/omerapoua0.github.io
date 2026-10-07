@@ -9,12 +9,25 @@ previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for histo
   (AI-generated, not Omar), loaded from Higgsfield's CDN (`src/data/robot.ts`;
   files in `public/robot/` override it). Every time the homepage opens it
   turns its head to you and waves once, then holds, breathing, turning toward
-  your pointer; "Say hi to the robot" replays it. The light gate plays its
-  "hands together, light bursts" clip. The Pause motion control was removed
+  your pointer. (v8 replaced this robot and its greeting; see below.) The Pause motion control was removed
   at the user's request; `prefers-reduced-motion` is honoured everywhere
   (poster only, no loops, no scroll effects). Current Digis Squared work:
   INOS and OctiMind alongside KATANA (technology selection, audits, business
   and product strategy).
+- **v8 (October 2026): the opening.** On the first homepage view of a browser
+  session (sessionStorage `omar-intro`, decided before first paint by an
+  inline script in `index.astro`; JavaScript only) a full-screen intro plays
+  (`Intro.astro`, `src/scripts/intro.ts`): the glossy sphere head transforms
+  into OA-01, Omar's robot (Higgsfield clips, URLs and timings in
+  `src/data/robot.ts`), he turns to look at you and asks "Do you want to see
+  the work?". "Yes, show me" plays his hands-together burst of light into the
+  white light gate, which dissolves into the homepage; "Contact Omar" opens
+  the contact page through the gate; "Skip intro" or Esc fades straight to
+  the homepage. Reduced motion, Save-Data / 2g / 3g, a CDN that does not
+  answer within 2.5 s or a video error: no clips, the robot still (or the dark
+  HUD stage) with the question. Later views: no intro; the hero shows the
+  robot still, "Say hi to OA-01" makes him look at you, "Replay intro" plays
+  the intro again. The light gate plays the same clip from 3.4 s for 0.7 s.
 - **Hero:** who I am in one line, See my work / Book a lesson / Contact me, the
   robot (abstract CSS orb as its loading/CDN-down fallback), spec chips that
   count up, and four big doors underneath: Work, Skills, Lessons, Contact. No
@@ -65,20 +78,24 @@ lockfile stays unchanged; point `NODE_PATH`/`AXE_PATH` at an isolated install.
 1280, links and legacy anchors, no-JS readability (the doors are real links),
 the light gate (leaving page opaque white, arriving page white at first paint
 and revealed within 1.5 s, the reduced-motion fade, same-page doors, bfcache,
-the robot's open clip), the hero robot (greets once on load, re-entry and
-bfcache; holds the last frame; Say hi by click, keyboard and tap; pointer
-turn; reduced motion / Save-Data poster only; H.264 unsupported, clip 404 and
-poster 404 fallbacks; no layout shift), no Pause control anywhere and reduced
+the robot's clip within the click → pagehide budget), the intro (first
+view, transform → question, focus on Yes, Yes → homepage with no layout
+shift, second view none, Replay intro, Skip and Esc, Contact, reduced motion,
+Save-Data and CDN-blocked paths, no-JS, axe at 390 and 1280), the hero robot
+(no autoplay, Say hi by click, keyboard and tap holds the facing-you frame,
+forced-colours focus ring, pointer turn, reduced motion / Save-Data still
+only; H.264 unsupported, clip 404 and still 404 fallbacks; no layout shift), no Pause control anywhere and reduced
 motion stopping every loop and scroll effect, Contact in one tap from
 every page, the command menu, the project index and matrix, the mobile menu,
 both enquiry journeys, the interior heroes and contact bands, scroll
 reveals finishing visible on every page, the scrollytelling, scroll-spy and
-contact topic shortcuts, gate hops from interior pages, and LCP/CLS (also
-with the robot poster 2 s late).
+contact topic shortcuts, gate hops from interior pages, and LCP/CLS with
+and without the intro, with stand-ins and with the CDN blocked (the LCP must
+never be third-party media).
 
 The robot's CDN is never contacted by QA: `qa.cjs` serves local stand-ins
-(generated with ffmpeg into `.qa/robot`, or `QA_ROBOT_MEDIA=<dir>` with
-hero.webp, greet.mp4, open.mp4 and optionally greet-h264.mp4). Never commit
+(generated with ffmpeg into `.qa/robot8`, or `QA_ROBOT_MEDIA=<dir>` with
+orb.webp, robot.webp, transform.mp4, look.mp4 and optionally look-h264.mp4). Never commit
 stand-in media.
 
 Build success does not mean publication. Do not deploy without explicit user
