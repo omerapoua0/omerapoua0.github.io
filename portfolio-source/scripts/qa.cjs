@@ -10,6 +10,15 @@
  * lockfile stays unchanged); point NODE_PATH/AXE_PATH at an isolated install.
  * Every request leaving the preview origin, and every non-GET request, is
  * blocked and reported. No personal profile is used; no enquiry is sent.
+ *
+ * The hero robot's media live on Higgsfield's CDN (src/data/robot.ts). QA
+ * never fetches them: requests to that host are answered with local
+ * STAND-INS (a dark 5 s clip with a moving light, and a webp poster), taken
+ * from QA_ROBOT_MEDIA (a directory with hero.webp, greet.mp4, open.mp4 and
+ * optionally greet-h264.mp4) or generated with ffmpeg into .qa/robot. The
+ * stand-in clips are VP9 in an MP4 container, which this Chromium (no H.264)
+ * accepts for the .mp4 URLs; greet-h264.mp4 is real H.264, used to test the
+ * "H.264 unsupported" path. Stand-ins are never committed.
  */
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
@@ -27,6 +36,48 @@ const widths = [360, 390, 768, 1280, 1440];
 const results = [];
 const outbound = [];
 
+/* Robot stand-ins (see the header). */
+const ROBOT_HOST = 'd8j0ntlcm91z4.cloudfront.net';
+const robotDir = process.env.QA_ROBOT_MEDIA || path.join(output, 'robot');
+let robotMedia = null; // { poster, greet, open, h264 } file paths, or null when unavailable
+function prepareRobotMedia() {
+  const fsSync = require('node:fs');
+  const want = { poster: 'hero.webp', greet: 'greet.mp4', open: 'open.mp4', h264: 'greet-h264.mp4' };
+  const files = Object.fromEntries(Object.entries(want).map(([key, name]) => [key, path.join(robotDir, name)]));
+  if (!process.env.QA_ROBOT_MEDIA && !fsSync.existsSync(files.greet)) {
+    const { execFileSync } = require('node:child_process');
+    fsSync.mkdirSync(robotDir, { recursive: true });
+    const ff = args => execFileSync('ffmpeg', ['-loglevel', 'error', '-y', ...args], { stdio: 'pipe' });
+    // A near-black 1280×720 clip, 5.04 s at 24 fps, with a light that moves like a turning head.
+    const clip = (seconds, extra = '') => ['-f', 'lavfi', '-i', `color=c=0x05070b:s=1280x720:r=24:d=${seconds}`, '-vf', `drawbox=x='700+60*sin(t*2)':y=180:w=90:h=90:color=0xdfe8ff@0.9:t=fill${extra}`];
+    try {
+      ff([...clip(5.04), '-c:v', 'libvpx-vp9', '-b:v', '300k', '-g', '999', '-an', files.greet]);
+      ff([...clip(5.04, ",drawbox=x=0:y=0:w=1280:h=720:color=white@1:t=fill:enable='gt(t,4.4)'"), '-c:v', 'libvpx-vp9', '-b:v', '300k', '-an', files.open]);
+      ff(['-i', files.greet, '-frames:v', '1', '-vf', 'scale=1344:752', '-c:v', 'libwebp', files.poster]);
+      try { ff([...clip(5.04), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-an', files.h264]); } catch { /* no libx264: that path is skipped */ }
+    } catch (error) { console.warn('Robot stand-ins unavailable (ffmpeg):', error.message.split('\n')[0]); }
+  }
+  robotMedia = fsSync.existsSync(files.greet) && fsSync.existsSync(files.poster) ? { ...files, h264: fsSync.existsSync(files.h264) ? files.h264 : null } : null;
+}
+/** Answer the robot CDN with stand-ins. mode: 'play' (default), 'h264' (the
+ *  clips are H.264, which this Chromium cannot decode), 'poster404' (the
+ *  poster is gone), 'video404' (the clips are gone). Options: posterDelay ms. */
+async function routeRobot(context, mode = 'play', { posterDelay = 0 } = {}) {
+  await context.route(url => url.hostname === ROBOT_HOST, async route => {
+    const url = route.request().url();
+    const poster = /\.webp$/.test(url);
+    if (!robotMedia) return route.fulfill({ status: 404, body: '' });
+    if (poster) {
+      if (mode === 'poster404') return route.fulfill({ status: 404, body: '' });
+      if (posterDelay) await new Promise(resolve => setTimeout(resolve, posterDelay));
+      return route.fulfill({ path: robotMedia.poster, contentType: 'image/webp', headers: { 'cache-control': 'no-store' } });
+    }
+    if (mode === 'video404') return route.fulfill({ status: 404, body: '' });
+    if (mode === 'h264') return robotMedia.h264 ? route.fulfill({ path: robotMedia.h264, contentType: 'video/mp4' }) : route.fulfill({ status: 404, body: '' });
+    return route.fulfill({ path: /4dfd8994/.test(url) ? robotMedia.open : robotMedia.greet, contentType: 'video/mp4' });
+  });
+}
+
 const only = process.env.QA_ONLY ? new RegExp(process.env.QA_ONLY, 'i') : null; // e.g. QA_ONLY=orbit
 async function check(name, run) {
   if (only && !only.test(name)) return;
@@ -37,7 +88,7 @@ async function check(name, run) {
     results.push({ name, status: 'fail', message }); console.error('FAIL', name, '-', message);
   }
 }
-async function isolated(browser, options = {}) {
+async function isolated(browser, options = {}, robot = 'play') {
   const context = await browser.newContext({ reducedMotion: 'reduce', ...options });
   await context.route('**/*', route => {
     const request = route.request();
@@ -47,6 +98,8 @@ async function isolated(browser, options = {}) {
     }
     return route.continue();
   });
+  // Registered last, so it is consulted first: the robot CDN gets stand-ins.
+  await routeRobot(context, robot);
   return context;
 }
 function watch(page) {
@@ -131,6 +184,8 @@ async function pixelContrast(page, selectors) {
 
 (async () => {
   await fs.mkdir(path.join(output, 'screens'), { recursive: true });
+  prepareRobotMedia();
+  results.push({ name: 'robot stand-ins', status: 'info', message: robotMedia ? `${robotDir} (h264: ${robotMedia.h264 ? 'yes' : 'no'})` : 'unavailable: robot playback checks are skipped' });
   const browser = await chromium.launch({ executablePath });
 
   /* 1. Every route (and tour) and width: one H1, no overflow, no broken images, no errors. */
@@ -255,9 +310,8 @@ async function pixelContrast(page, selectors) {
 
   /* 5. The light gate: leaving ends opaque white, arriving starts white at first paint and reveals. */
   const GATE_TOL = 250;
-  const gateScenario = async ({ label, reducedMotion, motionOff, width }) => {
+  const gateScenario = async ({ label, reducedMotion, width }) => {
     const context = await isolated(browser, { reducedMotion, viewport: { width, height: 900 } });
-    if (motionOff) await context.addInitScript(() => { try { sessionStorage.setItem('omar-motion', 'off'); } catch {} });
     // On every document: record the gate's state at first paint, and whether a
     // native view transition ever ran.
     await context.addInitScript(() => {
@@ -332,12 +386,12 @@ async function pixelContrast(page, selectors) {
     await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-gate]')).visibility === 'hidden' || getComputedStyle(document.querySelector('[data-gate]')).display === 'none', null, { timeout: 1500 });
     assert.equal(await page.evaluate(() => window.__vt), 0, 'no native view transition alongside the gate');
     // The design budget is asserted on the animation timeline: the white is
-    // opaque 550ms after a door is chosen (160ms reduced/paused), frame-rate
+    // opaque 550ms after a door is chosen (160ms with reduced motion), frame-rate
     // independent. Wall-clock click → pagehide is only a stall guard: headless
     // Chromium composites the hero in software at ~15fps, so every frame-bound
     // step (finished promises, the two frames before navigating) runs late.
     const tl = JSON.parse(await page.evaluate(() => sessionStorage.getItem('qa-tl')) || '{}');
-    const still = reducedMotion === 'reduce' || motionOff;
+    const still = reducedMotion === 'reduce';
     assert.ok(tl.design > 0 && tl.design <= (still ? 170 : 560), `white opaque ${tl.design}ms into the gate's own timeline (design ${still ? 160 : 550}ms)`);
     assert.ok(tl.firstFrame <= 400, `the gate starts on the next frame (${tl.firstFrame}ms; headless software frames)`);
     assert.ok(leaveMs > 0 && leaveMs <= (still ? 700 : 900) + GATE_TOL, `click → pagehide within ${(still ? 700 : 900)}ms + ${GATE_TOL}ms headless tolerance (${leaveMs}ms)`);
@@ -358,7 +412,6 @@ async function pixelContrast(page, selectors) {
     { label: 'motion 1440', reducedMotion: 'no-preference', width: 1440 },
     { label: 'motion 390', reducedMotion: 'no-preference', width: 390 },
     { label: 'reduced motion', reducedMotion: 'reduce', width: 1280 },
-    { label: 'Pause motion', reducedMotion: 'no-preference', motionOff: true, width: 1280 },
   ]) await check(`light gate ${scenario.label}: opaque white leaving, white at first paint, revealed ≤ 1.5 s`, async () => {
     // Wall-clock timings in headless Chromium are noisy: one retry, and the
     // retry is reported, so a real regression still fails twice.
@@ -366,10 +419,11 @@ async function pixelContrast(page, selectors) {
     catch (error) { results.push({ name: `light gate ${scenario.label} retry`, status: 'info', message: error.message.slice(0, 200) }); await gateScenario(scenario); }
   });
 
-  /* The robot's open clip (only when the build has public/robot/open.*, e.g.
-     a scratch copy with stand-in media): it must start on the parked frame,
-     and the page must be fully white when it is hidden. */
-  await check('light gate robot clip (when present): plays from the hands moment, white ≥ 0.99 at pagehide', async () => {
+  /* The robot's open clip (Higgsfield's CDN, answered here by the stand-in):
+     it must start on the parked frame, and the page must be fully white when
+     it is hidden. */
+  await check('light gate robot clip: plays from the palms-pressed moment, white ≥ 0.99 at pagehide', async () => {
+    if (!robotMedia) { results.push({ name: 'robot clip', status: 'skipped', message: 'no stand-in media' }); return; }
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
     await context.addInitScript(() => addEventListener('pagehide', () => {
       const gate = document.querySelector('[data-gate]');
@@ -377,9 +431,9 @@ async function pixelContrast(page, selectors) {
     }));
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    if (!(await page.locator('[data-gate-clip]').count())) { results.push({ name: 'robot clip', status: 'info', message: 'no open clip in this build: skipped' }); await context.close(); return; }
+    assert.equal(await page.locator('[data-gate-clip]').count(), 1, 'the gate carries the open clip');
     await page.hover('.doors a[href="/work.html"]');
-    await page.waitForFunction(() => { const v = document.querySelector('[data-gate-clip]'); return v.readyState >= 3 && Math.abs(v.currentTime - Math.min(Number(v.dataset.seek), v.duration - 1.3)) < .15; }, null, { timeout: 5000 });
+    await page.waitForFunction(() => { const v = document.querySelector('[data-gate-clip]'); return v.readyState >= 3 && Math.abs(v.currentTime - Math.min(Number(v.dataset.seek), v.duration - Number(v.dataset.play) / 1000 - .1)) < .15; }, null, { timeout: 5000 });
     await Promise.all([page.waitForURL(/work\.html$/), page.evaluate(() => document.querySelector('.doors a[href="/work.html"]').click())]);
     const state = JSON.parse(await page.evaluate(() => sessionStorage.getItem('qa-clip')));
     assert.ok(state.clipOn, 'the clip played');
@@ -392,15 +446,20 @@ async function pixelContrast(page, selectors) {
     // it, so Back really restores the page that left through the gate.
     const bfBrowser = await chromium.launch({ executablePath, ignoreDefaultArgs: ['--disable-back-forward-cache'] });
     const context = await bfBrowser.newContext({ reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    await routeRobot(context);
     await context.addInitScript(() => addEventListener('pageshow', event => { window.__persisted = event.persisted; }));
+    await context.addInitScript(() => document.addEventListener('play', event => { if (event.target.matches?.('[data-robot-video]')) window.__robotPlays = (window.__robotPlays || 0) + 1; }, true));
     const page = await context.newPage();
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    if (robotMedia) await page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.greet === 'done', null, { timeout: 12000 });
+    const playsBefore = await page.evaluate(() => window.__robotPlays || 0);
     await Promise.all([page.waitForURL(/research\.html$/), page.click('#site-nav a[href="/research.html"]')]);
     assert.equal(await page.evaluate(() => document.documentElement.dataset.gate), 'in');
     await page.waitForTimeout(300);
     await page.goBack({ waitUntil: 'commit' });
     await page.waitForFunction(() => window.__persisted !== undefined, null, { timeout: 3000 });
     assert.equal(await page.evaluate(() => window.__persisted), true, 'Back restored the page from the bfcache');
+    if (robotMedia) await page.waitForFunction(n => (window.__robotPlays || 0) > n, playsBefore, { timeout: 4000 }).catch(() => { throw new Error('the robot did not greet again after a bfcache restore'); });
     await page.waitForFunction(() => { const gate = document.querySelector('[data-gate]'); return !gate.dataset.state && (getComputedStyle(gate).display === 'none' || Number(getComputedStyle(gate.querySelector('.gate__white')).opacity) === 0); }, null, { timeout: 1000 });
     const untouched = await page.evaluate(() => {
       const gate = document.querySelector('[data-gate]');
@@ -425,47 +484,55 @@ async function pixelContrast(page, selectors) {
     await bfBrowser.close();
   });
 
-  /* 6. Pause motion stops every loop; contact is one tap away everywhere. */
-  await check('Pause motion on every page: the footer switch stops every loop (marquees, light, decks, pipelines)', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
-    const page = await context.newPage();
+  /* 6. No Pause control (removed at the user's request, Oct 2026): the
+     visitor's prefers-reduced-motion is the motion opt-out, and it must stop
+     every loop and every scroll-driven effect. Contact is one tap away. */
+  const loops = page => page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).map(a => `${a.animationName} on ${a.effect.target?.className?.baseVal ?? a.effect.target?.className}`));
+  await check('no Pause control anywhere; with motion every interior page has ambient motion; with reduced motion no loop runs on any page', async () => {
+    const on = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
+    const off = await isolated(browser, { reducedMotion: 'reduce', viewport: { width: 1280, height: 900 } });
+    const [pageOn, pageOff] = [await on.newPage(), await off.newPage()];
     const left = [];
     for (const route of [...routes, ...tours]) {
-      await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
-      await page.evaluate(() => sessionStorage.removeItem('omar-motion'));
-      await page.reload({ waitUntil: 'networkidle' });
-      const looping = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).length);
-      if (route !== 'index' && looping === 0) left.push(`${route}: no ambient motion at all`);
-      await page.locator('.footer__motion').click();
-      const running = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).map(a => a.animationName));
-      if (running.length) left.push(`${route}: ${running.join(', ')}`);
-      await page.locator('.footer__motion').click();
+      await pageOn.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+      const state = await pageOn.evaluate(() => ({ toggles: document.querySelectorAll('[data-motion-toggle], .mtoggle, .footer__motion, .motion-pill').length, attr: document.documentElement.hasAttribute('data-motion'), text: /\b(Pause|Play|Resume) motion\b/i.test(document.body.innerText + [...document.querySelectorAll('[aria-label]')].map(el => el.getAttribute('aria-label')).join(' ')) }));
+      if (state.toggles || state.attr || state.text) left.push(`${route}: a Pause/Play motion control remains ${JSON.stringify(state)}`);
+      if (route !== 'index' && (await loops(pageOn)).length === 0) left.push(`${route}: no ambient motion at all`);
+      await pageOff.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
+      await pageOff.evaluate(() => { document.querySelector('.footer')?.scrollIntoView(); });
+      await pageOff.waitForTimeout(150);
+      const running = await loops(pageOff);
+      if (running.length) left.push(`${route} (reduced motion): ${running.join(', ')}`);
     }
     assert.deepEqual(left, []);
+    await on.close(); await off.close();
+  });
+
+  await check('reduced motion: no loop, no cursor ring, no autoplaying video, no count-up; the hero and gallery are static', async () => {
+    const context = await isolated(browser, { reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.mouse.move(700, 400);
+    await page.mouse.move(760, 420);
+    await page.waitForTimeout(2500);
+    assert.deepEqual(await loops(page), [], 'no infinite animation runs');
+    const state = await page.evaluate(() => ({
+      playing: [...document.querySelectorAll('video')].filter(v => !v.paused).length,
+      robotSrc: document.querySelector('[data-robot-video]')?.currentSrc ?? '',
+      ring: !!document.querySelector('.cursor-ring:not([hidden])'),
+      counts: [...document.querySelectorAll('[data-count-to]')].map(el => el.textContent),
+      ry: getComputedStyle(document.querySelector('[data-robot-tilt]')).getPropertyValue('--ry').trim(),
+    }));
+    assert.equal(state.playing, 0, 'no video plays');
+    assert.equal(state.robotSrc, '', 'the robot clip is not even fetched');
+    assert.ok(!state.ring, 'no cursor ring');
+    assert.deepEqual(state.counts, ['150', '5', '3'], 'numbers shown final');
+    assert.ok(!state.ry || Number(state.ry) === 0, `robot does not tilt (${state.ry})`);
     await context.close();
   });
 
-  await check('Pause motion: visible, stops every looping animation and the hero video; persists for the session', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
-    const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    const toggle = page.locator('.hero__pause');
-    assert.ok(await toggle.isVisible(), 'Pause motion visible in the hero');
-    await toggle.click();
-    assert.equal(await page.evaluate(() => document.documentElement.dataset.motion), 'off');
-    const running = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).map(a => `${a.animationName} on ${a.effect.target?.className}`));
-    assert.deepEqual(running, [], 'no infinite animation keeps running');
-    assert.equal(await page.evaluate(() => [...document.querySelectorAll('video')].filter(v => !v.paused).length), 0, 'videos paused');
-    await page.reload({ waitUntil: 'networkidle' });
-    assert.equal(await page.evaluate(() => document.documentElement.dataset.motion), 'off', 'remembered for the session');
-    assert.match(await toggle.textContent(), /Play motion/);
-    await context.close();
-  });
-  await check('Pause motion stops the scroll-driven motion too: hero pin and scrub, the pinned gallery, neon lines', async () => {
-    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
-    const page = await context.newPage();
-    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
-    const state = () => page.evaluate(() => {
+  await check('reduced motion releases the scroll-driven motion (hero pin and scrub, pinned gallery, neon lines) that runs with motion', async () => {
+    const state = page => page.evaluate(() => {
       const pin = document.querySelector('.hero-pin'), gallery = document.querySelector('[data-hgallery]');
       return {
         scrubbing: document.getAnimations().filter(a => a.effect?.target?.hasAttribute?.('data-scrub') && a.playState !== 'idle').length,
@@ -476,23 +543,28 @@ async function pixelContrast(page, selectors) {
         p: getComputedStyle(gallery).getPropertyValue('--p').trim(),
       };
     });
-    const on = await state();
-    assert.ok(on.scrubbing > 3 && on.pinTall && on.pinned && on.heroSticky, `motion on: scrub, pin and gallery active (${JSON.stringify(on)})`);
+    const on = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await on.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    const live = await state(page);
+    assert.ok(live.scrubbing > 3 && live.pinTall && live.pinned && live.heroSticky, `motion on: scrub, pin and gallery active (${JSON.stringify(live)})`);
     // Halfway through the gallery the track has moved sideways.
     await page.evaluate(() => { const g = document.querySelector('[data-hgallery]'); scrollTo(0, g.getBoundingClientRect().top + scrollY + (g.offsetHeight - innerHeight) / 2); });
     await page.waitForTimeout(300);
-    const mid = await state();
+    const mid = await state(page);
     assert.ok(Number(mid.p) > .3 && Number(mid.p) < .7 && mid.track !== 'none' && !/^0px/.test(mid.track), `gallery track follows the scroll (${JSON.stringify(mid)})`);
-    await page.evaluate(() => scrollTo(0, 0));
-    await page.locator('.hero__pause').click();
-    await page.waitForTimeout(200);
-    const off = await state();
-    assert.equal(off.scrubbing, 0, 'no scroll-driven animation runs when paused');
-    assert.ok(!off.pinTall && !off.pinned && !off.heroSticky, `pin and pinned gallery released (${JSON.stringify(off)})`);
-    assert.ok(/^(none|0px)/.test(off.track), `gallery track at rest (${off.track})`);
-    const looping = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).length);
-    assert.equal(looping, 0, 'beams, labels, rings and marquees paused');
-    await context.close();
+    await on.close();
+    const off = await isolated(browser, { reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
+    const still = await off.newPage();
+    await still.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await still.evaluate(() => { const g = document.querySelector('[data-hgallery]'); scrollTo(0, g.getBoundingClientRect().top + scrollY + 200); });
+    await still.waitForTimeout(200);
+    const rest = await state(still);
+    assert.equal(rest.scrubbing, 0, 'no scroll-driven animation runs with reduced motion');
+    assert.ok(!rest.pinTall && !rest.pinned && !rest.heroSticky, `pin and pinned gallery released (${JSON.stringify(rest)})`);
+    assert.ok(/^(none|0px)/.test(rest.track), `gallery track at rest (${rest.track})`);
+    assert.equal(await still.locator('[data-hgallery-track]').evaluate(el => getComputedStyle(el).overflowX), 'auto', 'the gallery is a native horizontal scroller');
+    await off.close();
   });
 
   for (const [label, reducedMotion] of [['pinned, motion on', 'no-preference'], ['native scroller, reduced motion', 'reduce']]) {
@@ -717,25 +789,6 @@ async function pixelContrast(page, selectors) {
     assert.deepEqual(problems, []);
     await context.close();
   });
-
-  for (const [label, viewport, mobile] of [['phone', { width: 390, height: 844 }, true], ['desktop', { width: 1280, height: 900 }, false]]) {
-    await check(`Pause motion visible in the first screen of every page (${label})`, async () => {
-      const context = await isolated(browser, { viewport, isMobile: mobile, hasTouch: mobile, reducedMotion: 'no-preference' });
-      const page = await context.newPage();
-      const missing = [];
-      for (const route of [...routes, ...tours]) {
-        await page.goto(`${base}/${route}.html`, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(1600); // hero entrance
-        const seen = await page.evaluate(() => [...document.querySelectorAll('[data-motion-toggle]')].some(el => {
-          const box = el.getBoundingClientRect();
-          return el.checkVisibility({ opacityProperty: true, visibilityProperty: true }) && box.width >= 24 && box.top >= 0 && box.bottom <= innerHeight && box.left >= 0 && box.right <= innerWidth;
-        }));
-        if (!seen) missing.push(route);
-      }
-      assert.deepEqual(missing, []);
-      await context.close();
-    });
-  }
 
   await check('scroll reveals never hide content when the site script fails to load', async () => {
     const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });

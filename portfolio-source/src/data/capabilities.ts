@@ -37,7 +37,10 @@ export const capabilities: { group: string; skills: { name: string; in: Evidence
     group: 'Product & delivery',
     skills: [
       { name: 'Technical strategy', in: ['katana', 'nookbase'] },
-      { name: 'TCO modelling & security auditing', in: ['katana'] },
+      { name: 'Technology selection', in: ['katana', 'inos'] },
+      { name: 'Technical & security audits', in: ['katana', 'inos'] },
+      { name: 'Business & product strategy', in: ['katana', 'inos'] },
+      { name: 'TCO modelling', in: ['katana'] },
       { name: 'Sprint & test planning', in: ['katana'] },
     ],
   },
