@@ -9,7 +9,7 @@ const { id = 'talk', mark, title, accent, lede, topic, primary = 'Write to Omar'
 const href = topic ? `/contact.html?topic=${encodeURIComponent(topic)}` : '/contact.html';
 ---
 <section class="band" id={id} aria-labelledby={`${id}-title`}>
-  <div class="band__bg" aria-hidden="true"><span></span><span></span><i></i></div>
+  <div class="band__bg" aria-hidden="true"><span></span><span></span><i></i><b class="beams"><i></i><i></i><i></i></b><em class="hud band__hud"></em></div>
   <div class="wrap band__inner">
     <p class="eyebrow eyebrow--dark">{mark && <b>{mark}</b>}Contact</p>
     <h2 id={`${id}-title`} class="band__title" data-reveal>{title} <span>{accent}</span></h2>
@@ -17,7 +17,7 @@ const href = topic ? `/contact.html?topic=${encodeURIComponent(topic)}` : '/cont
     <div class="band__row" data-reveal>
       <div class="band__email">
         <a href={`mailto:${site.email}`}>{site.email}</a>
-        <button type="button" class="band__copy" data-copy-email={site.email} hidden><span data-copy-label>Copy</span></button>
+        <button type="button" class="copy-btn band__copy" data-copy-email={site.email} hidden><svg class="copy-btn__tick" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path pathLength="1" d="m3 8.5 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg><span data-copy-label>Copy</span></button>
         <span class="sr-only" role="status" data-copy-status></span>
       </div>
       <div class="band__actions">
@@ -38,34 +38,33 @@ const href = topic ? `/contact.html?topic=${encodeURIComponent(topic)}` : '/cont
 </section>
 
 <style>
-  .band { position: relative; isolation: isolate; overflow: hidden; background: var(--navy); color: var(--navy-ink); padding-block: clamp(80px, 10vw, 152px) clamp(48px, 6vw, 88px); }
+  .band { position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(180deg, var(--bg), var(--navy) 30%, #070a14); border-top: 1px solid var(--line); color: var(--navy-ink); padding-block: clamp(80px, 10vw, 152px) clamp(48px, 6vw, 88px); }
   .band__bg > * { position: absolute; z-index: -1; pointer-events: none; }
   .band__bg span { border-radius: 50%; will-change: transform; }
-  .band__bg span:first-child { width: 50vw; height: 50vw; right: -12vw; top: -20vw; background: radial-gradient(closest-side, #1f4bffaa, transparent); }
-  .band__bg span:nth-child(2) { width: 40vw; height: 40vw; left: -14vw; bottom: -24vw; background: radial-gradient(closest-side, #5d7bff66, transparent); }
-  .band__bg i { inset: 0; background: linear-gradient(#ffffff0a 1px, transparent 1px) 0 0 / 64px 64px, linear-gradient(90deg, #ffffff0a 1px, transparent 1px) 0 0 / 64px 64px; -webkit-mask: radial-gradient(60% 70% at 70% 30%, #000, transparent 75%); mask: radial-gradient(60% 70% at 70% 30%, #000, transparent 75%); }
+  .band__hud { --hud-inset: 20px; --hl: 24px; }
+  .band__bg span:first-child { width: 50vw; height: 50vw; right: -12vw; top: -20vw; background: radial-gradient(closest-side, #2f6bffaa, transparent); }
+  .band__bg span:nth-child(2) { width: 40vw; height: 40vw; left: -14vw; bottom: -24vw; background: radial-gradient(closest-side, #ff2d4633, transparent); }
+  .band__bg > i { inset: 0; background: linear-gradient(#ffffff0a 1px, transparent 1px) 0 0 / 64px 64px, linear-gradient(90deg, #ffffff0a 1px, transparent 1px) 0 0 / 64px 64px; -webkit-mask: radial-gradient(60% 70% at 70% 30%, #000, transparent 75%); mask: radial-gradient(60% 70% at 70% 30%, #000, transparent 75%); }
   .band__inner { display: grid; gap: var(--s-6); }
-  .band__title { font-size: clamp(2.6rem, 1rem + 6.4vw, 7.6rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; max-width: 14ch; color: #fff; }
-  .band__title span { color: #8ea6ff; }
+  .band__title { font-size: clamp(2.6rem, 1rem + 6.4vw, 7.6rem); font-weight: 780; letter-spacing: -.055em; line-height: .9; max-width: 14ch; color: #fff; text-transform: uppercase; }
+  .band__title span { color: var(--accent); text-shadow: 0 0 40px #2f6bff80; }
   .band__lede { max-width: 54ch; color: var(--navy-muted); font-size: var(--step-lede); line-height: 1.45; }
   .band__row { display: grid; gap: var(--s-5); align-items: center; padding-top: var(--s-6); border-top: 1px solid var(--navy-line); }
   .band__email { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
   .band__email a { font-family: var(--font-mono); font-size: clamp(1rem, .8rem + 1vw, 1.6rem); color: #fff; text-decoration: none; border-bottom: 1px solid #8ea6ff; min-height: 44px; display: inline-flex; align-items: center; overflow-wrap: anywhere; }
-  .band__copy { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #ffffff4d; background: #ffffff14; color: #fff; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
-  .band__copy:hover { background: #ffffff26; }
   .band__actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .band__primary { background: #fff; border-color: #fff; color: var(--navy); }
-  .band__primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .band__primary:hover { background: var(--accent-fill); border-color: var(--accent); color: #fff; }
   .band__social { display: inline-flex; align-items: center; gap: 6px; min-height: 52px; padding: 0 22px; border-radius: 999px; border: 1px solid #ffffff40; color: #fff; text-decoration: none; font-weight: 560; }
   .band__social:hover { border-color: #fff; background: #ffffff14; }
   .band :focus-visible { outline-color: #fff; }
   .band__next { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 20px; margin-top: var(--s-6); padding: 22px 24px; border-radius: var(--radius-3); background: #ffffff0d; border: 1px solid #ffffff26; color: #fff; text-decoration: none; overflow: hidden; transition: background-color 400ms, border-color 400ms; }
-  .band__next::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #1f4bff, #3d63ff); transform: scaleX(0); transform-origin: 0 50%; transition: transform 700ms var(--ease-out); }
+  .band__next::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #2f6bff, #3d63ff); transform: scaleX(0); transform-origin: 0 50%; transition: transform 700ms var(--ease-out); }
   .band__next:hover::before, .band__next:focus-visible::before { transform: scaleX(1); }
-  .band__next:hover { border-color: #1f4bff; }
+  .band__next:hover { border-color: #2f6bff; }
   .band__next { isolation: isolate; }
   .band__next-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #9fb2ff; }
-  .band__next:hover .band__next-kicker, .band__next:hover .band__next-note { color: #e3e9ff; }
+  .band__next:hover .band__next-kicker, .band__next:hover .band__next-note { color: #ffffff; }
   .band__next-label { grid-column: 1; font-size: clamp(1.8rem, 1.2rem + 2.4vw, 3.4rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; }
   .band__next-note { grid-column: 1; color: var(--navy-muted); font-size: var(--step-small); }
   .band__next-go { grid-column: 2; grid-row: 1 / span 3; align-self: center; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; border: 1px solid #ffffff4d; font-size: 22px; transition: transform 500ms var(--ease-out), background-color 300ms, color 300ms; }
@@ -76,7 +75,7 @@ const href = topic ? `/contact.html?topic=${encodeURIComponent(topic)}` : '/cont
     .band__bg span:nth-child(2) { animation-duration: 20s; animation-direction: alternate-reverse; }
     :global(html[data-motion='off']) .band__bg span { animation-play-state: paused; }
     @supports (animation-timeline: view()) {
-      :global(html:not([data-motion='off'])) .band__title { animation: band-wipe linear both; animation-timeline: view(); animation-range: entry 10% cover 40%; }
+      :global(html:not([data-motion='off'])) .band__title { animation-name: band-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     }
   }
   @keyframes band-drift { to { transform: translate(-8vw, 6vw) scale(1.15); } }

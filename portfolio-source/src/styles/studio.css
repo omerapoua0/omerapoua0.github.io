@@ -3,14 +3,14 @@
    bar. Pure CSS; everything degrades to a static, readable page. */
 
 /* A white studio panel: rounded, soft product-shot shadow. */
-.panel { position: relative; background: var(--surface); border: 1px solid #ffffff; border-radius: var(--radius-3); box-shadow: var(--shadow-2); }
+.panel { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-3); box-shadow: var(--shadow-2); }
 .panel--quiet { background: var(--bg-2); border-color: var(--line); box-shadow: none; }
 
 /* Small mono pill used above section titles. */
-.eyebrow { display: inline-flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; padding: 6px 14px 6px 8px; border-radius: 999px; background: #ffffffb3; border: 1px solid #ffffff; box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; padding: 6px 14px 6px 8px; border-radius: 4px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
 /* On the navy bands. */
 .eyebrow--dark { background: #ffffff1a; border-color: #ffffff26; box-shadow: none; color: var(--navy-ink); }
-.eyebrow b { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; letter-spacing: .02em; }
+.eyebrow b { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 8px; border-radius: 3px; background: var(--accent-fill); color: #fff; font-weight: 600; letter-spacing: .02em; }
 
 /* Number labels in "01/05" form. */
 .idx { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--accent); font-variant-numeric: tabular-nums; }
@@ -25,7 +25,7 @@
 .scroll-progress { display: none; }
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
-    .scroll-progress { display: block; position: fixed; left: 0; right: 0; top: 0; z-index: 60; height: 2px; background: var(--accent); box-shadow: 0 0 10px #1f4bff80; transform-origin: 0 50%; pointer-events: none; animation: fx-grow-x linear both; animation-timeline: scroll(root); }
+    .scroll-progress { display: block; position: fixed; left: 0; right: 0; top: 0; z-index: 60; height: 2px; background: var(--accent-fill); box-shadow: 0 0 10px #2f6bff80; transform-origin: 0 50%; pointer-events: none; animation-name: fx-grow-x; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: scroll(root); }
   }
 }
 
@@ -43,13 +43,13 @@
 
   @supports (animation-timeline: view()) {
     /* Parallax: an element drifts against the scroll while it crosses the screen. */
-    html:not([data-motion='off']) [data-fx~='parallax'] { animation: fx-parallax linear both; animation-timeline: view(); animation-range: cover; }
-    html:not([data-motion='off']) [data-fx~='parallax-slow'] { animation: fx-parallax-slow linear both; animation-timeline: view(); animation-range: cover; }
+    html:not([data-motion='off']) [data-fx~='parallax'] { animation-name: fx-parallax; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
+    html:not([data-motion='off']) [data-fx~='parallax-slow'] { animation-name: fx-parallax-slow; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
     /* Progress lines that draw as their section scrolls through. */
-    html:not([data-motion='off']) [data-fx~='grow-y'] { animation: fx-grow-y linear both; animation-timeline: view(); animation-range: entry 30% exit 40%; }
-    html:not([data-motion='off']) [data-fx~='grow-x'] { animation: fx-grow-x linear both; animation-timeline: view(); animation-range: entry 40% cover 55%; }
+    html:not([data-motion='off']) [data-fx~='grow-y'] { animation-name: fx-grow-y; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 30% exit 40%; }
+    html:not([data-motion='off']) [data-fx~='grow-x'] { animation-name: fx-grow-x; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 40% cover 55%; }
     /* Big outlined numerals slide sideways as you pass. */
-    html:not([data-motion='off']) [data-fx~='slide-x'] { animation: fx-slide-x linear both; animation-timeline: view(); animation-range: cover; }
+    html:not([data-motion='off']) [data-fx~='slide-x'] { animation-name: fx-slide-x; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
   }
 }
 @keyframes fx-parallax { from { transform: translateY(9%); } to { transform: translateY(-9%); } }
@@ -66,7 +66,7 @@
 .stage + .stage:not(.stage--white):not(.stage--grey) { padding-top: 0; }
 
 /* A big outlined numeral behind a block ("01", "Q3"). */
-.ghost-num { font-size: clamp(5rem, 2rem + 10vw, 12rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #0a0c1017; user-select: none; pointer-events: none; }
+.ghost-num { font-size: clamp(5rem, 2rem + 10vw, 12rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #ffffff17; user-select: none; pointer-events: none; }
 
 /* Text link with an arrow and a growing underline. */
 .go { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; color: var(--accent); text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 calc(100% - 8px) / 0 1.5px no-repeat; transition: background-size var(--d-3) var(--ease-out); }

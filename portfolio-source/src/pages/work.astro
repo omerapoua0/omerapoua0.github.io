@@ -78,7 +78,7 @@ const deck = caseStudies.filter(project => project.media).slice(0, 3).reverse();
 
 <style>
   .deck { position: relative; height: clamp(280px, 34vw, 460px); margin-inline: auto; width: min(100%, 520px); }
-  .deck__card { position: absolute; left: 50%; top: 50%; width: 82%; translate: -50% -50%; display: grid; gap: 0; padding: 8px 8px 12px; border-radius: 22px; background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-3); text-decoration: none; color: var(--ink); transform: rotate(calc((var(--k) - 1) * 7deg)) translate(calc((var(--k) - 1) * 26px), calc((1 - var(--k)) * 14px)); transition: transform 700ms var(--ease-out); }
+  .deck__card { position: absolute; left: 50%; top: 50%; width: 82%; translate: -50% -50%; display: grid; gap: 0; padding: 8px 8px 12px; border-radius: 22px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-3); text-decoration: none; color: var(--ink); transform: rotate(calc((var(--k) - 1) * 7deg)) translate(calc((var(--k) - 1) * 26px), calc((1 - var(--k)) * 14px)); transition: transform 700ms var(--ease-out); }
   .deck__card .plate { display: block; aspect-ratio: 16 / 10; border-radius: 16px; }
   .deck__cap { display: flex; justify-content: space-between; gap: 10px; padding: 10px 6px 0; font-size: 14px; }
   /* Only the front card (the last one painted) shows its caption; the ones
@@ -86,7 +86,7 @@ const deck = caseStudies.filter(project => project.media).slice(0, 3).reverse();
   .deck__card:not(:last-of-type) .deck__cap { visibility: hidden; }
   .deck__cap span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
   .deck:hover .deck__card { transform: rotate(calc((var(--k) - 1) * 11deg)) translate(calc((var(--k) - 1) * 70px), calc((1 - var(--k)) * 6px)); }
-  .deck__tag { position: absolute; left: 50%; bottom: 0; translate: -50% 0; padding: 5px 12px; border-radius: 999px; background: #ffffffd9; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .deck__tag { position: absolute; left: 50%; bottom: 0; translate: -50% 0; padding: 5px 12px; border-radius: 999px; background: var(--glass); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
   @media (max-width: 1099px) { .deck { height: clamp(240px, 62vw, 400px); } }
   @media (prefers-reduced-motion: no-preference) {
     .deck__card { animation: deck-float 7s ease-in-out infinite alternate; animation-delay: calc(var(--k) * -2.3s); }

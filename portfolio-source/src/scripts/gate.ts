@@ -1,21 +1,24 @@
 /*
- * The light gate (LightGate.astro): every internal page change leaves through
- * white light and the next page arrives out of it.
+ * The neon light gate (LightGate.astro): every internal page change leaves
+ * through light and the next page arrives out of it.
  *   - Doors, project cards and primary calls to action ([data-open]) play the
- *     full "hands together" open (or the robot's open clip when it exists).
- *   - Other internal links play the quick white rise.
+ *     full "hands together" open: red and blue neon seams meet, a cool-white
+ *     burst fills the screen (or the robot's open clip plays, when it exists).
+ *   - Other internal links play the quick variant: a dark veil and a scan line.
  *   - A door to a section of the same page (e.g. /index.html#skills on the
  *     homepage) opens, jumps there behind the white, then reveals.
  * Only once the overlay is opaque does the browser navigate. The arriving
- * page paints the identical white at first paint (Base.astro head script
- * reads sessionStorage omar-gate {t, path, label}) and dissolves it.
+ * page paints the identical layer at first paint (Base.astro head script
+ * reads sessionStorage omar-gate {t, path, label, m}) and dissolves it.
  * The open starts where the visitor chose: the click point (or the centre of
  * the link, from the keyboard) becomes --gx/--gy for the hands, flare and
  * burst, and the robot in the hero (when on screen) snaps its rings shut and
  * flares (RobotStage [data-opening]).
- * Timing (full motion): leave ≈ 650 ms (hands 0–300, flare 260–460, burst
- * 300–600, then navigate); arrive: white dissolves 60–480 ms after first paint.
+ * Timing (full motion): leave ≈ 600 ms (hands 0–270, flare 220–440, burst
+ * 260–550, then navigate); arrive: white dissolves 60–480 ms after first paint.
  * Reduced motion / Pause motion: a 160 ms fade out, a 200 ms fade in.
+ * The robot's clip is fetched early, when a [data-open] link is hovered or
+ * focused, so it can seek to the hands-together moment without a stall.
  * Links still work normally without JavaScript.
  */
 type Mode = 'open' | 'quick';
@@ -47,29 +50,53 @@ let busy = false;
  *  opaque), never before `min` ms and never after `cap` ms. Waiting on the
  *  animation itself, not a timer, keeps slow first frames from navigating
  *  while the page is still showing through. */
-async function whiteDone(min: number, cap: number) {
-  const white = gate?.querySelector<HTMLElement>('.gate__white');
+async function layerDone(min: number, cap: number, layer = '.gate__white') {
+  const white = gate?.querySelector<HTMLElement>(layer);
   await frames();
   const animations = white?.getAnimations?.() ?? [];
   await Promise.all([sleep(min), Promise.race([Promise.all(animations.map(animation => animation.finished.catch(() => undefined))), sleep(cap)])]);
 }
 
-/** Wait for the open animation, or the robot's clip, to reach full white. */
+const clip = () => gate?.querySelector<HTMLVideoElement>('[data-gate-clip]') ?? null;
+/** Attach the clip's sources and start loading it (once). */
+function warm() {
+  const video = clip();
+  if (!video || video.dataset.warm) return;
+  video.dataset.warm = '1';
+  video.querySelectorAll<HTMLSourceElement>('source[data-src]').forEach(source => { if (!source.src) source.src = source.dataset.src!; });
+  video.preload = 'auto';
+  video.load();
+}
+const once = (target: EventTarget, name: string, ms: number) => new Promise<boolean>(resolve => {
+  const done = (ok: boolean) => { target.removeEventListener(name, yes); resolve(ok); };
+  const yes = () => done(true);
+  target.addEventListener(name, yes, { once: true });
+  window.setTimeout(() => done(false), ms);
+});
+
+/** Wait for the open animation, or the robot's clip, to reach full white.
+ *  The clip seeks to the hands-together moment and plays for ~1.2 s, then
+ *  the white takes over; any stall falls back to the CSS seams. */
 async function playOpen(): Promise<void> {
-  const clip = gate?.querySelector<HTMLVideoElement>('[data-gate-clip]');
-  if (clip && gate) {
-    clip.querySelectorAll<HTMLSourceElement>('source[data-src]').forEach(source => { if (!source.src) source.src = source.dataset.src!; });
-    if (clip.readyState === 0) clip.load();
+  const video = clip();
+  if (video && gate) {
+    warm();
     try {
-      await Promise.race([clip.play(), sleep(500).then(() => { throw new Error('slow'); })]);
-      const length = Number.isFinite(clip.duration) && clip.duration > 0 ? Math.min(clip.duration * 1000, 1600) : 1300;
-      gate.style.setProperty('--clip-white', `${Math.max(0, length - 260)}ms`);
+      if (video.readyState < 1 && !(await once(video, 'loadedmetadata', 450))) throw new Error('slow');
+      const seek = Math.min(Number(video.dataset.seek) || 0, Math.max(0, (video.duration || 0) - 1.3));
+      if (seek > 0 && Math.abs(video.currentTime - seek) > .05) {
+        video.currentTime = seek;
+        if (!(await once(video, 'seeked', 350))) throw new Error('slow');
+      }
+      await Promise.race([video.play(), sleep(400).then(() => { throw new Error('slow'); })]);
+      const length = 1200;
+      gate.style.setProperty('--clip-white', `${length - 260}ms`);
       gate.dataset.clipOn = '';
       await sleep(length);
       return;
-    } catch { clip.pause(); gate.removeAttribute('data-clip-on'); }
+    } catch { video.pause(); gate.removeAttribute('data-clip-on'); }
   }
-  await whiteDone(600, 900);
+  await layerDone(550, 850);
 }
 
 const robot = () => document.querySelector<HTMLElement>('[data-robot-stage]');
@@ -94,11 +121,13 @@ async function go(href: string, mode: Mode = 'quick', link?: Element | null, poi
   gate.style.setProperty('--gy', `${Math.round(at.y)}px`);
   gate.removeAttribute('data-clip-on');
   root.removeAttribute('data-gate');
+  root.removeAttribute('data-gate-mode');
   if (mode === 'open' && !still()) robot()?.setAttribute('data-opening', '');
   gate.dataset.state = mode;
-  if (still()) await whiteDone(160, 600);
+  const layer = mode === 'quick' ? '.gate__dark' : '.gate__white';
+  if (still()) await layerDone(160, 600, layer);
   else if (mode === 'open') await playOpen();
-  else await whiteDone(300, 800);
+  else await layerDone(300, 800, layer);
 
   // Same page, different section: jump behind the white, then reveal.
   if (samePath(url.pathname, location.pathname) && url.search === location.search && url.hash) {
@@ -115,7 +144,7 @@ async function go(href: string, mode: Mode = 'quick', link?: Element | null, poi
     return;
   }
 
-  try { sessionStorage.setItem('omar-gate', JSON.stringify({ t: Date.now(), path: url.pathname === '/' ? '/index.html' : url.pathname, label })); } catch { /* storage unavailable */ }
+  try { sessionStorage.setItem('omar-gate', JSON.stringify({ t: Date.now(), path: url.pathname === '/' ? '/index.html' : url.pathname, label, m: mode })); } catch { /* storage unavailable */ }
   await frames(); // the opaque white is on screen before the page changes
   location.assign(url.href);
   // A download or a cancelled navigation must not leave the page white.
@@ -140,7 +169,14 @@ if (gate) {
   });
 
   // Arrived through the gate: tidy up once the light has gone.
-  if (root.dataset.gate === 'in') window.setTimeout(() => root.removeAttribute('data-gate'), 700);
+  if (root.dataset.gate === 'in') window.setTimeout(() => { root.removeAttribute('data-gate'); root.removeAttribute('data-gate-mode'); }, 700);
+
+  // Fetch the robot's clip early, when a full open is likely.
+  if (clip()) {
+    const early = (event: Event) => { if ((event.target as Element | null)?.closest?.('a[data-open]') && !still()) warm(); };
+    document.addEventListener('pointerover', early, { passive: true });
+    document.addEventListener('focusin', early);
+  }
 
   // Back/forward from the bfcache: never come back to a white page.
   addEventListener('pageshow', event => {

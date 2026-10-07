@@ -1,5 +1,5 @@
-/* Isolated browser QA for the v4 "studio" portfolio (light theme, light gate,
- * no chat). Linux-friendly.
+/* Isolated browser QA for the v6 "neon" portfolio (dark only, neon light
+ * gate, scroll scrub, pinned gallery, no chat). Linux-friendly.
  *
  *   PORTFOLIO_QA_URL=http://127.0.0.1:4174 \
  *   PLAYWRIGHT_EXECUTABLE=/path/to/chromium \
@@ -31,7 +31,11 @@ const only = process.env.QA_ONLY ? new RegExp(process.env.QA_ONLY, 'i') : null; 
 async function check(name, run) {
   if (only && !only.test(name)) return;
   try { await run(); results.push({ name, status: 'pass' }); }
-  catch (error) { results.push({ name, status: 'fail', message: error.message.split('\n')[0] }); console.error('FAIL', name, '-', error.message.split('\n')[0]); }
+  catch (error) {
+    // Keep the assertion's diff (deep-equal failures say what differed).
+    const message = error.message.split('\n').map(line => line.trim()).filter(line => line && !/^(\+ actual|- expected)/.test(line)).join(' ').slice(0, 700);
+    results.push({ name, status: 'fail', message }); console.error('FAIL', name, '-', message);
+  }
 }
 async function isolated(browser, options = {}) {
   const context = await browser.newContext({ reducedMotion: 'reduce', ...options });
@@ -402,6 +406,66 @@ async function pixelContrast(page, selectors) {
     assert.match(await toggle.textContent(), /Play motion/);
     await context.close();
   });
+  await check('Pause motion stops the scroll-driven motion too: hero pin and scrub, the pinned gallery, neon lines', async () => {
+    const context = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    const state = () => page.evaluate(() => {
+      const pin = document.querySelector('.hero-pin'), gallery = document.querySelector('[data-hgallery]');
+      return {
+        scrubbing: document.getAnimations().filter(a => a.effect?.target?.hasAttribute?.('data-scrub') && a.playState !== 'idle').length,
+        pinTall: pin.offsetHeight > innerHeight * 1.2,
+        pinned: getComputedStyle(gallery).getPropertyValue('--pinned').trim() === '1',
+        heroSticky: getComputedStyle(document.querySelector('.hero')).position === 'sticky',
+        track: getComputedStyle(document.querySelector('[data-hgallery-track]')).translate,
+        p: getComputedStyle(gallery).getPropertyValue('--p').trim(),
+      };
+    });
+    const on = await state();
+    assert.ok(on.scrubbing > 3 && on.pinTall && on.pinned && on.heroSticky, `motion on: scrub, pin and gallery active (${JSON.stringify(on)})`);
+    // Halfway through the gallery the track has moved sideways.
+    await page.evaluate(() => { const g = document.querySelector('[data-hgallery]'); scrollTo(0, g.getBoundingClientRect().top + scrollY + (g.offsetHeight - innerHeight) / 2); });
+    await page.waitForTimeout(300);
+    const mid = await state();
+    assert.ok(Number(mid.p) > .3 && Number(mid.p) < .7 && mid.track !== 'none' && !/^0px/.test(mid.track), `gallery track follows the scroll (${JSON.stringify(mid)})`);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.locator('.hero__pause').click();
+    await page.waitForTimeout(200);
+    const off = await state();
+    assert.equal(off.scrubbing, 0, 'no scroll-driven animation runs when paused');
+    assert.ok(!off.pinTall && !off.pinned && !off.heroSticky, `pin and pinned gallery released (${JSON.stringify(off)})`);
+    assert.ok(/^(none|0px)/.test(off.track), `gallery track at rest (${off.track})`);
+    const looping = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).length);
+    assert.equal(looping, 0, 'beams, labels, rings and marquees paused');
+    await context.close();
+  });
+
+  for (const [label, reducedMotion] of [['pinned, motion on', 'no-preference'], ['native scroller, reduced motion', 'reduce']]) {
+    await check(`horizontal gallery: Tab reaches every card and brings it into view (${label})`, async () => {
+      const context = await isolated(browser, { reducedMotion, viewport: { width: 1440, height: 900 } });
+      const page = await context.newPage();
+      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+      const count = await page.locator('[data-hgallery-item] a').count();
+      assert.equal(count, 6, 'five case cards and the index card');
+      // Start from the last link before the gallery, then Tab through it.
+      await page.locator('#what-teach a').focus();
+      const seen = [];
+      for (let i = 0; i < count; i++) {
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(250);
+        const info = await page.evaluate(() => {
+          const el = document.activeElement, box = el.getBoundingClientRect();
+          return { href: el.getAttribute('href'), inGallery: !!el.closest('[data-hgallery-item]'), left: Math.round(box.left), right: Math.round(box.right), top: Math.round(box.top), bottom: Math.round(box.bottom), w: innerWidth, h: innerHeight };
+        });
+        assert.ok(info.inGallery, `Tab ${i + 1} stays in the gallery (${info.href})`);
+        assert.ok(info.left >= -2 && info.right <= info.w + 2 && info.top >= 0 && info.bottom <= info.h + 2, `card ${info.href} fully on screen ${JSON.stringify(info)}`);
+        seen.push(info.href);
+      }
+      assert.equal(new Set(seen).size, count, 'every card reached once');
+      await context.close();
+    });
+  }
+
   for (const [label, viewport, mobile] of [['phone', { width: 390, height: 844 }, true], ['desktop', { width: 1280, height: 900 }, false]]) {
     await check(`contact in one tap from every page (${label})`, async () => {
       const context = await isolated(browser, { viewport, isMobile: mobile, hasTouch: mobile });
@@ -503,7 +567,7 @@ async function pixelContrast(page, selectors) {
       const total = await page.evaluate(() => document.body.scrollHeight);
       for (let y = 0; y < total; y += 400) { await page.evaluate(top => scrollTo(0, top), y); await page.waitForTimeout(50); }
       await page.waitForTimeout(1300);
-      const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.closest('[hidden]') && (!el.classList.contains('is-in') || Number(getComputedStyle(el).opacity) < .99 || !/^(none|inset\(0(px)?( round [^)]*)?\))$/.test(getComputedStyle(el).clipPath))).map(el => el.className || el.tagName));
+      const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter(el => !el.closest('[hidden]') && (!el.classList.contains('is-in') || Number(getComputedStyle(el).opacity) < .99 || !/^(none|inset\((0(px|%)?\s*)+( round [^)]*)?\))$/.test(getComputedStyle(el).clipPath))).map(el => el.className || el.tagName));
       if (hidden.length) problems.push(`${route}: ${hidden.slice(0, 3).join(' | ')}`);
     }
     assert.deepEqual(problems, []);

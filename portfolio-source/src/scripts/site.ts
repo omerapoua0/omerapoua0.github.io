@@ -92,7 +92,8 @@ if (counters.length && 'IntersectionObserver' in window && !countStill()) {
   counters.forEach(element => counter.observe(element));
 }
 
-/* Copy the email address (the address itself is always a mailto link). */
+/* Copy the email address (the address itself is always a mailto link). On
+   success the button gets data-copied for its confirm animation (neon.css). */
 document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach(button => {
   if (!navigator.clipboard) return;
   button.hidden = false;
@@ -104,7 +105,9 @@ document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach(button
     try { await Promise.race([navigator.clipboard.writeText(email), new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500))]); ok = true; } catch { ok = false; }
     if (label) label.textContent = ok ? 'Copied' : 'Copy failed';
     if (status) status.textContent = ok ? 'Email address copied.' : `Could not copy. The address is ${email}.`;
-    window.setTimeout(() => { if (label) label.textContent = 'Copy'; }, 1800);
+    button.toggleAttribute('data-copied', ok);
+    window.clearTimeout(Number(button.dataset.copyTimer));
+    button.dataset.copyTimer = String(window.setTimeout(() => { if (label) label.textContent = 'Copy'; button.removeAttribute('data-copied'); }, 2000));
   });
 });
 

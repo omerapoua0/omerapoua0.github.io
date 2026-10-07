@@ -141,7 +141,7 @@ const half = Math.ceil(allSkills.length / 2);
 
 <style>
   .portrait { position: relative; width: min(100%, 440px); justify-self: center; display: grid; gap: 12px; }
-  .portrait__frame { border-radius: var(--radius-3); overflow: hidden; background: var(--raised); box-shadow: var(--shadow-3); border: 8px solid #fff; }
+  .portrait__frame { border-radius: var(--radius-3); overflow: hidden; background: var(--raised); box-shadow: var(--shadow-3); border: 1px solid var(--line-strong); }
   .portrait img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 20%; scale: 1.18; }
   .portrait figcaption { display: flex; justify-content: space-between; gap: 10px; padding: 0 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 
@@ -151,7 +151,7 @@ const half = Math.ceil(allSkills.length / 2);
   .profile__copy { display: grid; gap: var(--s-4); }
   .profile__copy > p:not(.lede) { max-width: 62ch; color: var(--ink-2); }
   .profile__facts { display: grid; gap: 12px; }
-  .profile__facts > div { display: grid; gap: 8px; padding: 22px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); }
+  .profile__facts > div { display: grid; gap: 8px; padding: 22px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
   .profile__facts dd { margin: 0; }
   @media (min-width: 1024px) {
     .profile { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); }
@@ -162,18 +162,18 @@ const half = Math.ceil(allSkills.length / 2);
 
   .xp { display: grid; gap: var(--s-7); }
   .xp__title { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-5); font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
-  .xp__title .idx { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; }
+  .xp__title .idx { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-fill); color: #fff; }
   @media (min-width: 1200px) { .xp { grid-template-columns: 1fr 1fr; column-gap: var(--gutter); align-items: start; } .xp :global(.timeline__row) { grid-template-columns: 1fr; } }
   .fine { margin-top: var(--s-6); font-size: var(--step-small); }
 
   .edu { display: grid; gap: 14px; }
   .edu__card { --gx: 50%; --gy: 50%; position: relative; display: grid; gap: 8px; align-content: start; padding: 26px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
-  .edu__card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(300px circle at var(--gx) var(--gy), #1f4bff14, transparent 60%); opacity: 0; transition: opacity 300ms; pointer-events: none; }
+  .edu__card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(300px circle at var(--gx) var(--gy), #2f6bff14, transparent 60%); opacity: 0; transition: opacity 300ms; pointer-events: none; }
   .edu__card:hover::before { opacity: 1; }
   .edu__period { font-size: 12.5px; color: var(--accent); font-weight: 600; }
   .edu__card h3 { font-size: clamp(1.3rem, 1.1rem + .8vw, 1.8rem); }
-  .edu__card--lead { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 30px 60px -30px var(--accent-glow); }
-  .edu__card--lead :is(.edu__period, .label, .muted) { color: #e3e9ff; }
+  .edu__card--lead { background: var(--accent-fill); color: #fff; border-color: var(--accent); box-shadow: 0 30px 60px -30px var(--accent-glow); }
+  .edu__card--lead :is(.edu__period, .label, .muted) { color: #ffffff; }
   .edu__card--certs { background: var(--navy); color: #fff; border-color: var(--navy); }
   .edu__card--certs :is(.edu__period, .label) { color: #9fb2ff; }
   .certs { display: grid; gap: 8px; margin-top: 6px; }
@@ -183,11 +183,11 @@ const half = Math.ceil(allSkills.length / 2);
   @media (min-width: 1200px) { .edu { grid-template-columns: 1.4fr 1fr 1fr 1.2fr; } }
 
   .skills { display: grid; gap: 14px; }
-  .skills__group { display: grid; gap: 14px; padding: 24px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); }
+  .skills__group { display: grid; gap: 14px; padding: 24px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
   .skills__group dt { display: flex; gap: 10px; align-items: baseline; font-weight: 640; font-size: 1.15rem; letter-spacing: -.02em; }
   .skills__group dd { margin: 0; }
   @media (min-width: 900px) { .skills { grid-template-columns: 1fr 1fr; } }
-  .cv-cta { display: grid; gap: var(--s-5); align-items: center; margin-top: var(--s-7); padding: clamp(24px, 3vw, 40px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); }
+  .cv-cta { display: grid; gap: var(--s-5); align-items: center; margin-top: var(--s-7); padding: clamp(24px, 3vw, 40px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-2); }
   .cv-cta__title { font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.6rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; margin-top: 6px; }
   @media (min-width: 900px) { .cv-cta { grid-template-columns: 1fr auto; } }
 </style>

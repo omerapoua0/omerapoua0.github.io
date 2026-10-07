@@ -39,7 +39,7 @@ const hasTour = ['katana', 'nookbase', 'inos', 'bitget', 'bp'].includes(project.
 </article>
 
 <style>
-  .case { position: relative; display: grid; gap: clamp(24px, 3vw, 48px); padding: clamp(14px, 2vw, 28px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--header) + 24px); }
+  .case { position: relative; display: grid; gap: clamp(24px, 3vw, 48px); padding: clamp(14px, 2vw, 28px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--header) + 24px); }
   .case + :global(.case) { margin-top: clamp(20px, 3vw, 40px); }
   .case__alias { position: absolute; top: 0; }
   .case__media-in { position: relative; display: grid; gap: 14px; }
@@ -60,7 +60,7 @@ const hasTour = ['katana', 'nookbase', 'inos', 'bitget', 'bp'].includes(project.
   .case__steps dd { margin: 0; max-width: 62ch; }
   .case__steps ul:not(.pills) { display: grid; gap: 8px; }
   .case__steps ul:not(.pills) li { position: relative; padding-left: 20px; }
-  .case__steps ul:not(.pills) li::before { content: ''; position: absolute; left: 2px; top: .7em; width: 8px; height: 2px; border-radius: 2px; background: var(--accent); }
+  .case__steps ul:not(.pills) li::before { content: ''; position: absolute; left: 2px; top: .7em; width: 8px; height: 2px; border-radius: 2px; background: var(--accent-fill); }
   .case__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
   @media (min-width: 1024px) {
     .case { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; }

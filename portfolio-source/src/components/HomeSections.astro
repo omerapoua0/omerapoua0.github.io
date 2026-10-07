@@ -1,22 +1,24 @@
 ---
-/* Everything below the homepage hero and doors: selected work, skills with
-   evidence, lessons, about, and the contact band. Facts only from src/data
-   and the CV. */
+/* Everything below the homepage hero and doors (v6 neon): a skills marquee
+   that speeds up with the scroll, "What I do" (Build / Reason / Teach) as
+   sticky storytelling with a progress rail, the selected work as a pinned
+   horizontal gallery driven by vertical scroll, skills with evidence,
+   lessons, about (a statement that fills with light as you scroll) and the
+   contact band. Facts only from src/data and the CV. */
 import SectionHead from './SectionHead.astro';
 import CapabilityMatrix from './CapabilityMatrix.astro';
 import ProjectMedia from './ProjectMedia.astro';
-import Figure from './Figure.astro';
-import { caseStudies, projects } from '../data/projects';
+import { caseStudies } from '../data/projects';
 import { statusLabel, site } from '../data/site';
 
 const pad = (value: number) => String(value).padStart(2, '0');
 const skillsRow = ['LangGraph', 'Bayesian inference', 'MAPE-K', 'Python', 'Time-series forecasting', 'Feature engineering', 'Data pipelines', 'FastAPI', 'PostgreSQL', 'Docker'];
 const learnRow = ['GCSE & A-level maths', 'Physics', 'Linear algebra', 'Calculus', 'Optimisation', 'Probability', 'Qiskit', 'Discrete maths'];
-/* The sliding project strip: one row, one tile style. Every tile names the
-   project and its organisation; projects without a concept visual get the
-   same navy schematic plate their cards use. One set is wider than a 1440px
-   screen, so a title never shows twice at once. */
-const tiles = projects.map(project => ({ id: project.id, name: project.name, org: project.org, image: project.media?.image, figure: (project.id === 'bitget' ? 'bitget' : project.id === 'bp' ? 'bp' : 'ai-he') as 'bitget' | 'bp' | 'ai-he' }));
+const chapters = [
+  { id: 'build', title: 'Build', head: 'AI products, from the maths to production.', copy: 'As AI Product Engineer at Digis Squared I design the closed-loop MAPE-K reasoning for the KATANA network-autonomy programme. As founder of NOOKBASE I’m building an agentic study platform, pre-launch with around 150 beta users.', facts: ['LangGraph workflows', 'MAPE-K reasoning', 'iOS · Android · Web'], href: '/work.html', go: 'See the work' },
+  { id: 'reason', title: 'Reason', head: 'Decisions you can explain.', copy: 'Bayesian inference to automate network decisions. Predictive models on historical and live market data at Bitget. Next, optimisation and machine learning for credit scoring at a Santander research placement (Summer 2027, upcoming).', facts: ['Bayesian inference', 'Time-series forecasting', 'Optimisation'], href: '/research.html', go: 'Research' },
+  { id: 'teach', title: 'Teach', head: 'Maths and science, made clear.', copy: 'Mathematics & Physics Teaching Assistant at Southfields Academy, and one-to-one online lessons for GCSE and A-level. Enhanced DBS checked, with a free 15-minute intro call.', facts: ['GCSE & A-level', 'Maths & physics', 'Online, one-to-one'], href: '/tutoring.html', go: 'Lessons' },
+];
 const now = [
   { label: 'Now', title: 'AI Product Engineer', meta: 'Digis Squared · since Jan 2026' },
   { label: 'Building', title: 'NOOKBASE', meta: 'Pre-launch · around 150 beta users' },
@@ -48,56 +50,88 @@ const levels = [
   ))}
 </div>
 
-<section class="section work" id="work" aria-labelledby="work-title">
-  <div class="wrap">
-    <SectionHead mark="01" label="Selected work" id="work-title">Real systems, <em class="voice">honestly labelled.</em>
-      <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. Each card says what I did, what the wider team did and what stage it’s at. Open any one for the tour.</p>
-    </SectionHead>
-  </div>
-
-  <div class="strip" aria-hidden="true">
-    <div class="strip__row">
-      <div class="strip__track">
-        {[0, 1].map(() => tiles.map(tile => (
-          <span class:list={['tile', { 'tile--type': !tile.image }]}>
-            <span class="tile__media">{tile.image ? <img src={tile.image} alt="" width="380" height="238" loading="lazy" decoding="async" /> : <Figure kind={tile.figure} />}</span>
-            <span class="tile__text"><b>{tile.name}</b><span class="tile__cap">{tile.org}</span></span>
-          </span>
-        )))}
+<section class="story" id="what" aria-labelledby="what-title" data-scrolly data-scrub="contain">
+  <div class="wrap story__grid">
+    <div class="story__side">
+      <div class="story__sticky">
+        <p class="eyebrow"><b>01</b>What I do</p>
+        <h2 id="what-title" class="story__title">Build. Reason. <em class="voice">Teach.</em></h2>
+        <ol class="story__rail" aria-hidden="true">
+          <i class="story__rail-fill"></i>
+          {chapters.map((chapter, index) => <li class={`story__tick story__tick--${index}`}><span>0{index + 1}</span>{chapter.title}</li>)}
+        </ol>
+        <div class="story__visual" aria-hidden="true">
+          <span class="hud hud--blue"></span>
+          <svg class="story__svg story__svg--0" viewBox="0 0 320 200"><g fill="none" stroke-width="1.5"><rect pathLength="1" x="20" y="70" width="72" height="60" rx="6" /><rect pathLength="1" x="124" y="70" width="72" height="60" rx="6" /><rect pathLength="1" x="228" y="70" width="72" height="60" rx="6" /><path pathLength="1" class="r" d="M92 100h32M196 100h32" /></g><g class="t"><text x="56" y="104">MATHS</text><text x="160" y="104">MODEL</text><text x="264" y="104">PRODUCT</text></g></svg>
+          <svg class="story__svg story__svg--1" viewBox="0 0 320 200"><g fill="none" stroke-width="1.5"><path pathLength="1" class="r" d="M20 170C80 170 90 70 130 70S190 170 300 170" stroke-dasharray=".02 .02" /><path pathLength="1" d="M20 170C110 170 140 36 176 36S230 170 300 170" /><path pathLength="1" class="r" d="M176 36V176" /></g><g class="t"><text x="70" y="62">PRIOR</text><text x="226" y="62">POSTERIOR</text></g></svg>
+          <svg class="story__svg story__svg--2" viewBox="0 0 320 200"><g fill="none" stroke-width="1.5"><path pathLength="1" class="r" d="M30 180H300M60 190V20" /><path pathLength="1" d="M70 30Q160 330 290 30" /><path pathLength="1" class="r" d="M120 150 270 60" /></g><g class="t"><text x="200" y="176">y = x²</text><text x="232" y="96">TANGENT</text></g></svg>
+          <span class="story__readout"><b></b>/03</span>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div class="wrap">
-    <ol class="cards" data-reveal-stagger>
-      {caseStudies.map((project, index) => (
-        <li class:list={['card', { 'card--wide': index < 2 }]}>
-          {/* Named by the project and its status (not the media caption); the
-              concept-visual label is still announced as the description. */}
-          <a class="card__link" href={`/inside/${project.id}.html`} data-open={project.name} data-glow aria-labelledby={`card-${project.id}-name card-${project.id}-status`} aria-describedby={project.media ? `card-${project.id}-cap` : undefined}>
-            <span class="card__media"><ProjectMedia project={project} video={index < 2} captionId={`card-${project.id}-cap`} /></span>
-            <span class="card__body">
-              <span class="card__meta"><span class="card__num">{pad(index + 1)}/{pad(caseStudies.length)}</span><span class:list={['chip', `chip--${project.status}`]} id={`card-${project.id}-status`}>{statusLabel[project.status]}</span></span>
-              <span class="card__name" id={`card-${project.id}-name`}>{project.name}</span>
-              <span class="card__org">{project.role} · {project.org === 'Founder' ? 'NOOKBASE' : project.org} · {project.period}</span>
-              <span class="card__summary">{project.summary}</span>
-              <span class="card__note">{project.statusNote}</span>
-              <span class="card__cta">Open the tour <span aria-hidden="true">↗</span></span>
-            </span>
-          </a>
+    <ol class="story__chapters">
+      {chapters.map((chapter, index) => (
+        <li class="chapter" data-scrolly-step id={`what-${chapter.id}`}>
+          <span class="chapter__num">0{index + 1}<span>/03</span></span>
+          <h3 class="chapter__title">{chapter.title}</h3>
+          <p class="chapter__head">{chapter.head}</p>
+          <p class="chapter__copy">{chapter.copy}</p>
+          <ul class="chapter__facts">{chapter.facts.map(fact => <li>{fact}</li>)}</ul>
+          <a class="go" href={chapter.href} data-open={chapter.go}>{chapter.go} <span aria-hidden="true">↗</span></a>
         </li>
       ))}
     </ol>
-    <p class="more" data-reveal><a class="btn btn--ghost" href="/work.html" data-open="Work">All case studies <span class="arrow" aria-hidden="true">↗</span></a></p>
+  </div>
+</section>
+
+<section class="work" id="work" aria-labelledby="work-title">
+  <div class="hgal" data-hgallery data-scrub="contain">
+    <div class="hgal__sticky">
+      <div class="wrap hgal__head">
+        <SectionHead mark="02" label="Selected work" id="work-title">Real systems, <em class="voice">honestly labelled.</em>
+          <p slot="aside">Network autonomy, my own learning product, market modelling and research automation. Each card says what I did, what the wider team did and what stage it’s at. Open any one for the tour.</p>
+        </SectionHead>
+      </div>
+      <ol class="hgal__track" data-hgallery-track>
+        {caseStudies.map((project, index) => (
+          <li class="hcard" data-hgallery-item>
+            {/* Named by the project and its status (not the media caption); the
+                concept-visual label is still announced as the description. */}
+            <a class="hcard__link" href={`/inside/${project.id}.html`} data-open={project.name} data-glow aria-labelledby={`card-${project.id}-name card-${project.id}-status`} aria-describedby={project.media ? `card-${project.id}-cap` : undefined}>
+              <span class="hud"></span>
+              <span class="hcard__media"><ProjectMedia project={project} video={index < 2} captionId={`card-${project.id}-cap`} /></span>
+              <span class="hcard__body">
+                <span class="hcard__meta"><span class="hcard__num">{pad(index + 1)}<span>/{pad(caseStudies.length)}</span></span><span class:list={['chip', `chip--${project.status}`]} id={`card-${project.id}-status`}>{statusLabel[project.status]}</span></span>
+                <span class="hcard__name" id={`card-${project.id}-name`}>{project.name}</span>
+                <span class="hcard__org">{project.role} · {project.org === 'Founder' ? 'NOOKBASE' : project.org} · {project.period}</span>
+                <span class="hcard__summary">{project.summary}</span>
+                <span class="hcard__note">{project.statusNote}</span>
+                <span class="hcard__cta">Open the tour <span aria-hidden="true">↗</span></span>
+              </span>
+            </a>
+          </li>
+        ))}
+        <li class="hcard hcard--all" data-hgallery-item>
+          <a class="hcard__all" href="/work.html" data-open="Work">
+            <span class="hud hud--red"></span>
+            <span class="hcard__all-k">Index</span>
+            <span class="hcard__all-t">All case studies</span>
+            <span class="hcard__all-go" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ol>
+      <div class="wrap hgal__foot" aria-hidden="true"><span class="hgal__bar"><i></i></span><span class="hgal__hint">Scroll to move · Tab through the cards</span></div>
+    </div>
   </div>
 </section>
 
 <section class="section skills" id="skills" aria-labelledby="skills-title" tabindex="-1">
   <div class="wrap">
-    <SectionHead mark="02" label="Skills" id="skills-title">Skills, with <em class="voice">evidence.</em>
+    <SectionHead mark="03" label="Skills" id="skills-title">Skills, with <em class="voice">evidence.</em>
       <p slot="aside">No star ratings. Each skill points to where my CV shows it in use. Hover a column to trace one project across the matrix.</p>
     </SectionHead>
     <div class="skills__panel" data-reveal>
+      <span class="hud"></span>
       <CapabilityMatrix />
     </div>
   </div>
@@ -106,7 +140,7 @@ const levels = [
 <section class="section lessons" id="lessons" aria-labelledby="lessons-title">
   <div class="wrap lessons__grid">
     <div class="lessons__copy" data-reveal>
-      <p class="eyebrow"><b>03</b>Lessons</p>
+      <p class="eyebrow"><b>04</b>Lessons</p>
       <h2 id="lessons-title">Maths &amp; science, <em class="voice">made clear.</em></h2>
       <p class="lede">Personal online lessons for GCSE Foundation, GCSE Higher and A-level. Build a method you understand, not just an answer you remember.</p>
       <ul class="promises">
@@ -114,12 +148,12 @@ const levels = [
       </ul>
       <div class="actions">
         <a class="btn btn--accent" href="/tutoring.html#lesson-enquiry" data-open="Lessons" data-magnetic>Book a lesson <span class="arrow" aria-hidden="true">↗</span></a>
-        <a class="btn btn--ghost" href="/tutoring.html" data-open="Lessons">How lessons work</a>
+        <a class="btn btn--ghost" href="/tutoring.html" data-open="Lessons" data-magnetic>How lessons work</a>
       </div>
     </div>
     <ol class="levels" data-reveal-stagger>
       {levels.map((level, index) => (
-        <li class="level" data-glow>
+        <li class="level" data-glow data-tilt>
           <span class="level__num">{['i', 'ii', 'iii'][index]}</span>
           <span class="level__name">{level.name}</span>
           <span class="level__copy">{level.copy}</span>
@@ -134,17 +168,18 @@ const levels = [
 
 <section class="section about" id="about" aria-labelledby="about-title">
   <div class="wrap about__grid">
-    <figure class="about__photo" data-reveal>
+    <figure class="about__photo" data-reveal="wipe">
       <picture>
         <source srcset="/portrait-hero.webp" type="image/webp" />
         <img src="/portrait-hero.jpg" alt="Portrait of Omar Aboelella" width="720" height="900" loading="lazy" decoding="async" />
       </picture>
+      <span class="hud hud--red"></span>
       <figcaption><span>Omar Aboelella</span><span>London · Arabic &amp; English</span></figcaption>
     </figure>
     <div class="about__copy">
       <div data-reveal>
-        <p class="eyebrow"><b>04</b>About</p>
-        <h2 id="about-title">Understand it. Build it. <em class="voice">Explain it.</em></h2>
+        <p class="eyebrow"><b>05</b>About</p>
+        <h2 id="about-title" class="about__title fill-text" data-scrub="entry">Understand it. Build it. Explain it.</h2>
         <p class="lede">I build machine-learning and optimisation systems from the mathematics through to production code, and I teach the maths that makes them work.</p>
       </div>
       <ol class="now" data-reveal-stagger>
@@ -153,23 +188,23 @@ const levels = [
         ))}
       </ol>
       <div class="actions" data-reveal>
-        <a class="btn" href="/Omar-Aboelella-CV.pdf" download>Download CV <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
-        <a class="btn btn--ghost" href="/cv.html" data-open="About & CV">About &amp; CV <span class="arrow" aria-hidden="true">↗</span></a>
+        <a class="btn" href="/Omar-Aboelella-CV.pdf" download data-magnetic>Download CV <span class="arrow arrow--down" aria-hidden="true">↓</span></a>
+        <a class="btn btn--ghost" href="/cv.html" data-open="About & CV" data-magnetic>About &amp; CV <span class="arrow" aria-hidden="true">↗</span></a>
       </div>
     </div>
   </div>
 </section>
 
 <section class="contact-band" id="contact" aria-labelledby="contact-title">
-  <div class="contact-band__bg" aria-hidden="true"><span></span><span></span></div>
+  <div class="contact-band__bg" aria-hidden="true"><span></span><span></span><b class="beams"><i></i><i></i><i></i></b><i class="contact-band__grid"></i><span class="hud contact-band__hud"></span></div>
   <div class="wrap contact-band__inner">
-    <p class="eyebrow eyebrow--dark"><b>05</b>Contact</p>
+    <p class="eyebrow eyebrow--dark"><b>06</b>Contact</p>
     <h2 id="contact-title" class="contact-band__title" data-reveal>Have something in mind? <span>Let’s talk.</span></h2>
     <p class="contact-band__lede" data-reveal>Projects, roles, research or lessons. Write a line or two; the contact form prepares an email you check and send yourself.</p>
     <div class="contact-band__row" data-reveal>
       <div class="contact-band__email">
         <a href={`mailto:${site.email}`}>{site.email}</a>
-        <button type="button" class="copy-btn" data-copy-email={site.email} hidden><span data-copy-label>Copy</span></button>
+        <button type="button" class="copy-btn" data-copy-email={site.email} hidden><svg class="copy-btn__tick" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path pathLength="1" d="m3 8.5 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg><span data-copy-label>Copy</span></button>
         <span class="sr-only" role="status" data-copy-status></span>
       </div>
       <div class="contact-band__actions">
@@ -182,130 +217,183 @@ const levels = [
 </section>
 
 <style>
-  /* Marquee of skills: two rows sliding in opposite directions. */
-  .marquee { overflow: hidden; padding: clamp(18px, 2.4vw, 32px) 0; border-block: 1px solid var(--line); background: var(--surface); display: grid; gap: 6px; }
+  /* Marquee of skills: two rows sliding in opposite directions; fx.ts speeds
+     them up and leans them with the scroll velocity. */
+  .marquee { overflow: hidden; padding: clamp(18px, 2.4vw, 32px) 0; border-block: 1px solid var(--line); background: linear-gradient(180deg, #0b0d12, #090a0e); display: grid; gap: 6px; }
   .marquee__track { display: flex; width: max-content; }
   .marquee__set { display: flex; flex: none; transform: skewX(calc(var(--scroll-vel, 0) * -12deg)); }
-  .marquee__word { display: inline-flex; align-items: center; gap: .5em; padding-right: .5em; font-size: clamp(1.7rem, 1rem + 3vw, 3.8rem); font-weight: 660; letter-spacing: -.05em; line-height: 1.12; white-space: nowrap; }
-  .marquee__word--ghost { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
-  .marquee__word i { width: .32em; height: .32em; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 .12em var(--accent-soft); }
+  .marquee__word { display: inline-flex; align-items: center; gap: .5em; padding-right: .5em; font-size: clamp(1.7rem, 1rem + 3vw, 3.8rem); font-weight: 720; letter-spacing: -.045em; line-height: 1.12; white-space: nowrap; text-transform: uppercase; }
+  .marquee__word--ghost { color: transparent; -webkit-text-stroke: 1px #ffffff59; }
+  .marquee__word i { width: .26em; height: .26em; rotate: 45deg; background: var(--red); box-shadow: 0 0 12px var(--red); }
+  .marquee__row--rev .marquee__word i { background: var(--blue); box-shadow: 0 0 12px var(--blue); }
 
-  /* Homepage rhythm: a tighter step than interior pages, and sections that
-     share a background (work → skills → lessons) share one gap. */
-  .section:is(.work, .skills, .lessons, .about) { padding-block: clamp(64px, 7vw, 112px); }
-  .section:is(.skills, .lessons) { padding-top: 0; }
-  .work { background: var(--bg); }
-  .strip { margin-bottom: clamp(32px, 4vw, 56px); overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-  .strip__track { display: flex; gap: 16px; width: max-content; padding-block: 4px 12px; }
-  .tile { position: relative; flex: none; width: clamp(240px, 26vw, 380px); aspect-ratio: 16 / 10; border-radius: 22px; overflow: hidden; background: var(--navy); color: var(--plate-ink); box-shadow: var(--shadow-2); isolation: isolate; }
-  .tile__media { position: absolute; inset: 0; display: grid; place-items: center; }
-  .tile__media img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.1); }
-  .tile:not(.tile--type) .tile__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, #4f74ff, #0b1640); mix-blend-mode: color; opacity: .6; }
-  .tile--type .tile__media { padding: 6% 8% 26%; }
-  .tile--type .tile__media :global(svg) { width: auto; height: 100%; max-width: 100%; }
-  .tile__text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; align-items: end; justify-content: space-between; gap: 10px; padding: 40px 14px 12px 16px; background: linear-gradient(180deg, #0b164000, #0b1640d9 70%); }
-  .tile__text b { font-size: clamp(1rem, .85rem + .5vw, 1.3rem); font-weight: 650; letter-spacing: -.035em; line-height: 1.1; color: #fff; }
-  .tile__cap { flex: none; padding: 3px 9px; border-radius: 999px; background: #ffffffe6; color: var(--ink); font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+  /* What I do: sticky storytelling with a progress rail (--p from the scrub)
+     and a HUD visual that follows the chapter in view (data-at, site.ts). */
+  .story { position: relative; padding-block: clamp(80px, 9vw, 140px); background: radial-gradient(60% 50% at 20% 40%, #2f6bff14, transparent 70%), var(--bg); }
+  .story__grid { display: grid; gap: 40px; }
+  .story__sticky { display: grid; gap: 22px; }
+  .story__title { font-size: clamp(2.6rem, 1.2rem + 5vw, 6rem); font-weight: 760; letter-spacing: -.055em; text-transform: uppercase; line-height: .92; }
+  .story__rail { position: relative; display: flex; gap: 0; padding-top: 14px; border-top: 1px solid var(--line-strong); }
+  .story__rail-fill { position: absolute; left: 0; top: -1px; height: 2px; width: 100%; background: linear-gradient(90deg, var(--red), var(--blue)); box-shadow: 0 0 10px #2f6bff99; transform-origin: 0 50%; transform: scaleX(1); }
+  .story__tick { flex: 1; display: grid; gap: 2px; font: 600 13px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); transition: color 400ms; }
+  .story__tick span { font-weight: 400; font-size: 11px; color: var(--accent); }
+  .story__visual { position: relative; display: none; aspect-ratio: 16 / 10; border-radius: 10px; background: radial-gradient(70% 70% at 50% 40%, #121a2e, #0a0c11 75%); border: 1px solid var(--line); overflow: hidden; }
+  .story__visual .hud { --hud-inset: 10px; }
+  .story__svg { position: absolute; inset: 12%; width: 76%; height: 76%; opacity: 0; transition: opacity 500ms var(--ease-out); }
+  .story__svg g[fill='none'] > * { stroke: var(--blue); filter: drop-shadow(0 0 4px #2f6bffcc); stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1400ms var(--ease-out); }
+  .story__svg g[fill='none'] > .r { stroke: var(--red); filter: drop-shadow(0 0 4px #ff2d46cc); }
+  .story__svg .t { fill: var(--ink-2); font: 500 10px var(--font-mono); letter-spacing: .12em; text-anchor: middle; opacity: 0; transition: opacity 600ms 500ms; }
+  .story__readout { position: absolute; right: 18px; bottom: 14px; font: 500 11px var(--font-mono); letter-spacing: .1em; color: var(--muted); }
+  .story__readout b { color: var(--ink); font-weight: 600; }
+  .story__readout b::before { content: '01'; }
+  .story[data-at='1'] .story__readout b::before { content: '02'; }
+  .story[data-at='2'] .story__readout b::before { content: '03'; }
+  .story__chapters { display: grid; gap: 18px; }
+  .chapter { position: relative; display: grid; gap: 12px; align-content: center; padding: clamp(24px, 3vw, 40px); border-radius: 14px; background: linear-gradient(180deg, #12151c, #0d1016); border: 1px solid var(--line); transition: border-color 500ms, box-shadow 500ms; }
+  .chapter::before { content: ''; position: absolute; left: -1px; top: 18%; bottom: 18%; width: 2px; background: var(--line-strong); transition: background-color 500ms, box-shadow 500ms; }
+  .chapter__num { font: 600 12px var(--font-mono); letter-spacing: .1em; color: var(--accent); }
+  .chapter__num span { color: var(--muted); font-weight: 400; }
+  .chapter__title { font-size: clamp(2.4rem, 1.4rem + 3vw, 4.2rem); font-weight: 760; letter-spacing: -.05em; text-transform: uppercase; line-height: .95; }
+  .chapter__head { font-size: var(--step-lede); font-weight: 560; letter-spacing: -.02em; color: var(--ink); line-height: 1.3; }
+  .chapter__copy { color: var(--ink-2); max-width: 52ch; }
+  .chapter__facts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chapter__facts li { padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 4px; font: 500 11.5px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+  .story[data-at] .chapter[data-current] { border-color: #4d84ff59; box-shadow: 0 30px 80px -40px #2f6bff80; }
+  .story[data-at] .chapter[data-current]::before { background: var(--blue); box-shadow: 0 0 12px var(--blue); }
+  @media (min-width: 1000px) {
+    .story__grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: clamp(40px, 6vw, 110px); }
+    .story__sticky { position: sticky; top: calc(var(--header) + 40px); }
+    .story__visual { display: block; }
+    .chapter { min-height: 72vh; }
+    .story__chapters { gap: 10vh; padding-block: 8vh 14vh; }
+  }
+  /* Without JavaScript (no data-at) every diagram is simply drawn. */
+  .story:not([data-at]) .story__svg--0, .story[data-at='0'] .story__svg--0, .story[data-at='1'] .story__svg--1, .story[data-at='2'] .story__svg--2 { opacity: 1; }
+  .story:not([data-at]) .story__svg--0 :is(g > *, .t), .story[data-at='0'] .story__svg--0 :is(g > *, .t), .story[data-at='1'] .story__svg--1 :is(g > *, .t), .story[data-at='2'] .story__svg--2 :is(g > *, .t) { stroke-dashoffset: 0; opacity: 1; }
+  .story[data-at='0'] .story__tick--0, .story[data-at='1'] .story__tick--1, .story[data-at='2'] .story__tick--2 { color: var(--ink); }
 
-  .cards { display: grid; gap: 16px; }
-  .card__link { --gx: 50%; --gy: 50%; position: relative; display: grid; height: 100%; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); text-decoration: none; color: var(--ink); overflow: hidden; isolation: isolate; transition: box-shadow 500ms var(--ease-out), translate 500ms var(--ease-out); }
-  .card__link::before { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(420px circle at var(--gx) var(--gy), #1f4bff14, transparent 60%); opacity: 0; transition: opacity 300ms; }
-  .card__link:hover, .card__link:focus-visible { box-shadow: 0 2px 6px #0a0c100d, 0 36px 80px -28px #1f4bff59; translate: 0 -4px; }
-  .card__link:hover::before { opacity: 1; }
-  .card__media { display: block; padding: 10px 10px 0; }
-  .card__media :global(.plate) { border-radius: 20px; aspect-ratio: 16 / 9; }
-  .card__media :global(.plate--type svg) { width: auto; height: 86%; max-width: 92%; }
-  .card__media :global(.plate img:not(.plate__logo)) { transition: transform 900ms var(--ease-out); }
-  .card__link:hover .card__media :global(.plate img:not(.plate__logo)) { transform: scale(1.05); }
-  .card__body { display: grid; gap: 8px; align-content: start; padding: 18px 22px 24px; }
-  .card__meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .card__num { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: .06em; }
-  .card__name { font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.6rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; margin-top: 4px; }
-  .card__org { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
-  .card__summary { color: var(--ink-2); max-width: 52ch; }
-  .card__note { font-size: 13.5px; color: var(--muted); padding-left: 12px; border-left: 2px solid var(--accent); max-width: 52ch; }
-  .card__cta { display: inline-flex; gap: 8px; margin-top: 8px; font-weight: 620; color: var(--accent); }
-  .more { margin-top: var(--s-7); }
-  @media (min-width: 760px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .card:not(.card--wide):last-child { grid-column: 1 / -1; } }
-  @media (min-width: 1100px) {
-    .cards { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; }
-    .card { grid-column: span 2; }
-    .card--wide { grid-column: span 3; }
-    .card:not(.card--wide):last-child { grid-column: span 2; }
+  /* Selected work: a horizontal gallery. On desktop with motion it pins and
+     the track moves sideways as you scroll down (--p); elsewhere it is a
+     native horizontal scroller with snap points (touch, keyboard, Pause). */
+  .work { position: relative; background: radial-gradient(70% 50% at 80% 50%, #2f6bff12, transparent 70%), var(--bg); }
+  .hgal { --cw: min(84vw, 520px); --gap: 16px; --n: 6; }
+  .hgal__sticky { padding-block: clamp(64px, 7vw, 104px) clamp(40px, 5vw, 72px); }
+  .hgal__head :global(.section-head) { margin-bottom: clamp(24px, 3vw, 40px); }
+  .hgal__head :global(.section-line) { display: none; }
+  .hgal__track { position: relative; display: flex; gap: var(--gap); padding-inline: var(--margin); padding-bottom: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--margin); scrollbar-width: thin; scrollbar-color: #ffffff33 transparent; }
+  .hcard { flex: none; width: var(--cw); scroll-snap-align: start; display: grid; }
+  .hcard__link, .hcard__all { --gx: 50%; --gy: 50%; position: relative; display: grid; grid-template-rows: auto 1fr; height: 100%; border-radius: 14px; background: linear-gradient(180deg, #141821, #0d1016); border: 1px solid var(--line); box-shadow: var(--shadow-2); text-decoration: none; color: var(--ink); overflow: hidden; isolation: isolate; transition: box-shadow 500ms var(--ease-out), border-color 400ms, translate 500ms var(--ease-out); }
+  .hcard__link::before, .hcard__all::before { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(420px circle at var(--gx) var(--gy), #2f6bff24, transparent 60%); opacity: 0; transition: opacity 300ms; }
+  .hcard__link:is(:hover, :focus-visible), .hcard__all:is(:hover, :focus-visible) { border-color: #4d84ff73; box-shadow: 0 2px 6px #00000080, 0 36px 80px -28px #2f6bff80; translate: 0 -6px; }
+  .hcard__link:hover::before, .hcard__all:hover::before { opacity: 1; }
+  .hcard .hud { --hud-inset: 8px; --hc: #ffffff40; z-index: 4; }
+  .hcard__media { display: block; padding: 10px 10px 0; }
+  .hcard__media :global(.plate) { border-radius: 8px; aspect-ratio: 16 / 8.4; }
+  .hcard__media :global(.plate--type svg) { width: auto; height: 86%; max-width: 92%; }
+  .hcard__media :global(.plate img:not(.plate__logo)) { transition: transform 900ms var(--ease-out); }
+  .hcard__link:hover .hcard__media :global(.plate img:not(.plate__logo)) { transform: scale(1.06); }
+  .hcard__body { display: grid; gap: 8px; align-content: start; padding: 16px 20px 22px; }
+  .hcard__meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .hcard__num { font: 600 12px var(--font-mono); color: var(--accent); letter-spacing: .08em; }
+  .hcard__num span { color: var(--muted); font-weight: 400; }
+  .hcard__name { font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.5rem); font-weight: 760; letter-spacing: -.045em; line-height: 1; margin-top: 2px; text-transform: uppercase; }
+  .hcard__org { font: 500 11.5px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  .hcard__summary { color: var(--ink-2); font-size: var(--step-small); max-width: 52ch; }
+  .hcard__note { font-size: 13px; color: var(--muted); padding-left: 12px; border-left: 2px solid var(--red); max-width: 52ch; }
+  .hcard__cta { display: inline-flex; gap: 8px; margin-top: 4px; font-weight: 620; color: var(--accent); }
+  .hcard--all { width: min(60vw, 300px); }
+  .hcard__all { grid-template-rows: auto 1fr auto; align-content: space-between; padding: 26px; background: radial-gradient(90% 70% at 30% 20%, #ff2d461f, transparent 70%), #0d1016; }
+  .hcard__all-k { font: 500 11px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--red-glow); }
+  .hcard__all-t { align-self: end; font-size: clamp(2rem, 1.4rem + 2vw, 3.2rem); font-weight: 760; letter-spacing: -.05em; line-height: .95; text-transform: uppercase; }
+  .hcard__all-go { display: grid; place-items: center; width: 52px; height: 52px; margin-top: 18px; border-radius: 50%; border: 1px solid var(--line-strong); font-size: 20px; transition: background-color 300ms, color 300ms, transform 500ms var(--ease-out); }
+  .hcard__all:is(:hover, :focus-visible) .hcard__all-go { background: var(--ink); color: var(--bg); transform: rotate(45deg); }
+  .hgal__foot { display: none; align-items: center; gap: 20px; margin-top: 22px; }
+  .hgal__bar { position: relative; flex: 1; height: 1px; background: var(--line-strong); }
+  .hgal__bar i { position: absolute; inset: -1px 0; background: linear-gradient(90deg, var(--red), var(--blue)); box-shadow: 0 0 10px #2f6bffaa; transform-origin: 0 50%; transform: scaleX(var(--p)); }
+  .hgal__hint { font: 500 10.5px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  @media (min-width: 760px) { .hgal { --cw: min(60vw, 540px); --gap: 20px; } }
+  @media (prefers-reduced-motion: no-preference) and (min-width: 1000px) and (hover: hover) {
+    :global(html.js:not([data-motion='off'])) .hgal { --pinned: 1; --cw: min(38vw, 560px); --travel: calc((var(--n) - 1) * var(--cw) + min(60vw, 300px) + (var(--n) - 1) * var(--gap) + 2 * var(--margin) - 100vw); height: calc(100vh + var(--travel)); }
+    :global(html.js:not([data-motion='off'])) .hgal__sticky { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: center; padding-block: calc(var(--header) + 8px) 24px; overflow: hidden; }
+    :global(html.js:not([data-motion='off'])) .hgal__track { overflow: visible; scroll-snap-type: none; width: max-content; translate: calc(var(--p) * var(--travel) * -1) 0; will-change: translate; }
+    :global(html.js:not([data-motion='off'])) .hgal__foot { display: flex; }
+    :global(html.js:not([data-motion='off'])) .hcard__summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   }
 
-  .skills { background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%); }
-  .skills__panel { padding: clamp(16px, 3vw, 40px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); }
+  /* Skills, lessons, about: colour washes from section to section. */
+  .section:is(.skills, .lessons, .about) { padding-block: clamp(64px, 7vw, 112px); }
+  .skills { background: linear-gradient(180deg, var(--bg) 0%, #0b0d12 100%); }
+  .skills__panel { position: relative; padding: clamp(16px, 3vw, 40px); border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-2); }
+  .skills__panel > .hud { --hud-inset: -6px; --hc: #4d84ff80; }
   .skills:focus { outline: none; }
 
-  .lessons { background: var(--bg-2); }
+  .lessons { background: radial-gradient(50% 60% at 90% 30%, #ff2d4612, transparent 70%), #0b0d12; padding-top: 0 !important; }
   .lessons__grid { display: grid; gap: clamp(32px, 5vw, 80px); align-items: start; }
   .lessons__copy { display: grid; gap: var(--s-5); }
-  .lessons__copy h2 { max-width: 12ch; }
+  .lessons__copy h2 { max-width: 12ch; text-transform: uppercase; font-weight: 740; }
   .promises { display: grid; gap: 10px; margin-block: var(--s-2) var(--s-3); }
   .promises li { display: flex; gap: 12px; align-items: baseline; }
-  .promises__tick { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; translate: 0 4px; }
+  .promises__tick { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--accent); color: var(--accent); box-shadow: 0 0 10px -2px #2f6bffaa; translate: 0 4px; }
   .levels { display: grid; gap: 12px; }
-  .level { --gx: 50%; --gy: 50%; position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 4px 16px; padding: 22px 24px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); overflow: hidden; }
-  .level::before { content: ''; position: absolute; inset: 0; background: radial-gradient(300px circle at var(--gx) var(--gy), #1f4bff14, transparent 60%); opacity: 0; transition: opacity 300ms; pointer-events: none; }
+  .level { --gx: 50%; --gy: 50%; position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 4px 16px; padding: 22px 24px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); overflow: hidden; transition: border-color 400ms; }
+  .level::before { content: ''; position: absolute; inset: 0; background: radial-gradient(300px circle at var(--gx) var(--gy), #2f6bff1f, transparent 60%); opacity: 0; transition: opacity 300ms; pointer-events: none; }
+  .level:hover { border-color: #4d84ff59; }
   .level:hover::before { opacity: 1; }
-  .level__num { grid-row: span 2; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--bg); font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
-  .level__name { font-size: var(--step-h3); font-weight: 650; letter-spacing: -.03em; }
+  .level__num { grid-row: span 2; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 8px; border: 1px solid var(--line-strong); font-family: var(--font-mono); font-size: 15px; color: var(--red-glow); font-weight: 600; }
+  .level__name { font-size: var(--step-h3); font-weight: 680; letter-spacing: -.03em; }
   .level__copy { color: var(--muted); font-size: var(--step-small); }
   .level--note { grid-template-columns: 1fr; background: transparent; box-shadow: none; border: 1px dashed var(--line-strong); }
   @media (min-width: 1000px) { .lessons__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .levels { margin-top: 56px; } }
 
   .about { background: var(--bg); }
   .about__grid { display: grid; gap: clamp(32px, 5vw, 80px); align-items: center; }
-  .about__photo { position: relative; max-width: 520px; border-radius: var(--radius-3); overflow: hidden; background: var(--raised); box-shadow: var(--shadow-3); }
+  .about__photo { position: relative; max-width: 520px; border-radius: 12px; overflow: hidden; background: var(--raised); box-shadow: var(--shadow-3); border: 1px solid var(--line-strong); }
   .about__photo img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 20%; }
-  .about__photo figcaption { position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; background: #ffffffd9; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+  .about__photo .hud { --hud-inset: 12px; --hl: 18px; }
+  .about__photo figcaption { position: absolute; left: 14px; right: 14px; bottom: 14px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border-radius: 6px; background: #07080bcc; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
   .about__copy { display: grid; gap: var(--s-6); }
-  .about__copy h2 { margin-top: var(--s-4); max-width: 14ch; }
-  .about__copy .lede { margin-top: var(--s-5); max-width: 44ch; }
+  .about__title { margin-top: var(--s-4); max-width: 13ch; font-size: clamp(2.4rem, 1.2rem + 4vw, 5rem); font-weight: 760; text-transform: uppercase; letter-spacing: -.05em; line-height: .95; }
+  .about__copy .lede { margin-top: var(--s-5); max-width: 44ch; color: var(--ink-2); }
   .now { display: grid; border-top: 1px solid var(--line); }
   .now li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 2px 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-  .now__label { grid-row: span 2; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); padding-top: 4px; }
-  .now__title { font-weight: 620; letter-spacing: -.02em; }
+  .now__label { grid-row: span 2; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); padding-top: 4px; }
+  .now li:last-child .now__label { color: var(--red-glow); }
+  .now__title { font-weight: 640; letter-spacing: -.02em; }
   .now__meta { font-size: 13.5px; color: var(--muted); }
   @media (min-width: 1000px) { .about__grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
 
-  /* The contact band: the one deep-navy moment on the page. */
-  .contact-band { position: relative; isolation: isolate; overflow: hidden; background: var(--navy); color: var(--navy-ink); padding-block: clamp(88px, 11vw, 168px); }
-  .contact-band__bg span { position: absolute; z-index: -1; border-radius: 50%; will-change: transform; }
-  .contact-band__bg span:first-child { width: 50vw; height: 50vw; right: -12vw; top: -20vw; background: radial-gradient(closest-side, #1f4bffaa, transparent); }
-  .contact-band__bg span:last-child { width: 40vw; height: 40vw; left: -14vw; bottom: -24vw; background: radial-gradient(closest-side, #5d7bff66, transparent); }
+  /* The contact band: deep blue-black with neon light. */
+  .contact-band { position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(180deg, var(--bg), var(--navy) 30%, #070a14); color: var(--navy-ink); padding-block: clamp(88px, 11vw, 168px); border-top: 1px solid var(--line); }
+  .contact-band__bg > * { position: absolute; z-index: -1; pointer-events: none; }
+  .contact-band__bg span:not(.hud) { border-radius: 50%; will-change: transform; }
+  .contact-band__bg span:first-child { width: 50vw; height: 50vw; right: -12vw; top: -20vw; background: radial-gradient(closest-side, #2f6bff59, transparent); }
+  .contact-band__bg span:nth-child(2) { width: 40vw; height: 40vw; left: -14vw; bottom: -24vw; background: radial-gradient(closest-side, #ff2d4633, transparent); }
+  .contact-band__grid { inset: 0; background: linear-gradient(#ffffff0a 1px, transparent 1px) 0 0 / 64px 64px, linear-gradient(90deg, #ffffff0a 1px, transparent 1px) 0 0 / 64px 64px; -webkit-mask: radial-gradient(60% 70% at 70% 30%, #000, transparent 75%); mask: radial-gradient(60% 70% at 70% 30%, #000, transparent 75%); }
+  .contact-band__hud { --hud-inset: 20px; --hl: 24px; }
   .contact-band__inner { display: grid; gap: var(--s-6); }
-  .contact-band__title { font-size: clamp(2.8rem, 1rem + 7vw, 8.4rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; max-width: 13ch; color: #fff; }
-  .contact-band__title span { color: #8ea6ff; }
+  .contact-band__title { font-size: clamp(2.8rem, 1rem + 7vw, 8.4rem); font-weight: 780; letter-spacing: -.055em; line-height: .9; max-width: 13ch; color: #fff; text-transform: uppercase; }
+  .contact-band__title span { color: var(--accent); text-shadow: 0 0 40px #2f6bff80; }
   .contact-band__lede { max-width: 52ch; color: var(--navy-muted); font-size: var(--step-lede); line-height: 1.45; }
   .contact-band__row { display: grid; gap: var(--s-5); align-items: center; padding-top: var(--s-6); border-top: 1px solid var(--navy-line); }
   .contact-band__email { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-  .contact-band__email a { font-family: var(--font-mono); font-size: clamp(1rem, .8rem + 1vw, 1.6rem); color: #fff; text-decoration: none; border-bottom: 1px solid #8ea6ff; min-height: 44px; display: inline-flex; align-items: center; overflow-wrap: anywhere; }
-  .copy-btn { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #ffffff4d; background: #ffffff14; color: #fff; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
-  .copy-btn:hover { background: #ffffff26; }
+  .contact-band__email a { font-family: var(--font-mono); font-size: clamp(1rem, .8rem + 1vw, 1.6rem); color: #fff; text-decoration: none; border-bottom: 1px solid var(--accent); min-height: 44px; display: inline-flex; align-items: center; overflow-wrap: anywhere; }
   .contact-band__actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .contact-band__primary { background: #fff; border-color: #fff; color: var(--navy); }
-  .contact-band__primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .contact-band__social { display: inline-flex; align-items: center; gap: 6px; min-height: 52px; padding: 0 22px; border-radius: 999px; border: 1px solid #ffffff40; color: #fff; text-decoration: none; font-weight: 560; }
-  .contact-band__social:hover { border-color: #fff; background: #ffffff14; }
+  .contact-band__social { display: inline-flex; align-items: center; gap: 6px; min-height: 52px; padding: 0 22px; border-radius: 999px; border: 1px solid #ffffff40; color: #fff; text-decoration: none; font-weight: 560; transition: border-color 300ms, background-color 300ms, box-shadow 300ms; }
+  .contact-band__social:is(:hover, :focus-visible) { border-color: var(--red-glow); background: #ff2d4614; box-shadow: 0 0 24px -6px #ff2d4699; }
   .contact-band :focus-visible { outline-color: #fff; }
-  .contact-band__tool { display: grid; gap: 6px; margin-top: var(--s-6); color: var(--navy-muted); font-size: var(--step-small); max-width: 80ch; }
-  .contact-band__tool span { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #9fb2ff; }
   @media (min-width: 1000px) { .contact-band__row { grid-template-columns: minmax(0, 1fr) auto; } }
 
   @media (prefers-reduced-motion: no-preference) {
     .marquee__track { animation: slide 42s linear infinite; }
     .marquee__row--rev .marquee__track { animation-direction: reverse; animation-duration: 50s; }
-    .strip__track { animation: slide 70s linear infinite; }
-    .contact-band__bg span { animation: band-drift 16s ease-in-out infinite alternate; }
-    .contact-band__bg span:last-child { animation-duration: 20s; animation-direction: alternate-reverse; }
-    :global(html[data-motion='off']) :is(.marquee__track, .strip__track, .contact-band__bg span) { animation-play-state: paused; }
-    :global(html.reveal-ready) .cards > li:not(.is-in) { transform: translateY(60px) scale(.97); }
+    .contact-band__bg span:not(.hud) { animation: band-drift 16s ease-in-out infinite alternate; }
+    .contact-band__bg span:nth-child(2) { animation-duration: 20s; animation-direction: alternate-reverse; }
+    :global(html[data-motion='off']) .marquee__track, :global(html[data-motion='off']) .contact-band__bg span:not(.hud) { animation-play-state: paused; }
+    :global(html.js:not([data-motion='off'])) .story__rail-fill { transform: scaleX(var(--p)); }
     :global(html.reveal-ready) .levels > li:not(.is-in) { transform: translateX(60px); }
     @supports (animation-timeline: view()) {
-      :global(html:not([data-motion='off'])) .about__photo img { animation: photo-pan linear both; animation-timeline: view(); animation-range: cover; }
-      :global(html:not([data-motion='off'])) .contact-band__title { animation: band-wipe linear both; animation-timeline: view(); animation-range: entry 10% cover 40%; }
+      :global(html:not([data-motion='off'])) .about__photo img { animation-name: photo-pan; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: cover; }
+      :global(html:not([data-motion='off'])) .contact-band__title { animation-name: band-wipe; animation-duration: auto; animation-timing-function: linear; animation-fill-mode: both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     }
   }
   @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -313,5 +401,3 @@ const levels = [
   @keyframes photo-pan { from { transform: scale(1.14) translateY(-4%); } to { transform: scale(1.14) translateY(4%); } }
   @keyframes band-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 </style>
-
-

@@ -31,7 +31,7 @@ const fill = (words: string[]) => { let out = [...words]; while (out.length < 10
   .mq--md .mq__word { font-size: clamp(1.15rem, .9rem + 1.2vw, 1.9rem); letter-spacing: -.035em; }
   .mq__word--ghost { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
   .mq--navy .mq__word--ghost { -webkit-text-stroke-color: #c9d3ff; }
-  .mq__word i { width: .3em; height: .3em; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 .12em var(--accent-soft); }
+  .mq__word i { width: .3em; height: .3em; border-radius: 50%; background: var(--accent-fill); box-shadow: 0 0 0 .12em var(--accent-soft); }
   .mq--navy .mq__word i { background: #8ea6ff; box-shadow: 0 0 0 .12em #8ea6ff33; }
   @media (prefers-reduced-motion: no-preference) {
     .mq__track { animation: mq-slide var(--mq-speed) linear infinite; }

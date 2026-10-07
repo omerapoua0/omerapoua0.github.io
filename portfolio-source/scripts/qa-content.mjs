@@ -101,6 +101,14 @@ for (const file of astroFiles.filter(name => name.endsWith('.js'))) {
 }
 const builtText = (await Promise.all(astroFiles.filter(file => /\.(css|js)$/.test(file)).map(file => readFile(path.join(dist, '_astro', file), 'utf8')))).join(' ') + Object.values(html).join(' ') + Object.values(insideHtml).join(' ');
 expect(!/d9ff3f/i.test(builtText), 'The old lime (#d9ff3f) appears in the build');
+// v6 neon: dark only. Every page declares the near-black theme; no light
+// colour scheme, theme toggle or v4 studio-grey page background remains.
+for (const [name, source] of everyPage) expect(/<meta name="theme-color" content="#07080b"/.test(source) && /<meta name="color-scheme" content="dark"/.test(source), `${name}: dark theme-color/color-scheme missing`);
+expect(!/color-scheme:\s*light|data-theme-toggle|\bdata-theme=/i.test(builtText), 'A light colour scheme or theme toggle remains');
+expect(!/--bg:\s*#eef0f3/i.test(builtText), 'The v4 studio-grey background token remains');
+// Scroll-driven animations must be written as longhands: the CSS minifier
+// folds `animation` + `animation-timeline` into an invalid shorthand.
+expect(!/animation:[^;}]*\b(view|scroll)\(\)/.test(builtText), 'A scroll-driven animation was folded into an invalid animation shorthand');
 
 // The v4 journey: no chat anywhere, four doors as real links, contact always one tap away.
 const sitemap = (await readdir(dist)).filter(file => /^sitemap.*\.xml$/.test(file));

@@ -123,13 +123,13 @@ const legend: Status[] = ['progress', 'incoming', 'exploratory', 'aspiration'];
 </Base>
 
 <style>
-  .legend-card { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 32px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-3); }
+  .legend-card { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 32px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-3); }
   .legend { display: flex; flex-wrap: wrap; gap: 8px; }
 
   /* Question cards stack on desktop: each one sticks a little lower than the
      last, so the notebook piles up as you read. */
   .stack { display: grid; gap: 20px; }
-  .entry { position: relative; display: grid; gap: var(--s-5); padding: clamp(22px, 3vw, 44px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--header) + 24px); }
+  .entry { position: relative; display: grid; gap: var(--s-5); padding: clamp(22px, 3vw, 44px); border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--header) + 24px); }
   .entry__alias { position: absolute; top: 0; }
   .entry__side { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; align-content: start; }
   .entry__q { display: none; }
@@ -146,6 +146,6 @@ const legend: Status[] = ['progress', 'incoming', 'exploratory', 'aspiration'];
   }
   @media (min-width: 1024px) and (min-height: 760px) {
     .stack { gap: 40px; }
-    .entry { position: sticky; top: calc(var(--header) + 24px + var(--n) * 18px); min-height: min(560px, calc(100vh - var(--header) - 140px)); box-shadow: 0 -2px 6px #0a0c100a, var(--shadow-3); }
+    .entry { position: sticky; top: calc(var(--header) + 24px + var(--n) * 18px); min-height: min(560px, calc(100vh - var(--header) - 140px)); box-shadow: 0 -2px 6px #0000001e, var(--shadow-3); }
   }
 </style>

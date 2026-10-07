@@ -6,12 +6,12 @@
   .form-shell__main { grid-column: 6 / span 7; }
 }
 .form-shell__aside { display: grid; gap: var(--s-5); align-content: start; }
-.form-panel { background: var(--surface); border: 1px solid #ffffff; border-radius: var(--radius-3); box-shadow: var(--shadow-2); padding: clamp(20px, 3.4vw, 48px); }
+.form-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-3); box-shadow: var(--shadow-2); padding: clamp(20px, 3.4vw, 48px); }
 
 .form-progress { display: grid; gap: var(--s-3); margin-bottom: var(--s-6); }
 .steps { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
 .steps li { height: 4px; border-radius: 4px; background: var(--line); position: relative; overflow: hidden; }
-.steps li::after { content: ''; position: absolute; inset: 0; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform var(--d-4) var(--ease-out); }
+.steps li::after { content: ''; position: absolute; inset: 0; background: var(--accent-fill); transform: scaleX(0); transform-origin: left; transition: transform var(--d-4) var(--ease-out); }
 .steps li[data-done]::after, .steps li[aria-current='step']::after { transform: scaleX(1); }
 .steps li[aria-current='step']::after { opacity: .55; }
 .step-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }

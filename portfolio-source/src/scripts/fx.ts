@@ -2,8 +2,8 @@
  * Small site-wide motion: 3D tilt toward the pointer on [data-tilt] cards
  * (fine pointers only), magnetic buttons ([data-magnetic]), a cursor-follow
  * highlight ([data-glow] reads --gx/--gy), pointer parallax on heroes
- * ([data-pointer-parallax] sets --mx/--my), and scroll velocity fed to CSS as --scroll-vel so
- * bands like the ticker lean and speed up as you scroll. All of it stops
+ * ([data-pointer-parallax] sets --mx/--my), and scroll velocity fed to the
+ * marquee bands so they lean and speed up as you scroll. All of it stops
  * with reduced motion or when motion is paused.
  */
 const root = document.documentElement;
@@ -28,7 +28,7 @@ if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
 
 /* Magnetic buttons: drift up to 8px toward the pointer. */
 if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-  document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach(button => {
+  document.querySelectorAll<HTMLElement>('[data-magnetic], .btn').forEach(button => {
     button.addEventListener('pointermove', event => {
       if (still()) return;
       const box = button.getBoundingClientRect();
@@ -69,27 +69,33 @@ if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
 
 /* Scroll velocity, written only on the marquee bands that read it (never on
    :root, which would restyle the whole document every frame) and only while
-   one of them is on screen. */
+   one of them is on screen. The bands lean (--scroll-vel, CSS skew) and
+   speed up: their slide animations get a playbackRate of up to 5×, easing
+   back to 1× as the scroll settles. */
 const leaners = [...document.querySelectorAll<HTMLElement>('.mq, .marquee')];
 if (leaners.length && 'IntersectionObserver' in window) {
   const inView = new Set<HTMLElement>();
   let lastY = window.scrollY, vel = 0, frame = 0;
-  const write = (value: string) => inView.forEach(band => band.style.setProperty('--scroll-vel', value));
+  const tracks = (band: HTMLElement) => band.getAnimations({ subtree: true }).filter(animation => animation.effect?.getComputedTiming().iterations === Infinity);
+  const write = (value: number) => inView.forEach(band => {
+    band.style.setProperty('--scroll-vel', value.toFixed(3));
+    tracks(band).forEach(animation => { animation.playbackRate = 1 + Math.abs(value) * 4; });
+  });
   const settle = () => {
-    vel *= .88;
+    vel *= .9;
     frame = Math.abs(vel) > .01 && inView.size ? requestAnimationFrame(settle) : 0;
-    write(frame ? vel.toFixed(3) : '0');
     if (!frame) vel = 0;
+    write(vel);
   };
   const watcher = new IntersectionObserver(entries => entries.forEach(entry => {
     const band = entry.target as HTMLElement;
     if (entry.isIntersecting) inView.add(band);
-    else { inView.delete(band); band.style.setProperty('--scroll-vel', '0'); }
+    else { inView.delete(band); band.style.setProperty('--scroll-vel', '0'); tracks(band).forEach(animation => { animation.playbackRate = 1; }); }
   }));
   leaners.forEach(band => watcher.observe(band));
   addEventListener('scroll', () => {
     const y = window.scrollY;
-    if (!still() && inView.size) vel = Math.max(-1, Math.min(1, vel + (y - lastY) / 600));
+    if (!still() && inView.size) vel = Math.max(-1, Math.min(1, vel + (y - lastY) / 500));
     lastY = y;
     if (!frame && inView.size && vel) frame = requestAnimationFrame(settle);
   }, { passive: true });

@@ -1,8 +1,16 @@
 ---
-/* Homepage hero: who Omar is in one line, three calls to action, the robot,
-   spec chips that count up, and four big doors underneath. Every fact comes
-   from src/data or the CV. Doors are plain links (no JavaScript needed);
-   gate.ts plays the light-gate open on them. */
+/* Homepage hero (v6 neon): who Omar is in one line, three calls to action,
+   the robot, spec chips that count up, and four big doors underneath. Every
+   fact comes from src/data or the CV. Doors are plain links (no JavaScript
+   needed); gate.ts plays the neon light gate on them.
+
+   Motion: volumetric beams sweep the dark stage; a HUD frame, tick ruler and
+   floating spec labels sit around it; the grid and robot follow the pointer.
+   On desktop the hero pins for half a screen while you scroll (--p from the
+   scroll scrub, neon.css): the title lines split and slide apart, the copy
+   fades, the robot scales up and drifts to the centre, then the page
+   releases. Phones get the same split without the pin. Pause motion and
+   reduced motion leave it static. */
 import RobotStage from './RobotStage.astro';
 import MotionToggle from './MotionToggle.astro';
 import { caseStudies } from '../data/projects';
@@ -12,7 +20,7 @@ const skillCount = capabilities.reduce((sum, group) => sum + group.skills.length
 const title = [
   { words: ['I', 'build', 'AI'] },
   { words: ['that', 'reasons.'] },
-  { words: ['I', 'teach', 'the'], accent: false },
+  { words: ['I', 'teach', 'the'] },
   { words: ['maths', 'behind', 'it.'], accent: true },
 ];
 let wordIndex = 0;
@@ -23,19 +31,29 @@ const chips = [
   { text: 'Birkbeck', label: 'BSc CS & Maths · expected 2028' },
 ];
 const doors = [
-  { id: 'work', label: 'Work', href: '/work.html', promise: 'Network autonomy, a learning product, market models and research automation.', proof: `${caseStudies.length} case studies`, glyph: 'M4 18 18 4M8 4h10v10' },
-  { id: 'skills', label: 'Skills', href: '/index.html#skills', promise: 'Every skill tied to the place I actually used it.', proof: `${skillCount} skills with evidence`, glyph: 'M3 12h4l3-8 4 16 3-8h4' },
-  { id: 'lessons', label: 'Lessons', href: '/tutoring.html', promise: 'GCSE & A-level maths and science, online. Enhanced DBS checked.', proof: 'Free 15-min intro call', glyph: 'M4 6h16M4 12h10M4 18h7' },
-  { id: 'contact', label: 'Contact', href: '/contact.html', promise: 'Projects, roles, research or lessons: one short message is enough.', proof: 'Email · LinkedIn · GitHub', glyph: 'M3 6h18v12H3zM3 6l9 7 9-7' },
+  { id: 'work', label: 'Work', href: '/work.html', promise: 'Network autonomy, a learning product, market models and research automation.', proof: `${caseStudies.length} case studies`, glyph: 'M4 18 18 4M8 4h10v10', preview: ['KATANA', 'NOOKBASE', 'INOS', 'Bitget', 'BP'] },
+  { id: 'skills', label: 'Skills', href: '/index.html#skills', promise: 'Every skill tied to the place I actually used it.', proof: `${skillCount} skills with evidence`, glyph: 'M3 12h4l3-8 4 16 3-8h4', preview: ['LangGraph', 'Bayesian inference', 'MAPE-K', 'Python', 'Forecasting'] },
+  { id: 'lessons', label: 'Lessons', href: '/tutoring.html', promise: 'GCSE & A-level maths and science, online. Enhanced DBS checked.', proof: 'Free 15-min intro call', glyph: 'M4 6h16M4 12h10M4 18h7', preview: ['GCSE Foundation', 'GCSE Higher', 'A-level', 'Physics'] },
+  { id: 'contact', label: 'Contact', href: '/contact.html', promise: 'Projects, roles, research or lessons: one short message is enough.', proof: 'Email · LinkedIn · GitHub', glyph: 'M3 6h18v12H3zM3 6l9 7 9-7', preview: ['Projects', 'Roles', 'Research', 'Lessons'] },
+];
+const labels = [
+  { text: 'OA-01 · online', x: '58%', y: '17%', d: '0s' },
+  { text: '51.5072° N · 0.1276° W', x: '83%', y: '30%', d: '-3s', red: true },
+  { text: 'Mode · build / reason / teach', x: '60%', y: '80%', d: '-6s' },
 ];
 ---
-<section class="hero" data-hero data-pointer-parallax data-own-entrance aria-labelledby="hero-title">
+<div class="hero-pin" data-scrub="contain" data-own-entrance>
+<section class="hero" data-hero data-pointer-parallax aria-labelledby="hero-title">
   <div class="hero__bg" aria-hidden="true">
     <span class="hero__grid"></span>
-    <span class="hero__blob hero__blob--a"></span>
-    <span class="hero__blob hero__blob--b"></span>
-    <span class="hero__blob hero__blob--c"></span>
+    <span class="hero__glow hero__glow--a"></span>
+    <span class="hero__glow hero__glow--b"></span>
+    <span class="beams"><i></i><i></i><i></i></span>
     <span class="hero__mark">OMAR</span>
+    <span class="haze"></span>
+    <span class="hud hero__hud"></span>
+    <span class="ticks hero__ticks"></span>
+    {labels.map(label => <span class:list={['spec-label', 'hero__label', { 'spec-label--red': label.red }]} style={`left:${label.x};top:${label.y};--ld:${label.d}`}>{label.text}</span>)}
   </div>
 
   <div class="hero__inner wrap">
@@ -48,16 +66,18 @@ const doors = [
           </span>
         ))}
       </h1>
-      <p class="hero__lede">AI Product Engineer at Digis Squared, founder of NOOKBASE, Computer Science &amp; Maths student at Birkbeck, and a GCSE &amp; A-level tutor.</p>
-      <div class="hero__ctas">
-        <a class="btn hero__cta" href="/work.html" data-open="Work" data-magnetic>See my work <span class="arrow" aria-hidden="true">↗</span></a>
-        <a class="btn btn--accent hero__cta" href="/tutoring.html#lesson-enquiry" data-open="Lessons" data-magnetic>Book a lesson <span class="arrow" aria-hidden="true">↗</span></a>
-        <a class="btn btn--ghost hero__cta" href="/contact.html" data-open="Contact" data-magnetic>Contact me</a>
+      <div class="hero__sub">
+        <p class="hero__lede">AI Product Engineer at Digis Squared, founder of NOOKBASE, Computer Science &amp; Maths student at Birkbeck, and a GCSE &amp; A-level tutor.</p>
+        <div class="hero__ctas">
+          <a class="btn hero__cta" href="/work.html" data-open="Work" data-magnetic>See my work <span class="arrow" aria-hidden="true">↗</span></a>
+          <a class="btn btn--accent hero__cta" href="/tutoring.html#lesson-enquiry" data-open="Lessons" data-magnetic>Book a lesson <span class="arrow" aria-hidden="true">↗</span></a>
+          <a class="btn btn--ghost hero__cta" href="/contact.html" data-open="Contact" data-magnetic>Contact me</a>
+        </div>
       </div>
     </div>
 
     <div class="hero__robot">
-      <RobotStage />
+      <div class="hero__robot-scrub"><RobotStage /></div>
     </div>
 
     <ul class="hero__chips" aria-label="At a glance">
@@ -72,18 +92,21 @@ const doors = [
     <MotionToggle class="hero__pause" />
   </div>
 </section>
+</div>
 
 <nav class="doors wrap" aria-label="Where to next" id="doors">
   <ol class="doors__list">
     {doors.map((door, index) => (
       <li style={`--d:${index}`}>
         <a class:list={['door', `door--${door.id}`]} href={door.href} data-open={door.label} data-glow data-tilt>
+          <svg class="door__line" aria-hidden="true" preserveAspectRatio="none"><rect pathLength="1" x="0.5" y="0.5" rx="18" /><rect pathLength="1" x="0.5" y="0.5" rx="18" /></svg>
           <span class="door__top">
             <span class="door__num">0{index + 1}<span>/04</span></span>
             <span class="door__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d={door.glyph} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
           </span>
           <span class="door__label">{door.label}</span>
           <span class="door__promise">{door.promise}</span>
+          <span class="door__preview" aria-hidden="true"><span>{[0, 1].map(() => door.preview.map(item => <b>{item}</b>))}</span></span>
           <span class="door__foot">
             <span class="door__proof">{door.proof}</span>
             <span class="door__go" aria-hidden="true">↗</span>
@@ -95,25 +118,26 @@ const doors = [
 </nav>
 
 <style>
-  .hero { position: relative; isolation: isolate; overflow: clip; min-height: min(100svh - var(--header), 980px); margin-top: calc(var(--header) * -1); padding-top: var(--header); background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 70%); }
+  .hero { position: relative; isolation: isolate; overflow: clip; min-height: min(100svh, 1000px); margin-top: calc(var(--header) * -1); padding-top: var(--header); background: radial-gradient(120% 90% at 70% 30%, #0e1220 0%, var(--bg) 62%); }
   .hero__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; contain: paint; }
   .hero__grid { position: absolute; inset: -40px; background:
-      linear-gradient(#0a0c100d 1px, transparent 1px) 0 0 / 56px 56px,
-      linear-gradient(90deg, #0a0c100d 1px, transparent 1px) 0 0 / 56px 56px;
-    -webkit-mask: radial-gradient(75% 70% at 60% 45%, #000 20%, transparent 75%); mask: radial-gradient(75% 70% at 60% 45%, #000 20%, transparent 75%);
-    transform: translate3d(calc(var(--mx, 0) * 14px), calc(var(--my, 0) * 12px), 0); transition: transform 900ms var(--ease-out); }
-  /* No filter: blur() on these moving layers (it is the single most expensive
-     thing a page can animate); the soft edge comes from the gradient stops. */
-  .hero__blob { position: absolute; border-radius: 50%; will-change: transform; }
-  .hero__blob--a { width: 46vw; height: 46vw; right: -8vw; top: -6vw; background: radial-gradient(closest-side, #1f4bff38, #1f4bff1c 45%, #1f4bff00); }
-  .hero__blob--b { width: 38vw; height: 38vw; left: -10vw; bottom: -14vw; background: radial-gradient(closest-side, #ffffff, #ffffff80 45%, #ffffff00); }
-  .hero__blob--c { width: 26vw; height: 26vw; left: 38%; top: 30%; background: radial-gradient(closest-side, #8fa6ff40, #8fa6ff20 45%, #8fa6ff00); }
-  .hero__mark { position: absolute; left: 50%; top: 52%; translate: -50% -50%; font-size: clamp(9rem, 30vw, 34rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #0a0c1012; white-space: nowrap; transform: translate3d(calc(var(--mx, 0) * -22px), 0, 0); transition: transform 1200ms var(--ease-out); user-select: none; }
+      linear-gradient(#ffffff0b 1px, transparent 1px) 0 0 / 64px 64px,
+      linear-gradient(90deg, #ffffff0b 1px, transparent 1px) 0 0 / 64px 64px;
+    -webkit-mask: radial-gradient(70% 70% at 64% 46%, #000 10%, transparent 72%); mask: radial-gradient(70% 70% at 64% 46%, #000 10%, transparent 72%);
+    transform: translate3d(calc(var(--mx, 0) * 16px), calc(var(--my, 0) * 12px), 0); transition: transform 900ms var(--ease-out); }
+  /* No filter: blur() on moving layers; the soft edge comes from the gradient stops. */
+  .hero__glow { position: absolute; border-radius: 50%; will-change: transform; }
+  .hero__glow--a { width: 56vw; height: 56vw; right: -10vw; top: -14vw; background: radial-gradient(closest-side, #2f6bff30, #2f6bff12 50%, #2f6bff00); }
+  .hero__glow--b { width: 40vw; height: 40vw; left: 26%; bottom: -24vw; background: radial-gradient(closest-side, #ff2d461f, #ff2d460a 50%, #ff2d4600); }
+  .hero__mark { position: absolute; left: 50%; top: 54%; translate: -50% -50%; font-size: clamp(9rem, 30vw, 34rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1px #ffffff0d; white-space: nowrap; transform: translate3d(calc(var(--mx, 0) * -22px), 0, 0); transition: transform 1200ms var(--ease-out); user-select: none; }
+  .hero__hud { --hud-inset: calc(var(--header) + 14px) clamp(10px, 2vw, 28px) 18px; --hl: 22px; --hc: #ffffff38; }
+  .hero__ticks { position: absolute; left: var(--margin); right: var(--margin); bottom: 26px; opacity: .7; }
+  .hero__label { z-index: 1; }
 
-  .hero__inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: clamp(12px, 4vw, 56px); padding-bottom: clamp(36px, 4vw, 56px); }
-  .hero__eyebrow { display: inline-flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; padding: 7px 14px 7px 10px; border-radius: 999px; background: #ffffffb3; border: 1px solid #ffffff; box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
-  .hero__live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-  .hero__title { margin-top: 22px; font-size: clamp(2.5rem, .9rem + 6.4vw, 7.6rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; text-transform: uppercase; max-width: none; }
+  .hero__inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: clamp(12px, 4vw, 56px); padding-bottom: clamp(48px, 5vw, 72px); }
+  .hero__eyebrow { display: inline-flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; padding: 7px 14px 7px 10px; border-radius: 4px; background: #ffffff08; border: 1px solid var(--line-strong); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+  .hero__live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 3px var(--red-soft), 0 0 12px var(--red); }
+  .hero__title { margin-top: 22px; font-size: clamp(2.5rem, .9rem + 6.4vw, 7.6rem); font-weight: 760; letter-spacing: -.055em; line-height: .9; text-transform: uppercase; max-width: none; }
   .hero__line { display: block; }
   .hero__line--accent { color: var(--accent); }
   .hero__word { display: inline-block; overflow: clip; overflow-clip-margin: .1em; padding-bottom: .04em; margin-right: .2em; vertical-align: top; }
@@ -123,95 +147,140 @@ const doors = [
   .hero__ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
   .hero__robot { position: relative; }
   .hero__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .spec { display: grid; gap: 2px; align-content: start; padding: 14px 16px; border-radius: 16px; background: #ffffffc2; border: 1px solid #ffffff; box-shadow: var(--shadow-1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-  .spec__num { font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.2rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
-  .spec__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
-  /* Pause motion: bottom right of the hero on desktop; top right (first
-     screen) on smaller widths, beside the robot. */
+  .spec { position: relative; display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-radius: 6px; background: #0b0d12b3; border: 1px solid var(--line); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .spec::after { content: ''; position: absolute; inset: -1px; background: var(--hud); --hl: 9px; --hc: #4d84ffa6; background-repeat: no-repeat; pointer-events: none; }
+  .spec:nth-child(even)::after { --hc: #ff4d62a6; }
+  .spec__num { font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.2rem); font-weight: 700; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .spec__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
   .hero__inner > :global(.hero__pause) { position: absolute; z-index: 3; right: var(--margin); top: 8px; }
 
   @media (min-width: 1000px) {
-    .hero__inner { grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); grid-template-rows: 1fr auto; column-gap: clamp(24px, 3vw, 56px); row-gap: 28px; align-items: center; }
-    .hero__copy { grid-column: 1; grid-row: 1; }
-    .hero__robot { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+    .hero__inner { min-height: calc(min(100svh, 1000px) - var(--header)); grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); grid-template-rows: 1fr auto; column-gap: clamp(24px, 3vw, 56px); row-gap: 28px; align-items: center; }
+    .hero__copy { grid-column: 1; grid-row: 1; position: relative; z-index: 2; }
+    .hero__robot { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-right: calc(var(--margin) * -.6); }
+    .hero__robot :global(.robot-stage) { --size: min(100%, 680px); }
+    /* The real robot media is wider (16:10) and bleeds behind the copy; its
+       radial mask dissolves the edges into the stage. */
+    .hero__robot :global(.robot-stage--media) { --size: 150%; margin-left: -34%; }
     .hero__chips { grid-column: 1; grid-row: 2; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .hero__inner > :global(.hero__pause) { top: auto; bottom: clamp(36px, 4vw, 56px); }
-    .hero__title { font-size: clamp(3rem, 1rem + 4.4vw, 5.6rem); }
+    .hero__inner > :global(.hero__pause) { top: auto; bottom: clamp(48px, 5vw, 72px); }
+    .hero__title { font-size: clamp(3rem, .6rem + 4.3vw, 5.6rem); }
+    .hero__lede { font-size: clamp(1.05rem, .9rem + .4vw, 1.25rem); margin-top: 20px; }
+    .hero__ctas { margin-top: 24px; }
     .hero__lede { max-width: 54ch; }
-  }
+    }
   @media (max-width: 999px) {
-    .hero__robot { order: -1; width: min(66vw, 340px); margin: -44px auto -40px; }
-    .hero__robot :global(.robot-stage__tag) { display: none; }
+    .hero__robot { order: -1; width: min(70vw, 360px); margin: -40px auto -44px; }
+    .hero__robot :global(.robot-stage__tag), .hero__label { display: none; }
     .hero__copy { order: 0; }
+    .hero__hud { --hl: 14px; }
   }
   @media (max-width: 520px) {
     .hero__eyebrow { font-size: 10.5px; }
     .hero__eyebrow-more { display: none; }
     .hero__ctas .btn { flex: 1 1 auto; }
     .hero__ctas .btn--ghost { flex-basis: 100%; }
+    .hero__ticks { display: none; }
   }
 
-  /* Doors: four big choices, right under the hero. */
-  .doors { position: relative; z-index: 2; margin-top: clamp(-28px, -2vw, -12px); padding-bottom: clamp(56px, 7vw, 112px); }
+  /* Doors: four big choices, right under the hero. Each lifts, draws a neon
+     outline (blue, then red) and previews its destination on hover/focus. */
+  .doors { position: relative; z-index: 2; padding-top: clamp(16px, 2vw, 32px); padding-bottom: clamp(56px, 7vw, 112px); }
   .doors__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .doors__list > li { display: grid; }
-  .door { --gx: 50%; --gy: 50%; position: relative; display: grid; grid-template-rows: auto auto 1fr auto; gap: 10px; min-height: 100%; padding: 22px 22px 20px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-2); text-decoration: none; color: var(--ink); overflow: hidden; isolation: isolate; transition: box-shadow 500ms var(--ease-out), translate 500ms var(--ease-out), background-color 300ms; }
-  .door::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(360px circle at var(--gx) var(--gy), #1f4bff1f, transparent 60%); opacity: 0; transition: opacity 300ms; }
-  .door:hover, .door:focus-visible { box-shadow: 0 2px 6px #0a0c100d, 0 30px 70px -24px #1f4bff59; translate: 0 -4px; }
+  .door { --gx: 50%; --gy: 50%; position: relative; display: grid; grid-template-rows: auto auto 1fr auto auto; gap: 10px; min-height: 100%; padding: 22px 22px 20px; border-radius: 18px; background: linear-gradient(180deg, #151923, #0e1117); border: 1px solid var(--line); box-shadow: var(--shadow-2); text-decoration: none; color: var(--ink); overflow: hidden; isolation: isolate; transition: box-shadow 500ms var(--ease-out), translate 500ms var(--ease-out), border-color 300ms; }
+  .door::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(380px circle at var(--gx) var(--gy), #2f6bff26, transparent 60%); opacity: 0; transition: opacity 300ms; }
+  .door:hover, .door:focus-visible { box-shadow: 0 2px 6px #00000080, 0 30px 70px -24px #2f6bff66; translate: 0 -6px; border-color: transparent; }
   .door:hover::before, .door:focus-visible::before { opacity: 1; }
+  .door__line { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .door__line rect { width: calc(100% - 1px); height: calc(100% - 1px); fill: none; stroke-width: 1.5; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 900ms var(--ease-out); }
+  .door__line rect:first-child { stroke: var(--blue); filter: drop-shadow(0 0 5px #2f6bff); }
+  .door__line rect:last-child { stroke: var(--red); stroke-dasharray: .18 .82; filter: drop-shadow(0 0 5px #ff2d46); transition-delay: 120ms; }
+  .door:is(:hover, :focus-visible) .door__line rect { stroke-dashoffset: 0; }
+  .door:is(:hover, :focus-visible) .door__line rect:last-child { stroke-dashoffset: -.5; }
   .door__top { display: flex; justify-content: space-between; align-items: center; }
-  .door__num { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--accent); font-weight: 600; }
+  .door__num { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; color: var(--accent); font-weight: 600; }
   .door__num span { color: var(--muted); font-weight: 400; }
-  .door__icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--bg); color: var(--ink); transition: background-color 300ms, color 300ms, rotate 500ms var(--ease-out); }
-  .door:hover .door__icon { background: var(--accent); color: #fff; rotate: -8deg; }
-  .door__label { font-size: clamp(2.2rem, 1.4rem + 2.6vw, 3.6rem); font-weight: 680; letter-spacing: -.055em; line-height: .95; margin-top: 10px; }
+  .door__icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--ink); transition: background-color 300ms, color 300ms, border-color 300ms, rotate 500ms var(--ease-out), box-shadow 300ms; }
+  .door:is(:hover, :focus-visible) .door__icon { background: var(--accent-fill); border-color: var(--accent); color: #fff; rotate: -8deg; box-shadow: 0 0 22px -2px #2f6bffaa; }
+  .door__label { font-size: clamp(2.2rem, 1.4rem + 2.6vw, 3.6rem); font-weight: 760; letter-spacing: -.05em; line-height: .95; margin-top: 10px; text-transform: uppercase; }
   .door__promise { color: var(--muted); font-size: var(--step-small); line-height: 1.45; max-width: 34ch; }
-  .door__foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
-  .door__proof { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
-  .door__go { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); font-size: 16px; transition: background-color 300ms, color 300ms, border-color 300ms, transform 400ms var(--ease-out); }
-  .door:hover .door__go { background: var(--ink); border-color: var(--ink); color: #fff; transform: rotate(45deg); }
-  .door--contact { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .door--contact .door__num, .door--contact .door__num span, .door--contact .door__promise, .door--contact .door__proof { color: #e3e9ff; }
-  .door--contact .door__icon { background: #ffffff26; color: #fff; }
-  .door--contact .door__foot { border-color: #ffffff40; }
+  .door__preview { display: block; overflow: hidden; height: 22px; margin-inline: -22px; border-block: 1px solid transparent; -webkit-mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); opacity: 0; transition: opacity 400ms, border-color 400ms; }
+  .door__preview > span { display: flex; width: max-content; gap: 22px; padding-top: 3px; animation: door-tick 9s linear infinite paused; }
+  .door__preview b { font: 500 11px/14px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+  .door__preview b::after { content: '/'; margin-left: 22px; color: var(--red-glow); }
+  .door:is(:hover, :focus-visible) .door__preview { opacity: 1; border-color: var(--line); }
+  .door__foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .door__proof { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+  .door__go { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-strong); font-size: 16px; transition: background-color 300ms, color 300ms, border-color 300ms, transform 400ms var(--ease-out); }
+  .door:is(:hover, :focus-visible) .door__go { background: var(--ink); border-color: var(--ink); color: var(--bg); transform: rotate(45deg); }
+  .door--contact { background: linear-gradient(160deg, #2d63f2, #1638b0 85%); color: #fff; border-color: #4d84ff80; box-shadow: 0 20px 60px -24px #2f6bffaa; }
+  .door--contact .door__num, .door--contact .door__num span, .door--contact .door__promise, .door--contact .door__proof, .door--contact .door__preview b { color: #e6eeff; }
+  .door--contact .door__icon { border-color: #ffffff59; color: #fff; }
+  .door--contact .door__foot, .door--contact:is(:hover, :focus-visible) .door__preview { border-color: #ffffff40; }
   .door--contact .door__go { border-color: #ffffff66; }
-  .door--contact:hover .door__go { background: #fff; color: var(--accent); border-color: #fff; }
-  .door--contact::before { background: radial-gradient(360px circle at var(--gx) var(--gy), #ffffff33, transparent 60%); }
-  .door--contact:focus-visible { outline-color: var(--ink); }
+  .door--contact:is(:hover, :focus-visible) .door__go { background: #fff; color: var(--accent-fill); border-color: #fff; }
+  .door--contact:is(:hover, :focus-visible) .door__icon { background: #fff; color: var(--accent-fill); }
+  .door--contact .door__line rect:first-child { stroke: var(--cool); filter: drop-shadow(0 0 6px #e6eeff); }
+  .door--contact::before { background: radial-gradient(380px circle at var(--gx) var(--gy), #ffffff33, transparent 60%); }
+  .door--contact:focus-visible { outline-color: var(--cool); }
   /* Phones: a compact 2×2 grid, so all four doors (blue Contact last) sit
-     within about one screen of the hero. The promise is dropped; the proof stays. */
+     within about one screen of the hero. The promise and preview give way. */
   @media (max-width: 639px) {
     .doors__list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .door { grid-template-rows: auto 1fr auto; min-height: 150px; gap: 6px; padding: 16px 14px 14px; border-radius: var(--radius-2); }
+    .door { grid-template-rows: auto 1fr auto; min-height: 150px; gap: 6px; padding: 16px 14px 14px; border-radius: 14px; }
+    .door__line rect { rx: 14px; }
     .door__icon { width: 34px; height: 34px; }
     .door__icon svg { width: 18px; height: 18px; }
-    .door__label { font-size: 1.9rem; margin-top: 4px; }
-    .door__promise, .door__go { display: none; }
+    .door__label { font-size: 1.75rem; margin-top: 4px; }
+    .door__promise, .door__go, .door__preview { display: none; }
     .door__foot { margin-top: 2px; padding-top: 10px; }
     .door__proof { font-size: 10.5px; line-height: 1.35; }
   }
   @media (min-width: 640px) { .doors__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (min-width: 1100px) { .doors__list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } .door { min-height: 300px; padding: 26px 26px 22px; } }
+  @media (min-width: 1100px) { .doors__list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } .door { min-height: 320px; padding: 26px 26px 22px; } .door__preview { margin-inline: -26px; } }
 
   /* Motion: always alive, never required. */
   @media (prefers-reduced-motion: no-preference) {
-    .hero__blob--a { animation: blob-a 22s ease-in-out infinite alternate; }
-    .hero__blob--b { animation: blob-b 26s ease-in-out infinite alternate; }
-    .hero__blob--c { animation: blob-c 18s ease-in-out infinite alternate; }
-    :global(html.js) .hero__word > span { animation: word-up 900ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 120ms + var(--w) * 55ms); }
+    .hero__glow--a { animation: glow-a 22s ease-in-out infinite alternate; }
+    .hero__glow--b { animation: glow-b 26s ease-in-out infinite alternate; }
+      .door:is(:hover, :focus-visible) .door__preview > span { animation-play-state: running; }
+    :global(html[data-motion='off']) .hero__glow { animation-play-state: paused; }
+    :global(html[data-motion='off']) .door .door__preview > span { animation-play-state: paused; }
+    :global(html.js) .hero__word > span { animation: word-up 1000ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 120ms + var(--w) * 60ms); }
     :global(html.js) :is(.hero__eyebrow, .hero__lede, .hero__ctas) { animation: fade-up 900ms var(--ease-out) both; }
     :global(html.js) .hero__eyebrow { animation-delay: calc(var(--enter-delay, 0ms) + 40ms); }
-    :global(html.js) .hero__lede { animation-delay: calc(var(--enter-delay, 0ms) + 640ms); }
-    :global(html.js) .hero__ctas { animation-delay: calc(var(--enter-delay, 0ms) + 760ms); }
-    :global(html.js) .hero__robot { animation: robot-up 1300ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 200ms); }
-    :global(html.js) .spec { animation: fade-up 800ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 900ms + var(--c) * 90ms); }
-    :global(html.js) .doors__list > li { animation: fade-up 900ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 1050ms + var(--d) * 90ms); }
-    :global(html[data-motion='off']) :is(.hero__blob) { animation-play-state: paused; }
+    :global(html.js) .hero__lede { animation-delay: calc(var(--enter-delay, 0ms) + 700ms); }
+    :global(html.js) .hero__ctas { animation-delay: calc(var(--enter-delay, 0ms) + 820ms); }
+    :global(html.js) .hero__robot { animation: robot-up 1400ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 200ms); }
+    :global(html.js) .spec { animation: fade-up 800ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 950ms + var(--c) * 90ms); }
+    :global(html.js) .doors__list > li { animation: fade-up 900ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 1100ms + var(--d) * 90ms); }
+    :global(html.js) :is(.hero__hud, .hero__ticks) { animation: hud-in 1400ms var(--ease-out) both; animation-delay: calc(var(--enter-delay, 0ms) + 300ms); }
+
+    /* Scroll scrub (individual transform properties, so they compose with
+       the entrance animations above). */
+    :global(html.js:not([data-motion='off'])) .hero__line { translate: calc(var(--p) * -16vw) 0; opacity: calc(1 - var(--p) * .9); }
+    :global(html.js:not([data-motion='off'])) .hero__line:nth-child(even) { translate: calc(var(--p) * 16vw) 0; }
+    :global(html.js:not([data-motion='off'])) :is(.hero__sub, .hero__chips, .hero__eyebrow) { translate: 0 calc(var(--p) * -60px); opacity: calc(1 - var(--p) * 1.8); }
+    :global(html.js:not([data-motion='off'])) .hero__robot-scrub { scale: calc(1 + var(--p) * .2); translate: calc(var(--p) * -12vw) calc(var(--p) * 8vh); }
+    :global(html.js:not([data-motion='off'])) .hero__mark { translate: calc(-50% - var(--p) * 18vw) -50%; }
+    :global(html.js:not([data-motion='off'])) .beams { opacity: calc(.8 + var(--p) * .6); }
+  }
+  /* Pin and release (desktop): half a screen of scroll while the hero plays. */
+  @media (prefers-reduced-motion: no-preference) and (min-width: 1000px) {
+    :global(html.js:not([data-motion='off'])) .hero-pin { height: calc(min(100svh, 1000px) + 55vh); }
+    :global(html.js:not([data-motion='off'])) .hero { position: sticky; top: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) and (max-width: 999px) {
+    @supports (animation-timeline: view()) {
+      :global(html.js:not([data-motion='off'])) .hero-pin { animation-range: exit 0% exit 100%; }
+    }
   }
   @keyframes word-up { from { transform: translateY(105%); } }
   @keyframes fade-up { from { opacity: 0; transform: translateY(26px); } }
-  @keyframes robot-up { from { opacity: 0; transform: translateY(90px) scale(.94); } }
-  @keyframes blob-a { to { transform: translate(-10vw, 8vw) scale(1.15); } }
-  @keyframes blob-b { to { transform: translate(14vw, -8vw) scale(1.2); } }
-  @keyframes blob-c { to { transform: translate(-12vw, 10vw) scale(.85); } }
+  @keyframes robot-up { from { opacity: 0; transform: translateY(80px) scale(.92); } }
+  @keyframes hud-in { from { opacity: 0; transform: scale(1.03); } }
+  @keyframes glow-a { to { transform: translate(-10vw, 8vw) scale(1.15); } }
+  @keyframes glow-b { to { transform: translate(14vw, -8vw) scale(1.2); } }
+  @keyframes door-tick { to { transform: translateX(-50%); } }
 </style>

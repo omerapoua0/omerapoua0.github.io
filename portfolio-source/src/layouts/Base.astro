@@ -5,6 +5,7 @@ import '../styles/tokens.css';
 import '../styles/base.css';
 import '../styles/layout.css';
 import '../styles/studio.css';
+import '../styles/neon.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import CommandPalette from '../components/CommandPalette.astro';
@@ -39,7 +40,8 @@ const person = {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f5f6f8" />
+    <meta name="theme-color" content="#07080b" />
+    <meta name="color-scheme" content="dark" />
     <link rel="preload" href={onestLatin} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/site.webmanifest" />
@@ -55,14 +57,16 @@ const person = {
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <!-- Before first paint: Pause motion, and arrival through the light gate.
-         sessionStorage omar-gate {t, path, label}: written by gate.ts just before
+         sessionStorage omar-gate {t, path, label, m}: written by gate.ts just before
          it navigates; fresh (< 8 s) and for this path, it marks html[data-gate="in"]
-         so LightGate paints opaque white on the first frame and then dissolves. -->
+         (plus data-gate-mode="quick" for ordinary links) so LightGate paints its
+         opaque layer on the first frame (white after an open, dark after a quick
+         change) and then dissolves it. -->
     <script is:inline>
       (function(){var d=document.documentElement;d.classList.add('js');
       try{var m=sessionStorage.getItem('omar-motion');if(m==='on'||m==='off')d.dataset.motion=m}catch(e){}
       try{var g=JSON.parse(sessionStorage.getItem('omar-gate')||'null'),p=location.pathname==='/'?'/index.html':location.pathname,n=Date.now();sessionStorage.removeItem('omar-gate');
-      if(g&&n-g.t>=0&&n-g.t<8000&&g.path===p){d.dataset.gate='in';d.style.setProperty('--gate-label',JSON.stringify(String(g.label||'').slice(0,40)))}}catch(e){}})();
+      if(g&&n-g.t>=0&&n-g.t<8000&&g.path===p){d.dataset.gate='in';if(g.m==='quick')d.dataset.gateMode='quick';d.style.setProperty('--gate-label',JSON.stringify(String(g.label||'').slice(0,40)))}}catch(e){}})();
     </script>
   </head>
   <body class:list={[home ? 'is-home' : 'is-page']}>
@@ -84,14 +88,15 @@ const person = {
     <script>import '../scripts/cursor';</script>
     <script>import '../scripts/fx';</script>
     <script>import '../scripts/hero-motion';</script>
+    <script>import '../scripts/scrub';</script>
   </body>
 </html>
 
 <style>
   /* Phones and tablets: a floating Contact pill once the header's own pill has
      scrolled out of view (site.ts toggles data-show). Always a real link. */
-  .float-contact { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 45; display: none; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 620; font-size: 15px; text-decoration: none; box-shadow: 0 14px 34px -10px #1f4bff99, 0 0 0 4px #ffffffb3; transition: transform 420ms var(--ease-spring), opacity 300ms; }
-  .float-contact__dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px #ffffff4d; }
+  .float-contact { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 45; display: none; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--accent-fill); color: #fff; font-weight: 620; font-size: 15px; text-decoration: none; box-shadow: 0 14px 34px -10px #2f6bffcc, 0 0 0 1px #4d84ff, 0 0 0 5px #07080bcc, 0 0 30px -4px #2f6bff99; transition: transform 420ms var(--ease-spring), opacity 300ms; }
+  .float-contact__dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px #ffffff4d, 0 0 10px #fff; }
   @media (max-width: 1099px) {
     .float-contact { display: inline-flex; }
     :global(html.js) .float-contact:not([data-show]) { transform: translateY(140%); opacity: 0; visibility: hidden; transition: transform 420ms var(--ease-spring), opacity 300ms, visibility 0s 300ms; }

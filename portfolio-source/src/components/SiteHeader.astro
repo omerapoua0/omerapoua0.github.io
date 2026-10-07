@@ -1,5 +1,5 @@
 ---
-/* Light glass header. Contact is always one tap away: the blue pill here on
+/* Dark glass header. Contact is always one tap away: the blue pill here on
    every width, plus a floating pill on phones once the header scrolls off
    (Base.astro). Search (⌘K) opens the command menu. */
 import { navigation, site } from '../data/site';
@@ -43,18 +43,18 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 
 <style>
   .header { position: sticky; top: 0; z-index: 50; height: var(--header); background: color-mix(in srgb, var(--bg-2) 78%, transparent); -webkit-backdrop-filter: saturate(1.4) blur(16px); backdrop-filter: saturate(1.4) blur(16px); border-bottom: 1px solid transparent; color: var(--ink); transition: border-color var(--d-3) var(--ease-out), box-shadow var(--d-3) var(--ease-out), background-color var(--d-3); }
-  .header[data-scrolled], .header[data-open] { border-color: var(--line); box-shadow: 0 8px 30px -18px #0a0c1033; background: color-mix(in srgb, var(--bg-2) 92%, transparent); }
+  .header[data-scrolled], .header[data-open] { border-color: var(--line); box-shadow: 0 8px 30px -18px #00000099; background: color-mix(in srgb, var(--bg-2) 92%, transparent); }
   .header__inner { height: 100%; max-width: var(--max); margin-inline: auto; padding-inline: var(--margin); display: flex; align-items: center; gap: var(--s-5); }
   .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; line-height: 1.1; margin-right: auto; min-height: 44px; }
-  .brand__mark { position: relative; flex: none; width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #fff 0 18%, #e9ecf2 40%, #c3c9d4 75%, #9aa3b2); box-shadow: inset -3px -4px 8px #0a0c1026, inset 2px 2px 4px #fff, 0 0 0 1px #0a0c1014, 0 4px 12px -4px #0a0c1040; }
-  .brand__mark i { position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid var(--accent); border-left-color: transparent; border-bottom-color: transparent; transform: rotate(-20deg) scaleY(.42); }
+  .brand__mark { position: relative; flex: none; width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 36% 28%, #4a5263 0, #1d222c 18%, #07080b 62%); box-shadow: inset 4px 0 5px -3px #ff2d46, inset -4px 0 6px -3px #2f6bff, 0 0 0 1px #ffffff1a, -4px 0 14px -6px #ff2d4699, 4px 0 14px -6px #2f6bffaa; }
+  .brand__mark i { position: absolute; left: 24%; right: 24%; top: 47%; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #ff2d46, #e6eeff, #2f6bff); box-shadow: 0 0 6px #4d84ff; }
   .brand__text { display: flex; flex-direction: column; }
   .brand__name { font-weight: 660; letter-spacing: -.03em; font-size: 16.5px; }
   .brand__meta { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   .nav__list { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid var(--line); }
   .nav__list a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 520; text-decoration: none; position: relative; transition: background-color var(--d-2), color var(--d-2); }
   .nav__list a:hover { background: var(--bg); color: var(--accent); }
-  .nav__list a[aria-current='page'] { background: var(--ink); color: #fff; }
+  .nav__list a[aria-current='page'] { background: var(--ink); color: var(--bg); }
   .nav__list a, .brand__name { white-space: nowrap; }
   .nav__num { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
   /* Six sections plus Contact: on narrower desktops, drop the numbers, the
@@ -65,7 +65,7 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
     .kbd-btn { padding: 0; }
     .nav__list a { padding: 0 12px; }
   }
-  .nav__list a[aria-current='page'] .nav__num { color: #c9ced8; }
+  .nav__list a[aria-current='page'] .nav__num { color: #4a5160; }
   .nav__sheet-only { display: none; }
   .header__actions { display: flex; align-items: center; gap: var(--s-2); }
   .kbd-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; min-width: 44px; justify-content: center; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--ink); }
@@ -73,7 +73,7 @@ const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
   .kbd-btn kbd { font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em; color: var(--muted); }
   .kbd-btn:hover { border-color: var(--accent); color: var(--accent); }
   @media (hover: none), (max-width: 699px) { .kbd-btn kbd { display: none; } .kbd-btn { padding: 0; } }
-  .header__cta { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 8px 22px -10px var(--accent-glow); transition: background-color var(--d-2), box-shadow var(--d-3); }
+  .header__cta { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; background: var(--accent-fill); color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 8px 22px -10px var(--accent-glow); transition: background-color var(--d-2), box-shadow var(--d-3); }
   .header__cta:hover { background: var(--accent-hover); box-shadow: 0 10px 28px -8px var(--accent-glow); }
   .header__cta-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px #ffffff40; }
   .menu-btn { display: none; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface) 70%, transparent); font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }

@@ -26,7 +26,7 @@ const topics = [
       <p class="direct__kicker"><span aria-hidden="true"></span>Direct</p>
       <div class="direct__email">
         <a class="contact-email" href={`mailto:${site.email}`}>{site.email}</a>
-        <button type="button" class="direct__copy" data-copy-email={site.email} hidden><span data-copy-label>Copy</span></button>
+        <button type="button" class="copy-btn direct__copy" data-copy-email={site.email} hidden><svg class="copy-btn__tick" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path pathLength="1" d="m3 8.5 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg><span data-copy-label>Copy</span></button>
         <span class="sr-only" role="status" data-copy-status></span>
       </div>
       <ul class="direct__links">
@@ -124,32 +124,30 @@ const topics = [
 
 <style>
   .direct { display: grid; gap: var(--s-4); padding: clamp(22px, 2.6vw, 32px); border-radius: var(--radius-3); background: var(--navy); color: #fff; box-shadow: var(--shadow-3); position: relative; overflow: hidden; isolation: isolate; }
-  .direct::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(70% 60% at 90% 0%, #1f4bff99, transparent 70%); }
+  .direct::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(70% 60% at 90% 0%, #2f6bff99, transparent 70%); }
   .direct__kicker { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9fb2ff; }
   .direct__kicker span { width: 8px; height: 8px; border-radius: 50%; background: #8ea6ff; box-shadow: 0 0 0 4px #8ea6ff33; }
   .direct__email { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
   .contact-email { font-family: var(--font-mono); font-size: clamp(1rem, .85rem + .7vw, 1.4rem); color: #fff; text-decoration: none; border-bottom: 1px solid #8ea6ff; min-height: 44px; display: inline-flex; align-items: center; overflow-wrap: anywhere; }
-  .direct__copy { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid #ffffff4d; background: #ffffff14; color: #fff; font-family: var(--font-mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
-  .direct__copy:hover { background: #ffffff26; }
   .direct__links { display: grid; border-top: 1px solid var(--navy-line); }
   .direct__links a { display: flex; justify-content: space-between; align-items: center; min-height: 52px; border-bottom: 1px solid var(--navy-line); color: #fff; text-decoration: none; font-weight: 560; transition: padding var(--d-3) var(--ease-out), color var(--d-2); }
   .direct__links a:hover { padding-left: 8px; color: #b9c7ff; }
   .direct__lessons { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 16px; background: #ffffff12; border: 1px solid #ffffff26; color: var(--navy-muted); text-decoration: none; font-size: var(--step-small); }
   .direct__lessons b { color: #fff; display: block; }
-  .direct__lessons:hover { background: var(--accent); color: #fff; }
+  .direct__lessons:hover { background: var(--accent-fill); color: #fff; }
   .direct :focus-visible { outline-color: #fff; }
 
   .quick { display: grid; gap: var(--s-4); padding-block: clamp(28px, 4vw, 48px); }
   .quick__list { display: flex; flex-wrap: wrap; gap: 10px; }
   .quick__list a { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); text-decoration: none; font-weight: 580; transition: background-color var(--d-2), color var(--d-2), border-color var(--d-2), transform var(--d-3) var(--ease-spring), box-shadow var(--d-3); }
   .quick__list a span { color: var(--accent); transition: transform var(--d-3) var(--ease-out); }
-  .quick__list a:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px -14px var(--accent-glow); }
+  .quick__list a:hover { background: var(--accent-fill); border-color: var(--accent); color: #fff; transform: translateY(-3px); box-shadow: 0 14px 30px -14px var(--accent-glow); }
   .quick__list a:hover span { color: #fff; transform: translateX(3px); }
   .quick__lessons { background: var(--navy) !important; color: #fff; border-color: var(--navy) !important; }
   .quick__lessons span { color: #9fb2ff !important; }
 
   .include { display: grid; gap: 10px; }
-  .include > div { padding: 16px 18px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); display: grid; gap: 4px; }
+  .include > div { padding: 16px 18px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); display: grid; gap: 4px; }
   .include dt { font-weight: 600; }
   .include dd { margin: 0; color: var(--muted); font-size: var(--step-small); }
   .small { font-size: var(--step-small); }

@@ -19,7 +19,13 @@ const pad = (value: number) => String(value).padStart(2, '0');
     <span class="phero__grid"></span>
     <span class="phero__blob phero__blob--a"></span>
     <span class="phero__blob phero__blob--b"></span>
+    <span class="beams"><i></i><i></i><i></i></span>
     <span class="phero__mark">{watermark}</span>
+    <span class="haze"></span>
+    <span class="hud phero__hud"></span>
+    <span class="ticks phero__ticks"></span>
+    <span class="spec-label phero__label" style="--ld:-2s">{pad(index)} · {section}</span>
+    <span class="spec-label spec-label--red phero__label phero__label--b" style="--ld:-5s">51.5072° N · 0.1276° W</span>
   </div>
   <div class="wrap phero__inner">
     <div class="phero__copy">
@@ -52,27 +58,32 @@ const pad = (value: number) => String(value).padStart(2, '0');
 </section>
 
 <style>
-  .phero { position: relative; isolation: isolate; overflow: clip; margin-top: calc(var(--header) * -1); padding-top: var(--header); background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 85%); border-bottom: 1px solid var(--line); }
+  .phero { position: relative; isolation: isolate; overflow: clip; margin-top: calc(var(--header) * -1); padding-top: var(--header); background: radial-gradient(110% 90% at 75% 20%, #0e1220, var(--bg) 65%); border-bottom: 1px solid var(--line); }
+  .phero__hud { --hud-inset: calc(var(--header) + 12px) clamp(10px, 2vw, 28px) 14px; --hl: 20px; --hc: #ffffff33; }
+  .phero__ticks { position: absolute; left: var(--margin); right: var(--margin); bottom: 22px; opacity: .55; }
+  .phero__label { right: calc(var(--margin) + 4px); top: 58%; }
+  .phero__label--b { top: auto; bottom: 48px; }
+  @media (max-width: 899px) { .phero__label, .phero__ticks { display: none; } }
   .phero__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; contain: paint; }
   .phero__grid { position: absolute; inset: -40px; background:
-      linear-gradient(#0a0c100c 1px, transparent 1px) 0 0 / 56px 56px,
-      linear-gradient(90deg, #0a0c100c 1px, transparent 1px) 0 0 / 56px 56px;
+      linear-gradient(#ffffff0c 1px, transparent 1px) 0 0 / 56px 56px,
+      linear-gradient(90deg, #ffffff0c 1px, transparent 1px) 0 0 / 56px 56px;
     -webkit-mask: radial-gradient(70% 80% at 70% 40%, #000 15%, transparent 72%); mask: radial-gradient(70% 80% at 70% 40%, #000 15%, transparent 72%);
     transform: translate3d(calc(var(--mx, 0) * 14px), calc(var(--my, 0) * 12px), 0); transition: transform 900ms var(--ease-out); }
   .phero__blob { position: absolute; border-radius: 50%; will-change: transform; } /* no blur on moving layers */
-  .phero__blob--a { width: 48vw; height: 48vw; right: -12vw; top: -14vw; background: radial-gradient(closest-side, #1f4bff33, #1f4bff19 45%, #1f4bff00); }
-  .phero__blob--b { width: 34vw; height: 34vw; left: -8vw; bottom: -16vw; background: radial-gradient(closest-side, #ffffff, #ffffff80 45%, #ffffff00); }
-  .phero__mark { position: absolute; right: -2vw; bottom: -.12em; font-size: clamp(7rem, 24vw, 26rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #0a0c1010; white-space: nowrap; transform: translate3d(calc(var(--mx, 0) * -22px), 0, 0); transition: transform 1200ms var(--ease-out); user-select: none; }
+  .phero__blob--a { width: 48vw; height: 48vw; right: -12vw; top: -14vw; background: radial-gradient(closest-side, #2f6bff33, #2f6bff19 45%, #2f6bff00); }
+  .phero__blob--b { width: 34vw; height: 34vw; left: -8vw; bottom: -16vw; background: radial-gradient(closest-side, #ff2d461f, #ff2d460a 45%, #ff2d4600); }
+  .phero__mark { position: absolute; right: -2vw; bottom: -.12em; font-size: clamp(7rem, 24vw, 26rem); font-weight: 800; letter-spacing: -.07em; line-height: .8; color: transparent; -webkit-text-stroke: 1.5px #ffffff10; white-space: nowrap; transform: translate3d(calc(var(--mx, 0) * -22px), 0, 0); transition: transform 1200ms var(--ease-out); user-select: none; }
 
   .phero__inner { position: relative; display: grid; gap: clamp(28px, 4vw, 48px); padding-top: clamp(36px, 7vw, 104px); padding-bottom: clamp(44px, 6vw, 88px); }
   .phero__copy { display: grid; align-content: start; min-width: 0; }
-  .phero__eyebrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; width: fit-content; max-width: 100%; padding: 6px 14px 6px 6px; border-radius: 999px; background: #ffffffb3; border: 1px solid #ffffff; box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
-  .phero__idx { display: inline-flex; align-items: baseline; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; }
-  .phero__idx span { color: #e3e9ff; font-weight: 400; }
+  .phero__eyebrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; width: fit-content; max-width: 100%; padding: 6px 14px 6px 6px; border-radius: 4px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow-1); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); }
+  .phero__idx { display: inline-flex; align-items: baseline; padding: 3px 10px; border-radius: 3px; background: var(--accent-fill); color: #fff; font-weight: 600; }
+  .phero__idx span { color: #fff; font-weight: 400; }
   .phero__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .phero__meta { color: var(--muted); }
   .phero__meta::before { content: '·'; margin-right: 12px; color: var(--line-strong); }
-  .phero__title { margin-top: 26px; font-size: clamp(2.35rem, .9rem + 5.6vw, 6.6rem); font-weight: 680; letter-spacing: -.06em; line-height: .9; text-transform: uppercase; max-width: 16ch; }
+  .phero__title { margin-top: 26px; font-size: clamp(2.35rem, .9rem + 5.6vw, 6.6rem); font-weight: 760; letter-spacing: -.06em; line-height: .9; text-transform: uppercase; max-width: 16ch; }
   .phero__line { display: block; }
   .phero__line--accent { color: var(--accent); }
   .phero__word { display: inline-block; overflow: clip; overflow-clip-margin: .1em; padding-bottom: .05em; margin-right: .2em; vertical-align: top; }
@@ -83,7 +94,9 @@ const pad = (value: number) => String(value).padStart(2, '0');
   .phero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
   .phero__aside { min-width: 0; }
   .phero__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .pspec { display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-radius: 16px; background: #ffffffc2; border: 1px solid #ffffff; box-shadow: var(--shadow-1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .pspec::after { content: ''; position: absolute; inset: -1px; background: var(--hud); --hl: 9px; --hc: #4d84ffa6; background-repeat: no-repeat; pointer-events: none; }
+  .pspec:nth-child(even)::after { --hc: #ff4d62a6; }
+  .pspec { position: relative; display: grid; gap: 4px; align-content: start; padding: 14px 16px; border-radius: 6px; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow-1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   .pspec__num { font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem); font-weight: 680; letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums; }
   .pspec__label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); line-height: 1.4; }
   .phero--compact .phero__title { font-size: clamp(2.35rem, .9rem + 5vw, 5.6rem); }

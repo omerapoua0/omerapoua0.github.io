@@ -70,7 +70,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
   .fchip input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
   .fchip > span { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-1); font-size: 14px; font-weight: 540; transition: background-color var(--d-2), color var(--d-2), border-color var(--d-2), box-shadow var(--d-3), transform var(--d-3) var(--ease-spring); }
   .fchip .num { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--bg); font-size: 11px; color: var(--muted); }
-  .fchip input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 10px 24px -10px var(--accent-glow); }
+  .fchip input:checked + span { background: var(--accent-fill); border-color: var(--accent); color: #fff; box-shadow: 0 10px 24px -10px var(--accent-glow); }
   .fchip input:checked + span .num { background: var(--navy); color: #fff; }
   .fchip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
   .fchip:hover > span { border-color: var(--accent); transform: translateY(-2px); }
@@ -79,7 +79,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
   .pindex__views { display: none; }
   .pindex__views { padding: 4px; gap: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
   .pindex__views button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; font-size: 14px; font-weight: 540; transition: background-color var(--d-2), color var(--d-2); }
-  .pindex__views button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .pindex__views button[aria-pressed='true'] { background: var(--ink); color: var(--bg); }
   .pindex__views button:not([aria-pressed='true']):hover { color: var(--accent); }
   @media (min-width: 640px) {
     .pindex__views:not([hidden]) { display: flex; position: absolute; right: 0; top: 0; z-index: 1; }
@@ -88,7 +88,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
   .pindex__layout { display: grid; gap: var(--s-7); }
   .pindex__list { display: grid; gap: 10px; }
   .pindex__list li { display: grid; }
-  .prow { --gx: 50%; --gy: 50%; position: relative; isolation: isolate; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 6px 16px; padding: 18px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-1); text-decoration: none; overflow: hidden; transition: opacity var(--d-3) var(--ease-out), box-shadow var(--d-4) var(--ease-out), translate var(--d-4) var(--ease-out); }
+  .prow { --gx: 50%; --gy: 50%; position: relative; isolation: isolate; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 6px 16px; padding: 18px; border-radius: var(--radius-2); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); text-decoration: none; overflow: hidden; transition: opacity var(--d-3) var(--ease-out), box-shadow var(--d-4) var(--ease-out), translate var(--d-4) var(--ease-out); }
   .prow::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, var(--accent-soft), transparent 70%); transform: scaleX(0); transform-origin: 0 50%; transition: transform 600ms var(--ease-out); }
   .prow:hover::before, .prow:focus-visible::before { transform: scaleX(1); }
   .prow:hover, .prow:focus-visible { box-shadow: var(--shadow-2); }
@@ -102,7 +102,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
   .prow__thumb :global(.plate) { aspect-ratio: 16 / 9; border-radius: 14px; }
   .prow__go { position: absolute; right: 18px; top: 22px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); font-size: 16px; color: var(--muted); transition: transform var(--d-3) var(--ease-out), color var(--d-2), background-color var(--d-2), border-color var(--d-2); }
   .prow:hover .prow__name, .prow:focus-visible .prow__name { color: var(--accent); }
-  .prow:hover .prow__go, .prow:focus-visible .prow__go { color: #fff; background: var(--accent); border-color: var(--accent); transform: rotate(45deg); }
+  .prow:hover .prow__go, .prow:focus-visible .prow__go { color: #fff; background: var(--accent-fill); border-color: var(--accent); transform: rotate(45deg); }
   .pindex__pane { display: none; }
   .prow__go { display: none; }
 
@@ -131,7 +131,7 @@ const uid = `pi-${Math.random().toString(36).slice(2, 7)}`;
     .prow__status { grid-column: 2; }
     .prow__thumb { display: none; }
     .prow__go { display: grid; }
-    .pindex__pane { display: block; grid-column: 8 / span 5; position: sticky; top: calc(var(--header) + 32px); padding: 12px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid #ffffff; box-shadow: var(--shadow-3); }
+    .pindex__pane { display: block; grid-column: 8 / span 5; position: sticky; top: calc(var(--header) + 32px); padding: 12px; border-radius: var(--radius-3); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-3); }
     .pindex__stage { position: relative; aspect-ratio: 4 / 3.4; background: var(--plate); border-radius: 20px; overflow: hidden; }
     .pindex__item { position: absolute; inset: 0; opacity: 0; transform: scale(1.06); transition: opacity var(--d-4) var(--ease-out), transform 900ms var(--ease-out); }
     .pindex__item :global(.plate) { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; border-radius: 0; }
