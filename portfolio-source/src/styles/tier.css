@@ -33,3 +33,7 @@ html[data-tier='lite'] .gate__ring { display: none; }
 html[data-tier='lite'] .gate__seam--l::after { box-shadow: 0 0 8px 2px #ffd6db, 0 0 24px 6px #ff2d46d9; }
 html[data-tier='lite'] .gate__seam--r::after { box-shadow: 0 0 8px 2px #dbe6ff, 0 0 24px 6px #2f6bffd9; }
 html[data-tier='lite'] .gate__flare { box-shadow: 0 0 40px 16px #e6eeffd9; }
+/* Interior heroes and tours: the copy and media are there at first paint
+   (no delayed fade, so the Largest Contentful Paint is not held back on a
+   weak phone); the title's word slide-up (transform only) stays. */
+html[data-tier='lite'] :is(.phero__eyebrow, .phero__body, .phero__actions, .phero__aside, .pspec, .phero__mark, .tour-hero__meta, .tour-hero .lede, .tour-hero__chips, .tour-hero__actions, .tour-hero__media) { animation: none !important; }

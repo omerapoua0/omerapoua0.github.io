@@ -69,7 +69,9 @@ required. This is a static portfolio, not a hosted backend.
   out), heroes pause their loops off screen (`[data-offscreen]`, site.ts),
   pointer handlers cache boxes and write once per frame (fx.ts), marquee
   animations are looked up once per band, project plates ship 800w/1120w
-  WebP (`ProjectMedia`, srcset/sizes). Budgets (README table): lite phone at
+  WebP (`ProjectMedia`, srcset/sizes). Lite interior heroes and tours
+  show their copy and media at first paint (only the title's word slide-up
+  stays), so a delayed fade never holds back LCP. Budgets (README table): lite phone at
   6× CPU + Slow 4G homepage LCP ≤ 2.5 s, TBT ≤ 200 ms, CLS ≤ 0.05; scroll
   frame-time p95 ≤ 20 ms at 4× CPU; full tier no worse than v8. The intro
   question is painted (opacity .004) from the first frame so LCP is decided
@@ -175,14 +177,22 @@ required. This is a static portfolio, not a hosted backend.
     is `display:none`. Stages (`data-stage`): boot (ORB still, HUD, "Otto ·
     online" typing, Skip intro + Contact top right) → transform (clip, red
     scan line, ticks, "Assembling") → ask with the ASK clip (`data-clip=
-    "ask"`, cross-faded over the shared robot frame; `data-moving` while it
-    plays): "Hi — I'm Otto, Omar's robot." types from ASK.say 1.0 s and the
+    "ask"`, cross-faded over the shared robot frame with its measured fit;
+    `data-moving` while it plays; on landscape screens the frame pans to
+    `--px-ask` while he turns, so his open palm (frame x 7–22%) shows by the
+    copy under a lighter left shade, and the desktop column is capped left
+    of his helmet (`--head`: 45% facing you, 55% for the still); on portrait
+    phones the palm cannot fit, so the lite tier's light hint runs from him
+    to the question instead): "Hi — I'm Otto, Omar's robot." types from ASK.say 1.0 s and the
     big question "Do you want to see his work?" appears at ASK.question
-    2.1 s as his palm presents it, with "Yes, show me" (focused, big, glowing)
+    2.1 s as his palm presents it (the speech box appears with its first
+    letter, never empty while he turns), with "Yes, show me" (focused, big, glowing)
     and "Contact Omar" (gate to /contact.html), announced in an aria-live
-    region; he holds on ASK's last frame facing you (breathing, ring glow,
-    pointer tilt) while LOOK is fetched and parked at 2.3 s → go (cross-fade
-    into LOOK at 2.3 s, on to white at 4.6 s). Without a playable ASK: the
+    region; he holds on ASK's last frame facing you (breathing, ring glow at
+    RING.ask only once ASK has ended, pointer tilt) while LOOK is fetched and
+    parked at 2.3 s → go (no LOOK frame matches ASK's end pose, so not a
+    cross-fade: a light flare rises over him, `data-flare` up → down, and
+    LOOK at 2.3 s cuts in under its 150 ms peak; on to white at 4.6 s). Without a playable ASK: the
     v8 path (look: LOOK from 0 paused at LOOK.hold 1.6 s, then ask). The
     question is ~1.4× v8 on desktop (cqw/cqh sized: 2–3 lines on phones,
     clear of his head) → white → `gate.ts` `reveal()`: the
@@ -192,7 +202,10 @@ required. This is a static portfolio, not a hosted backend.
     Esc: 300 ms fade. All pictures are drawn into one canvas with each
     source's measured fit (s, dx, dy) so hand-overs line up and no
     third-party media is ever the LCP (text is). The rest of the page is
-    inert and does not scroll during the intro.
+    inert and does not scroll during the intro, and `<main>` is
+    `content-visibility: hidden` under it (not laid out or painted until the
+    hand-over; no script may force its layout meanwhile, e.g. no
+    `offsetWidth` reads in robot.ts).
   - Lite path (`data-path="lite"`, lite tier without reduced motion): no
     clips; the ORB and ROBOT stills painted once each into two canvases, a
     CSS assemble (stage `assemble`: clip reveal in step with the scan line,
@@ -214,9 +227,13 @@ required. This is a static portfolio, not a hosted backend.
     colours; an sr-only live line says the move) plays his next move in
     turn: WAVE → HEART → LOOK (0 → 1.6 s, held facing you) → WAVE…; WAVE and
     HEART end on the still (invisible cut back). Clips are `preload="none"`
-    and fetched on intent only (hover/focus/pointerdown on Otto prefetches
-    the next move; after a press the following one is warmed; lite: only the
-    tap fetches). One idle surprise (full tier, motion allowed, no
+    and fetched on intent only (mouse/pen hover or pointerdown, or keyboard
+    focus, on Otto prefetches the next move; on touch only the tap fetches,
+    since a finger landing on him may be a scroll; after a real press the
+    following one is warmed, never after the idle wave; lite: only the tap
+    fetches). ASK, WAVE and HEART carry a measured fit (s 1.0125, dx 12,
+    dy 26: the transform's framing, not the stills'); keep it when clips
+    change, or the still ↔ move hand-overs jump. One idle surprise (full tier, motion allowed, no
     Save-Data): after ~20 s of the hero in view with no input he waves once
     per page view. Stage state: `data-move`, `data-moves`, `data-greet`,
     `data-video`; a failed move is skipped. "Replay intro" clears the flag and

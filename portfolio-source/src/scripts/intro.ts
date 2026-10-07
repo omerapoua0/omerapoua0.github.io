@@ -11,8 +11,8 @@
  *   clip (v9), cross-faded over the shared robot frame: he turns to you, the
  *   line "Hi — I'm Otto, Omar's robot." types out from ASK.say, and the
  *   question appears at ASK.question as his open hand presents it; he then
- *   holds on the clip's last frame, facing you → "Yes": cross-fade into LOOK
- *   at LOOK.resume (parked there while he waits), on to LOOK.white (hands
+ *   holds on the clip's last frame, facing you → "Yes": a light flare, and
+ *   under its peak a cut into LOOK at LOOK.resume (parked there while he waits), on to LOOK.white (hands
  *   together, light, white) → the white hands over to the light gate
  *   (gate.ts reveal), which dissolves into the homepage while the hero
  *   staggers in. Without a playable ASK (no URL yet, an error, not buffered
@@ -37,7 +37,8 @@
  * State for CSS/QA on [data-intro]: data-stage boot | transform | assemble |
  * look | ask | go | white, data-path video | still | lite, data-clip ask |
  * look (the clip that brought him to the question), data-moving (ASK still
- * playing), data-asking, data-asked.
+ * playing), data-asking (the speech box, from the first typed letter),
+ * data-asked, data-flare up | down (Yes from ASK: the cut into LOOK).
  */
 import { cover, reveal } from './gate';
 
@@ -273,7 +274,9 @@ function run(intro: HTMLElement) {
   function ask(timed = false) {
     if (done || intro.dataset.stage === 'ask') return;
     stage('ask');
-    set('asking', '');
+    // The speech box comes with the first typed letter (in the timed path,
+    // at ASK.say), never as an empty box while he turns.
+    if (!timed) set('asking', '');
     if (reduce) { asked(); return; }
     if (timed) {
       set('moving', '');
@@ -284,6 +287,7 @@ function run(intro: HTMLElement) {
   function say() {
     if (done || saying || hasAsked) return;
     saying = true;
+    set('asking', '');
     let i = 0;
     const type = () => {
       if (done || hasAsked) return;
@@ -296,6 +300,7 @@ function run(intro: HTMLElement) {
   function asked() {
     if (done || hasAsked) return;
     hasAsked = true;
+    set('asking', '');
     typed.textContent = line;
     set('asked', '');
     const question = $<HTMLElement>('#intro-q').textContent?.replace(/ /g, ' ') ?? '';
@@ -325,11 +330,17 @@ function run(intro: HTMLElement) {
     if (done || intro.dataset.stage === 'go' || intro.dataset.stage === 'white') return;
     if (reduce) { leave(200); return; }
     if (intro.dataset.path === 'video' && intro.dataset.clip === 'ask' && askReady && playable(look)) {
-      // From ASK's last frame (facing you) into LOOK at RESUME, cross-faded.
+      // From ASK's last frame (facing you) into LOOK at RESUME. The two
+      // poses differ (no LOOK frame matches ASK's end), so a cross-fade
+      // would show two heads: instead a short light flare rises over him and
+      // the clip cuts under its peak, then the flare falls away into LOOK
+      // (hands up, palms together, white).
       stage('go');
       set('moving', null);
+      set('flare', 'up');
       askClip?.pause();
-      const go = () => look.play().then(() => show(look, 260), () => void fallbackOpen());
+      const peak = new Promise<void>(resolve => later(resolve, 150));
+      const go = () => look.play().then(async () => { await peak; show(look); set('flare', 'down'); }, () => void fallbackOpen());
       if (Math.abs(look.currentTime - RESUME) > .05 || look.seeking) {
         look.addEventListener('seeked', go, { once: true });
         try { look.currentTime = RESUME; } catch { void fallbackOpen(); return; }

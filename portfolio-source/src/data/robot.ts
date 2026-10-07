@@ -74,11 +74,15 @@ export const robot = {
  *  - HEART: 0–1.2 turns to you; ≈ 1.25 hands rise; 1.7–3.75 a glowing red
  *    heart with both hands at his chest; ≈ 4.2 hands down, turns back.
  *  WAVE and HEART end on the ROBOT still, so the hero cuts back to it
- *  invisibly. Their framing matches the stills (fit = identity). */
+ *  invisibly. They share the transform's framing, not the stills': `fit`
+ *  (measured on the real clips, best pixel match of each clip's first and
+ *  last frame with the ROBOT still, mean luminance difference ≈ 4 against
+ *  ≈ 12 unfitted) lines them up with the still, so the hand-overs (still →
+ *  move → still in the hero, TRANSFORM → ASK in the intro) do not jump. */
 export const gestures = {
-  ask: { mp4: `${base}/hf_20261007_140440_df410d0c-f3b9-4fd7-ad45-b4829ca41dc5.mp4`, duration: 5.06, fit: { s: 1, dx: 0, dy: 0 } as Fit },
-  wave: { mp4: `${base}/hf_20261007_140440_0d5a7893-8f58-49d0-95c5-5dec71b6f69e.mp4`, duration: 5.06, fit: { s: 1, dx: 0, dy: 0 } as Fit },
-  heart: { mp4: `${base}/hf_20261007_140440_86ab53ef-2514-4434-9a8a-0587120b5e1d.mp4`, duration: 5.06, fit: { s: 1, dx: 0, dy: 0 } as Fit },
+  ask: { mp4: `${base}/hf_20261007_140440_df410d0c-f3b9-4fd7-ad45-b4829ca41dc5.mp4`, duration: 5.06, fit: { s: 1.0125, dx: 12, dy: 26 } as Fit },
+  wave: { mp4: `${base}/hf_20261007_140440_0d5a7893-8f58-49d0-95c5-5dec71b6f69e.mp4`, duration: 5.06, fit: { s: 1.0125, dx: 12, dy: 26 } as Fit },
+  heart: { mp4: `${base}/hf_20261007_140440_86ab53ef-2514-4434-9a8a-0587120b5e1d.mp4`, duration: 5.06, fit: { s: 1.0125, dx: 12, dy: 26 } as Fit },
 };
 /** ASK timings (seconds): the speech line starts typing at `say` (he faces
  *  you), the big question appears at `question` (as his open palm turns
@@ -94,8 +98,10 @@ export const LOOK = {
   /** …to the white frame, where the light gate takes over. */
   white: 4.6,
 };
-/** Where the red ring (and the asking pose's ring) sit in the frame, in %. */
-export const RING = { still: { x: 71, y: 25 }, ask: { x: 71.5, y: 29 } };
+/** Where the red ring sits in the frame, in %: on the still, on LOOK's
+ *  held frame (the v8 asking pose) and on ASK's last frame (measured on the
+ *  real clip, with its fit). */
+export const RING = { still: { x: 71, y: 25 }, look: { x: 71.5, y: 29 }, ask: { x: 73, y: 28 } };
 
 /** The light gate plays LOOK from just before the palms meet… */
 export const OPEN_SEEK = 3.4;

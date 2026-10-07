@@ -119,8 +119,13 @@ and optionally look-h264.mp4). Never commit stand-in media. Checks run as a
 capable device (8 cores, 8 GB) unless they ask for the lite tier; v9 adds
 the tier detection and overrides, the lite homepage (no clips requested, no
 cursor, pins, scrub or blur), the lite intro end to end, the ASK-timed
-question, the hero's WAVE → HEART → LOOK cycle and on-intent prefetch, the
-question size and fit at 360/390/1440, and lite LCP/CLS/TBT budgets.
+question, the hero's WAVE → HEART → LOOK cycle and on-intent prefetch (a
+touch scroll starting on Otto fetches nothing; the idle wave fetches only
+WAVE), the speech box with its first letter, the ring glow only after ASK,
+the ASK pan (palm on screen, copy clear of his helmet), Yes's flare cut into
+LOOK, the question size and fit at 360/390/1000/1440 for the still and ASK
+framings, and lite LCP/CLS/TBT budgets (homepage with and without the
+intro, /work and /inside/katana).
 
 ## Performance (v9)
 
