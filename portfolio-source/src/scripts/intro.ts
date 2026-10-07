@@ -282,10 +282,12 @@ function run(intro: HTMLElement) {
       if (!(error instanceof DOMException && error.name === 'NotAllowedError') || !wake) { stillPath(); return; }
       window.clearTimeout(start);
       wake.hidden = false;
+      wake.style.display = '';
       set('wake', '');
       status('Tap to wake');
       wake.addEventListener('click', () => {
         wake.hidden = true;
+        wake.style.display = 'none';
         set('wake', null);
         status('Waking up');
         start = window.setTimeout(stillPath, 8000);
