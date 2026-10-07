@@ -124,7 +124,7 @@ async function check(name, run) {
    capable device (8 cores, 8 GB) unless it asks for device 'low' (4 cores,
    2 GB: the lite tier) or 'native' (whatever this machine reports). */
 const emulateDevice = (context, device) => device === 'native' ? null : context.addInitScript(low => {
-  Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => (low ? 4 : 8) });
+  Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => (low ? 2 : 8) });
   Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => (low ? 2 : 8) });
 }, device === 'low');
 async function isolated(browser, { intro = false, device = 'capable', ...options } = {}, robot = 'play') {
@@ -852,15 +852,18 @@ async function pixelContrast(page, selectors) {
 
   /* v9: the capability tier (Base.astro head script) and the lite tier. */
   const tierOf = page => page.evaluate(() => document.documentElement.dataset.tier);
-  await check('tier: capable devices get "full"; ≤ 4 GB memory, ≤ 4 cores, Save-Data or a 3g connection get "lite"; ?tier= overrides it for the session', async () => {
+  await check('tier: capable devices get "full"; ≤ 2 GB memory, ≤ 2 cores, Save-Data or a 2g connection get "lite" (4 GB / 4 cores / 3g stay "full"); ?tier= overrides it for the session', async () => {
     const cases = [
       ['capable (8 cores, 8 GB)', {}, null, '', 'full'],
-      ['low (4 cores, 2 GB)', { device: 'low' }, null, '', 'lite'],
-      ['4 GB only', {}, () => Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => 4 }), '', 'lite'],
-      ['4 cores only', {}, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'lite'],
+      ['low (2 cores, 2 GB)', { device: 'low' }, null, '', 'lite'],
+      ['4 GB only', {}, () => Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => 4 }), '', 'full'],
+      ['2 GB only', {}, () => Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => 2 }), '', 'lite'],
+      ['4 cores only', {}, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'full'],
+      ['2 cores only', {}, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 2 }), '', 'lite'],
       ['4 cores, iPhone (WebKit caps the count)', { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' }, () => Object.defineProperty(Navigator.prototype, 'hardwareConcurrency', { configurable: true, get: () => 4 }), '', 'full'],
       ['Save-Data', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ saveData: true }) }), '', 'lite'],
-      ['3g', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ effectiveType: '3g' }) }), '', 'lite'],
+      ['3g (noisy on mobile)', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ effectiveType: '3g' }) }), '', 'full'],
+      ['2g', {}, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ effectiveType: '2g' }) }), '', 'lite'],
       ['?tier=lite on a capable device', {}, null, '?tier=lite', 'lite'],
       ['?tier=full on a low device', { device: 'low' }, null, '?tier=full', 'full'],
     ];

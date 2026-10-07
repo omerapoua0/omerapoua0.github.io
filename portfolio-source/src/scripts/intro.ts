@@ -66,7 +66,7 @@ function run(intro: HTMLElement) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const lite = root.dataset.tier === 'lite';
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-  const slow = !!connection?.saveData || /^(slow-2g|2g|3g)$/.test(connection?.effectiveType ?? '');
+  const slow = !!connection?.saveData || /^(slow-2g|2g)$/.test(connection?.effectiveType ?? '');
   const num = (el: HTMLElement | null, key: string, fallback: number) => Number(el?.dataset[key]) || fallback;
   const fitOf = (el: HTMLElement): Fit => { try { return JSON.parse(el.dataset.fit || ''); } catch { return { s: 1, dx: 0, dy: 0 }; } };
   const HOLD = num(look, 'hold', 1.6), RESUME = num(look, 'resume', 2.3), WHITE = num(look, 'white', 4.6);
