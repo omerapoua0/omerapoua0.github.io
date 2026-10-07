@@ -606,8 +606,8 @@ async function pixelContrast(page, selectors) {
     await page.waitForTimeout(1500);
     const idle = await robotState(page);
     assert.equal(idle.plays, 0, 'nothing plays on its own'); assert.equal(idle.src, '', 'no clip is fetched until asked');
-    assert.equal(await page.evaluate(() => document.querySelector('[data-robot-stage]').dataset.moves), 'wave heart look', 'his moves, in turn');
-    for (const move of ['wave', 'heart']) {
+    assert.equal(await page.evaluate(() => document.querySelector('[data-robot-stage]').dataset.moves), 'heart wave look', 'his moves, in turn (v9.1: the heart first)');
+    for (const move of ['heart', 'wave']) {
       await page.click('[data-robot-hi]');
       await page.waitForFunction(name => { const s = document.querySelector('[data-robot-stage]'); return s.dataset.move === name && s.dataset.greet === 'playing' && s.dataset.video === 'on'; }, move, { timeout: 5000 });
       assert.equal(await page.evaluate(() => document.querySelector('[data-robot-said]').textContent), move === 'wave' ? 'Otto waves hello.' : 'Otto makes a heart with his hands.', `${move}: announced`);
@@ -638,7 +638,7 @@ async function pixelContrast(page, selectors) {
     await greetDone(page);
     await page.waitForTimeout(800);
     const last = await robotState(page);
-    assert.deepEqual(last.moves, ['wave', 'heart', 'look', 'wave'], 'the cycle starts again after LOOK');
+    assert.deepEqual(last.moves, ['heart', 'wave', 'look', 'heart'], 'the cycle starts again after LOOK');
     assert.equal(last.plays, 4, 'no extra plays');
     assert.deepEqual(errors, []);
     await context.close();
@@ -1230,16 +1230,16 @@ async function pixelContrast(page, selectors) {
     await context.close();
   });
 
-  await check('moves: the idle wave (≈ 20 s, no input) plays WAVE once and fetches nothing else', async () => {
+  await check('moves: the idle surprise (≈ 12 s, no input) plays the HEART once and fetches nothing else', async () => {
     if (!robotMedia) return;
     const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     const page = await context.newPage();
     const clips = [];
     page.on('request', request => { const m = /(0d5a7893|86ab53ef|37408964)/.exec(request.url()); if (m) clips.push(m[1]); });
     await page.goto(`${base}/index.html?tier=full`, { waitUntil: 'networkidle' });
-    await page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.move === 'wave', null, { timeout: 26000 });
+    await page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.move === 'heart', null, { timeout: 18000 });
     await page.waitForTimeout(3000);
-    assert.deepEqual([...new Set(clips)], ['0d5a7893'], `only WAVE fetched (${clips})`);
+    assert.deepEqual([...new Set(clips)], ['86ab53ef'], `only HEART fetched (${clips})`);
     await context.close();
   });
 

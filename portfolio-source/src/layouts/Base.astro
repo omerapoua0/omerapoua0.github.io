@@ -1,4 +1,5 @@
 ---
+import { SHARE_CARD } from '../data/robot';
 import '@fontsource-variable/onest/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
 import '../styles/tokens.css';
@@ -15,7 +16,7 @@ import { site } from '../data/site';
 import onestLatin from '@fontsource-variable/onest/files/onest-latin-wght-normal.woff2?url';
 
 interface Props { title: string; description?: string; home?: boolean; image?: string; noindex?: boolean }
-const { title, description = site.description, home = false, image = '/portrait-hero.jpg', noindex = false } = Astro.props;
+const { title, description = site.description, home = false, image = SHARE_CARD.src, noindex = false } = Astro.props;
 const path = Astro.url.pathname === '/' ? '/index.html' : Astro.url.pathname;
 const fullTitle = home ? `${site.name} | ${title}` : `${title} | ${site.name}`;
 const person = {
@@ -52,7 +53,8 @@ const person = {
     <meta property="og:type" content="website" />
     <meta property="og:url" content={new URL(path, site.url).href} />
     <meta property="og:image" content={new URL(image, site.url).href} />
-    <meta property="og:image:alt" content="Portrait of Omar Aboelella" />
+    <meta property="og:image:alt" content={image === SHARE_CARD.src ? SHARE_CARD.alt : 'Portrait of Omar Aboelella'} />
+    {image === SHARE_CARD.src && <><meta property="og:image:width" content={String(SHARE_CARD.width)} /><meta property="og:image:height" content={String(SHARE_CARD.height)} /><meta property="og:image:type" content="image/png" /><meta name="twitter:image" content={SHARE_CARD.src} /></>}
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(person)} />
     <!-- Before first paint: arrival through the light gate.

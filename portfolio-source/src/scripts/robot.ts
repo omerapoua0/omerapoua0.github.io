@@ -101,7 +101,7 @@ if (stage && all.length) {
 
   /* ---------- the moves ---------- */
   type Move = { name: string; video: HTMLVideoElement; hold: number; attached: boolean; failed: boolean };
-  const moves: Move[] = ['wave', 'heart', 'look']
+  const moves: Move[] = ['heart', 'wave', 'look']
     .map(name => all.find(video => video.dataset.robotVideo === name))
     .filter((video): video is HTMLVideoElement => !!video)
     .map(video => ({ name: video.dataset.robotVideo!, video, hold: Number(video.dataset.hold) || 0, attached: false, failed: false }));
@@ -229,21 +229,36 @@ if (stage && all.length) {
     hit.addEventListener('focus', intent);
   }
 
-  // One idle surprise: after ~20 s with the hero in view and no input, he
-  // waves (capable devices only, once per page view).
-  const wave = moves.find(move => move.name === 'wave');
-  if (wave && !lite && !saveData && !reduce.matches && 'IntersectionObserver' in window) {
+  // v9.1: his heart is the first move. He greets you with it once the intro
+  // hands over to the homepage, and (once per page view) after ~12 s with
+  // the hero in view and no input — on every tier, never with reduced
+  // motion or Save-Data.
+  const wave = moves[0];
+  let greeted = false;
+  if (wave && !saveData && !reduce.matches) {
+    const greet = () => {
+      if (greeted || pressed || stage.dataset.poster === 'failed' || wave.failed || upcoming() !== wave) return;
+      greeted = true;
+      attach(wave);
+      window.setTimeout(() => { if (!pressed && !document.hidden) play(); }, 1400);
+    };
+    if (root.dataset.introOn !== undefined) {
+      attach(wave);
+      new MutationObserver((_, observer) => { if (root.dataset.introOn === undefined) { observer.disconnect(); greet(); } }).observe(root, { attributes: true, attributeFilter: ['data-intro-on'] });
+    }
+  }
+  if (wave && !saveData && !reduce.matches && 'IntersectionObserver' in window) {
     let visible = false, idle = 0, spent = false;
     const arm = () => {
       window.clearTimeout(idle);
       if (spent || pressed || !visible || document.hidden) return;
       idle = window.setTimeout(() => {
-        if (spent || pressed || !visible || document.hidden || reduce.matches || root.dataset.introOn !== undefined || stage.dataset.poster === 'failed' || wave.failed) return;
+        if (spent || greeted || pressed || !visible || document.hidden || reduce.matches || root.dataset.introOn !== undefined || stage.dataset.poster === 'failed' || wave.failed) return;
         if (current && !current.video.paused) return;
         spent = true;
         if (upcoming() !== wave) return; // only as his first move
         play();
-      }, 20000);
+      }, 12000);
     };
     new IntersectionObserver(entries => { visible = entries.some(entry => entry.isIntersecting); arm(); }, { threshold: .4 }).observe(stage);
     for (const type of ['pointermove', 'pointerdown', 'keydown', 'scroll', 'wheel', 'touchstart']) addEventListener(type, arm, { passive: true });

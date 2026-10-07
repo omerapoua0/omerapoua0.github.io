@@ -138,3 +138,15 @@ export const VOICE_AT = 0.9;
  *  Intro.astro; qa.cjs checks it at every viewport). The open palm in ASK
  *  is at x .07–.24, y .42–.75. */
 export const HEAD = { still: [.52, .03, .76, .47], ask: [.45, .03, .73, .52], look: [.49, .03, .73, .55] } as const;
+
+/** v9.1: the link-preview card (og:image) for LinkedIn and other sites: Otto
+ *  beside Omar's name and title on the dark neon background. Generated with
+ *  Higgsfield (GPT Image 2.5, from the ROBOT still; text checked), 2688x1520
+ *  PNG (≈ 4 MB, under LinkedIn's 5 MB limit; PNG for compatibility). Omar's
+ *  photo is not used or altered. */
+export const SHARE_CARD = {
+  src: 'https://d8j0ntlcm91z4.cloudfront.net/user_3Hu8nuHpTz0mXVPyD5jCOMXRDom/hf_20261007_213526_e28d1595-bbc9-4e52-ae87-ec9bbadd6a88.png',
+  width: 2688,
+  height: 1520,
+  alt: 'Otto, Omar’s robot, beside the name Omar Aboelella: AI Product Engineer · Maths & CS · Tutor',
+} as const;
