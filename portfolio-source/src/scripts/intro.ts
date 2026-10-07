@@ -112,8 +112,13 @@ function run(intro: HTMLElement) {
   if ('ResizeObserver' in window) { const ro = new ResizeObserver(measureTalk); ro.observe(intro); ro.observe(talk); }
 
   /* ---------- the canvas: every picture is drawn here ---------- */
+  // Weaker phones (lite tier) draw into a 60% backing store (CSS scales it
+  // up; the fits' pixel offsets scale with it), and every tier skips frames
+  // where the video has no new picture (24 fps clips vs a 60+ Hz loop).
+  const SCALE = lite ? .6 : 1;
+  if (SCALE < 1) for (const c of [canvas, intro.querySelector<HTMLCanvasElement>('[data-intro-screen-b]')]) if (c) { c.width = Math.round(c.width * SCALE); c.height = Math.round(c.height * SCALE); }
   const W = canvas.width, H = canvas.height;
-  let cur: Src | null = null, prev: Src | null = null, fadeFrom = 0, fadeMs = 0, raf = 0;
+  let cur: Src | null = null, prev: Src | null = null, fadeFrom = 0, fadeMs = 0, raf = 0, lastT = -1, lastEl: Src['el'] | null = null;
   const ready = (el: Src['el']) => el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete && el.naturalWidth > 0;
   const draw = (src: Src, alpha: number, into = ctx) => {
     if (!into || !ready(src.el)) return false;
@@ -121,14 +126,23 @@ function run(intro: HTMLElement) {
     const h = src.el instanceof HTMLVideoElement ? src.el.videoHeight : src.el.naturalHeight;
     const k = Math.max(W / w, H / h) * src.fit.s, dw = w * k, dh = h * k;
     into.globalAlpha = alpha;
-    into.imageSmoothingQuality = 'high';
-    into.drawImage(src.el, (W - dw) / 2 + src.fit.dx, (H - dh) / 2 + src.fit.dy, dw, dh);
+    into.imageSmoothingQuality = lite ? 'medium' : 'high';
+    into.drawImage(src.el, (W - dw) / 2 + src.fit.dx * SCALE, (H - dh) / 2 + src.fit.dy * SCALE, dw, dh);
     return true;
   };
   const frame = (now: number) => {
     raf = 0;
     if (done || !ctx || !cur) return;
     const t = fadeMs ? Math.min(1, (now - fadeFrom) / fadeMs) : 1;
+    const video = cur.el instanceof HTMLVideoElement ? cur.el : null;
+    // Nothing new to show (no cross-fade, same video frame): skip the draw.
+    if (!(prev && t < 1) && video && !video.paused && lastEl === video && video.currentTime === lastT && intro.hasAttribute('data-drawn')) {
+      tick();
+      raf = requestAnimationFrame(frame);
+      return;
+    }
+    lastEl = cur.el;
+    lastT = video ? video.currentTime : -1;
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#040506';
     ctx.fillRect(0, 0, W, H);

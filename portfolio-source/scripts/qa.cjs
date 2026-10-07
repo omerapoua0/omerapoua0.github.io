@@ -830,7 +830,7 @@ async function pixelContrast(page, selectors) {
   });
 
   // Save-Data makes the lite tier (v9): its CSS path, no clips.
-  for (const [label, options, mode, limit, path] of [['reduced motion', { reducedMotion: 'reduce' }, 'play', 1500, 'still'], ['CDN blocked', { reducedMotion: 'no-preference' }, 'block', 3000, 'still'], ['Save-Data', { reducedMotion: 'no-preference' }, 'play', 5000, 'lite']]) {
+  for (const [label, options, mode, limit, path] of [['reduced motion (untouched: the Tap to wake offer, then the question)', { reducedMotion: 'reduce' }, 'play', 7000, 'still'], ['CDN blocked', { reducedMotion: 'no-preference' }, 'block', 3000, 'still'], ['Save-Data', { reducedMotion: 'no-preference' }, 'play', 5000, 'lite']]) {
     await check(`intro (${label}): no clips, the ${path} path with the question within ${limit / 1000} s; Yes opens the homepage`, async () => {
       const context = await isolated(browser, { intro: true, viewport: { width: 390, height: 844 }, ...options }, mode);
       if (label === 'Save-Data') await context.addInitScript(() => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ saveData: true }) }));
@@ -844,7 +844,7 @@ async function pixelContrast(page, selectors) {
       if (label !== 'CDN blocked') assert.ok(!ask.look && !ask.transform && !ask.ask, `no clip fetched (${ask.look} ${ask.transform} ${ask.ask})`);
       assert.equal(ask.active, 'yes');
       await page.click('[data-intro-yes]');
-      await introGone(page, label === 'reduced motion' ? 800 : 2500);
+      await introGone(page, label.startsWith('reduced motion') ? 800 : 2500);
       assert.ok(await page.locator('#hero-title').isVisible());
       await context.close();
     });
@@ -938,22 +938,22 @@ async function pixelContrast(page, selectors) {
     const errors = watch(page);
     await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     const stage = '[data-robot-stage]';
-    // Off: a press plays WAVE silently.
+    // Off: a press plays HEART silently.
     await page.locator('[data-robot-hi]').click({ force: true });
     await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'playing', stage, { timeout: 5000 });
     assert.deepEqual(wavs(), [], 'Sound off: no line fetched');
     assert.equal(await page.locator('[data-robot-caption]').textContent(), '', 'Sound off: no caption');
     await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'done', stage, { timeout: 9000 });
-    // On (the hero chip), then HEART → THANKS.
+    // On (the hero chip), then WAVE → HELLO.
     const chip = page.locator('.robot-stage__sound');
     assert.equal(await chip.getAttribute('aria-pressed'), 'false');
     await chip.click();
     assert.equal(await chip.getAttribute('aria-pressed'), 'true');
     await page.locator('[data-robot-hi]').click({ force: true });
-    await playedLine(page, 'thanks');
+    await playedLine(page, 'hello');
     const caption = await page.evaluate(() => { const c = document.querySelector('[data-robot-caption]'); return { text: c.textContent, live: c.getAttribute('aria-live'), shown: c.hasAttribute('data-show') }; });
-    assert.deepEqual(caption, { text: 'Thanks for stopping by!', live: 'polite', shown: true }, 'THANKS captioned');
-    assert.equal(await page.evaluate(s => document.querySelector(s).dataset.move, stage), 'heart');
+    assert.deepEqual(caption, { text: 'Hello! Nice to meet you.', live: 'polite', shown: true }, 'HELLO captioned');
+    assert.equal(await page.evaluate(s => document.querySelector(s).dataset.move, stage), 'wave');
     await page.waitForFunction(() => !document.querySelector('[data-robot-caption]').hasAttribute('data-show'), null, { timeout: 5000 });
     await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'done', stage, { timeout: 9000 });
     // LOOK: no line.
@@ -964,15 +964,15 @@ async function pixelContrast(page, selectors) {
     assert.equal(wavs().length, before, 'LOOK: no line');
     assert.ok(!(await page.evaluate(() => document.querySelector('[data-robot-caption]').hasAttribute('data-show'))), 'LOOK: no caption');
     await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'done', stage, { timeout: 6000 });
-    // WAVE → HELLO.
+    // HEART → THANKS.
     await page.locator('[data-robot-hi]').click({ force: true });
-    await playedLine(page, 'hello');
-    assert.equal(await page.locator('[data-robot-caption]').textContent(), 'Hello! Nice to meet you.');
+    await playedLine(page, 'thanks');
+    assert.equal(await page.locator('[data-robot-caption]').textContent(), 'Thanks for stopping by!');
     assert.ok(wavs().some(name => /737260d3/.test(name)) && wavs().some(name => /a2c7efb9/.test(name)), `HELLO and THANKS fetched (${wavs()})`);
     assert.ok(!wavs().some(name => /2fd4c0cf|282d86e6/.test(name)), 'the intro lines were not fetched here');
     // Off again: the line stops, the caption goes.
     await chip.click();
-    await page.waitForFunction(() => { const a = document.querySelector('audio[data-voice-line="hello"]'); return (a.paused || a.volume < .05) && !document.querySelector('[data-robot-caption]').hasAttribute('data-show'); }, null, { timeout: 2000 });
+    await page.waitForFunction(() => { const a = document.querySelector('audio[data-voice-line="thanks"]'); return (a.paused || a.volume < .05) && !document.querySelector('[data-robot-caption]').hasAttribute('data-show'); }, null, { timeout: 2000 });
     if (axePath) {
       await chip.click();
       await page.addScriptTag({ path: axePath });
@@ -1004,7 +1004,7 @@ async function pixelContrast(page, selectors) {
     await p2.goto(`${base}/index.html`);
     assert.equal(await p2.evaluate(() => document.documentElement.dataset.tier), 'lite');
     await p2.locator('.intro__bar [data-sound-toggle]').click();
-    await asked(p2, 6000);
+    await asked(p2, 16000);
     assert.equal(await p2.locator('.intro__bar [data-sound-toggle]').getAttribute('aria-pressed'), 'true');
     assert.ok(await p2.locator('#intro-q').isVisible(), 'the question (the caption) stays');
     await p2.click('[data-intro-yes]');
@@ -1157,7 +1157,7 @@ async function pixelContrast(page, selectors) {
       await page.waitForTimeout(300);
       await page.click('[data-robot-hi]');
       await page.waitForFunction(() => ['playing', 'done', 'failed'].includes(document.querySelector('[data-robot-stage]').dataset.greet), null, { timeout: 5000 });
-      assert.ok(clips.length === 1 && /0d5a7893/.test(clips[0]), `the tap fetched WAVE only (${clips})`);
+      assert.ok(clips.length === 1 && /86ab53ef/.test(clips[0]), `the tap fetched HEART (his first move) only (${clips})`);
       // A door still opens through the light (CSS seams; no clip).
       await Promise.all([page.waitForURL(/work\.html$/, { timeout: 5000 }), page.click('.door--work')]);
       assert.equal(await tierOf(page), 'lite', 'the tier holds on the next page');
@@ -1208,16 +1208,16 @@ async function pixelContrast(page, selectors) {
     assert.deepEqual(clips, [], 'nothing fetched during load');
     assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('[data-robot-video]')].map(v => v.preload)), ['none', 'none', 'none'], 'every move is preload="none" until asked');
     await page.hover('[data-robot-hi]');
-    await page.waitForFunction(() => document.querySelector('[data-robot-video="wave"]').preload === 'auto', null, { timeout: 2000 });
+    await page.waitForFunction(() => document.querySelector('[data-robot-video="heart"]').preload === 'auto', null, { timeout: 2000 });
     await page.waitForTimeout(300);
-    assert.deepEqual([...new Set(clips)], ['0d5a7893'], `hovering Otto prefetches his next move only (${clips})`);
+    assert.deepEqual([...new Set(clips)], ['86ab53ef'], `hovering Otto prefetches his next move (the heart) only (${clips})`);
     await page.click('[data-robot-hi]');
     await page.waitForTimeout(2200);
-    assert.ok(clips.includes('86ab53ef'), 'while he waves, HEART (the next move) is warmed');
+    assert.ok(clips.includes('0d5a7893'), 'while he makes the heart, WAVE (the next move) is warmed');
     const focusOnly = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
     const second = await focusOnly.newPage();
     const more = [];
-    second.on('request', request => { if (/0d5a7893/.test(request.url())) more.push(request.url()); });
+    second.on('request', request => { if (/86ab53ef/.test(request.url())) more.push(request.url()); });
     await second.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
     await second.locator('[data-robot-hi]').focus();
     await second.waitForTimeout(600);
@@ -1245,7 +1245,7 @@ async function pixelContrast(page, selectors) {
     await page.evaluate(() => scrollTo(0, 0));
     await page.tap('[data-robot-hi]');
     await page.waitForTimeout(800);
-    assert.deepEqual([...new Set(clips)], ['0d5a7893'], 'the tap fetches his move');
+    assert.deepEqual([...new Set(clips)], ['86ab53ef'], 'the tap fetches his move (the heart first)');
     await context.close();
   });
 
