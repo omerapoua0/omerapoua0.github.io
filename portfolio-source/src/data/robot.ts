@@ -114,3 +114,27 @@ export const OPEN_PLAY_MS = 700;
 export const ROBOT_NAME = 'Otto';
 /** Accessible name of the hero robot button (WAVE → HEART → LOOK). */
 export const ROBOT_LABEL = 'Say hi to Otto, Omar’s robot';
+
+/** v10: Otto's voice (opt-in, default off). Pre-recorded AI voice lines,
+ *  generated for Omar with Higgsfield (Seed Audio, preset voice "Archie";
+ *  AI-generated voice, see THIRD-PARTY-NOTICES), on the same public,
+ *  immutable CDN; WAV 24 kHz stereo, checked by speech-to-text. `duration`
+ *  is the file length (s; a caption stays up that long), `speech` when the
+ *  words start and end in the file (silencedetect -40 dB). Fetched only when
+ *  the visitor turns Sound on (preload="none"); scripts/voice.ts plays them.
+ *  Files in public/robot/ (voice-intro.wav, …) override them at build time. */
+export const VOICE = {
+  intro: { src: `${base}/hf_20261007_142405_2fd4c0cf-c1c4-4195-a9b9-d552108dd7de.wav`, duration: 5.1, speech: [0.45, 4.85], text: 'Hi, I’m Otto, Omar’s robot. Do you want to see his work?' },
+  yes: { src: `${base}/hf_20261007_142718_282d86e6-6f10-4c84-a0fe-c5bcfaf0b6da.wav`, duration: 4.4, speech: [0.97, 2.4], text: 'Great, let’s go and see it!' },
+  hello: { src: `${base}/hf_20261007_142718_737260d3-4257-47ce-8a3b-831f02a0b63b.wav`, duration: 3.6, speech: [1.68, 3.26], text: 'Hello! Nice to meet you.' },
+  thanks: { src: `${base}/hf_20261007_142406_a2c7efb9-f3d1-4682-988f-b8d6108077b0.wav`, duration: 3.2, speech: [1.7, 2.84], text: 'Thanks for stopping by!' },
+};
+/** INTRO starts this far into ASK (s), as he faces you. */
+export const VOICE_AT = 0.9;
+/** Otto's head in the shared frame, per framing (fractions of the frame:
+ *  x0, y0, x1, y1), measured on the real frames (still; ASK ≈ 2.5 s to its
+ *  last frame; LOOK 3.3 s; TRANSFORM 3.5 s ≈ the still): the intro's copy
+ *  never covers it (the frame shrinks on short portrait screens, see
+ *  Intro.astro; qa.cjs checks it at every viewport). The open palm in ASK
+ *  is at x .07–.24, y .42–.75. */
+export const HEAD = { still: [.52, .03, .76, .47], ask: [.45, .03, .73, .52], look: [.49, .03, .73, .55] } as const;

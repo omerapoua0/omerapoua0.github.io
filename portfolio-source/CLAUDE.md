@@ -13,7 +13,7 @@ Preserve user changes. Do not reset, clean, or delete unrelated work. Inspect
 before editing; use small, reviewable changes. No Supabase or paid service is
 required. This is a static portfolio, not a hosted backend.
 
-## Active architecture (v6 "Neon" dark redesign on the v4/v5 structure, October 2026; v7 adds the hero robot, v8 the opening intro, v9 names him Otto, gives him moves and a lite tier for weaker phones)
+## Active architecture (v6 "Neon" dark redesign on the v4/v5 structure, October 2026; v7 adds the hero robot, v8 the opening intro, v9 names him Otto, gives him moves and a lite tier for weaker phones, v10 gives him a voice and fits every screen size)
 
 - Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React and three.js
   remain declared for lockfile stability, but no page ships a React island or
@@ -250,6 +250,54 @@ required. This is a static portfolio, not a hosted backend.
     ('block' mode). Every check runs as a later homepage view unless it asks
     for the intro, and as a capable device (8 cores, 8 GB) unless it asks for
     `device: 'low'` (lite) — this container reports 4 cores.
+  - **Voice** (v10, the user's final call: "Actually put the voice"):
+    opt-in only, default OFF. Four pre-recorded lines (Higgsfield Seed
+    Audio, preset voice "Archie", AI-generated; WAV 24 kHz on the same CDN;
+    `VOICE` in `src/data/robot.ts` with duration, speech span and text):
+    INTRO "Hi, I'm Otto, Omar's robot. Do you want to see his work?", YES
+    "Great, let's go and see it!", HELLO (with WAVE), THANKS (with HEART).
+    `Voice.astro` (homepage only): `<audio preload="none">` with data-src;
+    `scripts/voice.ts` attaches a source only when Sound is turned on.
+    `SoundToggle.astro`: speaker icon + "Sound", `aria-pressed`, hidden
+    without JS, in the intro's top bar (lines "intro yes") and as a HUD chip
+    beside Replay intro in the hero (lines "hello thanks"); the toggle click
+    is the unlocking gesture (its lines are played muted and paused);
+    sessionStorage `omar-sound` remembers it for the session,
+    `html[data-sound]`. Intro: INTRO at VOICE_AT 0.9 s into ASK (or as the
+    line types on other paths, or at once if turned on while he is
+    speaking/asking; once), YES on Yes, faded out after its words over the
+    gate (`release`), Skip stops it; the on-screen text is the caption.
+    Hero: a user press on Otto speaks the move's line and shows it in a HUD
+    caption bubble by his head (`[data-robot-caption]`, aria-live polite)
+    for the line's duration; LOOK and the idle wave are silent. One line at
+    a time, 120 ms fade in, volume 0.8, failures silent (captions stay),
+    works on lite and with reduced motion. QA answers `.wav` with ffmpeg
+    tones.
+  - **Every screen size** (v10): QA's 29-viewport matrix (phones 320×568 →
+    430×932, landscape 844×390/932×430, Z Fold cover 344×882 and inner
+    673×841/841×673, Pixel Fold 617×841/841×617, Z Flip, iPad mini/Air/Pro
+    both ways, 1280×600 → 2560×1440). Otto's head boxes (`HEAD` in
+    src/data/robot.ts, fractions of the frame, measured on the real frames
+    in the Higgsfield sandbox: still [.485,.03,.74,.52], ASK [.455,.05,.74,
+    .56]; palm x .07–.24) must stay clear of the question (per line), the
+    speech line and the buttons. Intro layouts: "stack" for portrait
+    (`(max-aspect-ratio: 1249/1000), (max-width: 599px)`): head centred
+    (`--hc` .615, ASK .6), frame height ≤ 210cqw and ≤ (--talk-top − 6px) /
+    .56 (intro.ts measures the copy with a ResizeObserver), ≥ 56cqw so it
+    still covers the width, bottom masked into the dark; "side" for
+    `(min-aspect-ratio: 5/4) and (min-width: 600px)`: copy column capped at
+    `--head` (.485 still, .45 ASK), `--px` .62, ASK pan `--px-ask` .3;
+    short screens (≤ 640 px tall) bottom-anchor the column with smaller
+    buttons. Top bar:
+    44 px targets everywhere, safe-area insets, narrow phones show the Sound
+    icon and "Skip →" (accessible names unchanged). Homepage hero: side by
+    side only for `(min-width: 1000px) and (min-aspect-ratio: 1/1)`
+    (portrait iPad Pro stacks), a two-column compact hero for
+    `(max-width: 999px) and (min-aspect-ratio: 6/5)` (phones/tablets on
+    their side), `--hero-h` min(100svh, 1000px). The homepage CSS sits at
+    its 30 KB gz budget (qa-content): new homepage CSS must replace, not
+    add. The gate is fixed inset 0 with viewport-fit=cover, so
+    its white covers the safe areas.
   Never draw a cartoon robot. The name Otto now belongs to this robot; the
   old Otto (v3 SVG robot and chat) stays gone.
 - Header (`SiteHeader.astro`): dark glass bar, black-orb brand mark, pill

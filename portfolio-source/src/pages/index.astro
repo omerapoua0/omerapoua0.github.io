@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import HomeHero from '../components/HomeHero.astro';
 import HomeSections from '../components/HomeSections.astro';
 import Intro from '../components/Intro.astro';
+import Voice from '../components/Voice.astro';
 import { ROBOT_ORIGIN } from '../data/robot';
 ---
 <Base title="AI product engineer, mathematician & tutor" home description="Omar Aboelella: London-based AI product engineer building agentic reasoning systems, Computer Science & Mathematics student at Birkbeck, and online GCSE and A-level maths & science tutor.">
@@ -15,6 +16,8 @@ import { ROBOT_ORIGIN } from '../data/robot';
       means no intro. "Replay intro" in the hero clears the flag. */}
   <script slot="head" is:inline>(function(){try{if(!sessionStorage.getItem('omar-intro'))document.documentElement.dataset.introOn=''}catch(e){}})();</script>
   <Intro slot="overlay" />
+  {/* Otto's voice lines (opt-in, fetched only when Sound is turned on). */}
+  <Voice slot="overlay" />
   <HomeHero />
   <HomeSections />
 </Base>

@@ -30,6 +30,12 @@
  *   fetched only once the transform plays on a fast connection, and if it
  *   is not playable when needed the still holds and Yes uses the CSS open.
  * - Skip intro / Esc: a 300 ms fade straight to the homepage.
+ * Voice (v10, scripts/voice.ts; opt-in with the Sound switch in the top
+ * bar, default off): INTRO plays VOICE_AT (0.9 s) into ASK, or as the line
+ * starts typing on the other paths, or at once if Sound is turned on while
+ * he is already speaking/asking (once per intro); YES plays on "Yes" and
+ * fades out over the gate once its words are over; Skip stops it. The text
+ * on screen is the caption.
  * The page underneath is inert while the intro shows and does not scroll;
  * at the end focus moves to <main>. Every picture is drawn into one canvas
  * (never an LCP candidate), each source with its measured framing
@@ -41,6 +47,7 @@
  * data-asked, data-flare up | down (Yes from ASK: the cut into LOOK).
  */
 import { cover, reveal } from './gate';
+import * as voice from './voice';
 
 type Fit = { s: number; dx: number; dy: number };
 type Src = { el: HTMLImageElement | HTMLVideoElement; fit: Fit };
@@ -70,13 +77,17 @@ function run(intro: HTMLElement) {
   const num = (el: HTMLElement | null, key: string, fallback: number) => Number(el?.dataset[key]) || fallback;
   const fitOf = (el: HTMLElement): Fit => { try { return JSON.parse(el.dataset.fit || ''); } catch { return { s: 1, dx: 0, dy: 0 }; } };
   const HOLD = num(look, 'hold', 1.6), RESUME = num(look, 'resume', 2.3), WHITE = num(look, 'white', 4.6);
-  const SAY = num(askClip, 'say', 1), QUESTION = num(askClip, 'question', 2.1);
+  const SAY = num(askClip, 'say', 1), QUESTION = num(askClip, 'question', 2.1), VOICE_AT = num(askClip, 'voiceAt', .9);
   const set = (key: string, value: string | null) => { if (value === null) delete intro.dataset[key]; else intro.dataset[key] = value; };
   const stage = (value: string) => set('stage', value);
   const status = (text: string) => { $<HTMLElement>('[data-intro-status]').textContent = text; };
   const timers: number[] = [];
   const later = (fn: () => void, ms: number) => { timers.push(window.setTimeout(fn, ms)); };
-  let done = false, lookReady = false, askReady = false;
+  let done = false, lookReady = false, askReady = false, spoken = false, answered = false;
+  /** INTRO, once (only with Sound on). */
+  const speak = () => { if (done || spoken || !voice.isOn()) return; spoken = true; void voice.play('intro'); };
+  if (voice.isOn()) voice.prepare(['intro', 'yes']);
+  voice.onChange(on => { if (on && (saying || hasAsked)) speak(); });
 
   // The page underneath: inert, and it does not scroll while the intro shows.
   const inerted = [...document.body.children].filter((el): el is HTMLElement => el instanceof HTMLElement && el !== intro && !el.matches('[data-gate], script') && !el.inert);
@@ -90,6 +101,13 @@ function run(intro: HTMLElement) {
     if (!control && [' ', 'PageDown', 'PageUp', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) event.preventDefault();
   };
   document.addEventListener('keydown', keys);
+
+  // Portrait screens: the frame keeps his chin above the copy (Intro.astro
+  // reads --talk-top). Only the intro is laid out here (main is unrendered).
+  const talk = $<HTMLElement>('.intro__talk');
+  const measureTalk = () => { if (!done) intro.style.setProperty('--talk-top', `${talk.offsetTop}px`); };
+  measureTalk();
+  if ('ResizeObserver' in window) { const ro = new ResizeObserver(measureTalk); ro.observe(intro); ro.observe(talk); }
 
   /* ---------- the canvas: every picture is drawn here ---------- */
   const W = canvas.width, H = canvas.height;
@@ -155,6 +173,7 @@ function run(intro: HTMLElement) {
     const at = intro.dataset.stage;
     if (at === 'look' && look.currentTime >= HOLD) { look.pause(); ask(); }
     else if (at === 'ask' && askClip && cur?.el === askClip) {
+      if (askClip.currentTime >= VOICE_AT) speak();
       if (askClip.currentTime >= SAY) say();
       if (askClip.currentTime >= QUESTION) asked();
       if (askClip.ended || askClip.paused) set('moving', null);
@@ -288,6 +307,7 @@ function run(intro: HTMLElement) {
     if (done || saying || hasAsked) return;
     saying = true;
     set('asking', '');
+    if (intro.dataset.clip !== 'ask' || intro.dataset.path !== 'video') speak();
     let i = 0;
     const type = () => {
       if (done || hasAsked) return;
@@ -301,6 +321,7 @@ function run(intro: HTMLElement) {
     if (done || hasAsked) return;
     hasAsked = true;
     set('asking', '');
+    speak();
     typed.textContent = line;
     set('asked', '');
     const question = $<HTMLElement>('#intro-q').textContent?.replace(/ /g, ' ') ?? '';
@@ -328,6 +349,8 @@ function run(intro: HTMLElement) {
   /* ---------- Yes ---------- */
   yes.addEventListener('click', async () => {
     if (done || intro.dataset.stage === 'go' || intro.dataset.stage === 'white') return;
+    answered = true;
+    void voice.play('yes');
     if (reduce) { leave(200); return; }
     if (intro.dataset.path === 'video' && intro.dataset.clip === 'ask' && askReady && playable(look)) {
       // From ASK's last frame (facing you) into LOOK at RESUME. The two
@@ -390,6 +413,8 @@ function run(intro: HTMLElement) {
     cancelAnimationFrame(raf);
     document.removeEventListener('keydown', keys);
     if (light) void reveal('The work');
+    // YES finishes its words over the gate, then fades; Skip is silent.
+    if (answered) voice.release('yes', 700); else voice.stop();
     inerted.forEach(el => { el.inert = false; });
     scrollTo(0, 0);
     delete root.dataset.introOn;

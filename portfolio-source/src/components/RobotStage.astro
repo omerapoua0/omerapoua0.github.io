@@ -19,7 +19,10 @@
      press plays his next move, WAVE → HEART → LOOK (0 → 1.6 s, then holds,
      facing you). Its focus ring is a HUD frame around the head (an outline
      in forced colours);
-   - "Replay intro" (homepage intro, intro.ts): shown only with JavaScript.
+   - "Replay intro" (homepage intro, intro.ts) and the Sound switch for
+     Otto's voice (v10, SoundToggle + scripts/voice.ts; default off), top
+     right, shown only with JavaScript; with Sound on, WAVE says HELLO and
+     HEART says THANKS, captioned in a HUD bubble by his head (aria-live).
    robot.ts: no autoplay (the homepage intro is the greeting); a breathing
    idle; fine pointers turn it toward the pointer (spring-smoothed 3D tilt),
    touch gets a slow ambient sway. No H.264 or a failed/stalled video: the
@@ -27,6 +30,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { robot, gestures, ROBOT_LABEL, ROBOT_NAME, LOOK, RING } from '../data/robot';
+import SoundToggle from './SoundToggle.astro';
 interface Props { class?: string }
 const { class: className } = Astro.props;
 const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
@@ -82,7 +86,11 @@ const stage = "this.closest('[data-robot-stage]')";
   <button class="robot-stage__hit" type="button" aria-label={ROBOT_LABEL} data-robot-hi data-cursor-label="Say hi"><span class="robot-stage__focus" aria-hidden="true"></span></button>
   <span class="robot-stage__tag" aria-hidden="true"><b>{ROBOT_NAME}</b><span>Omar’s robot · say hi</span></span>
   <span class="sr-only" aria-live="polite" data-robot-said></span>
-  <button class="robot-stage__replay" type="button" data-intro-replay hidden><span aria-hidden="true">↺</span> Replay intro</button>
+  <p class="robot-stage__caption" aria-live="polite" data-robot-caption></p>
+  <div class="robot-stage__hud">
+    <SoundToggle class="robot-stage__chip robot-stage__sound" lines="hello thanks" />
+    <button class="robot-stage__chip robot-stage__replay" type="button" data-intro-replay hidden><span aria-hidden="true">↺</span> Replay intro</button>
+  </div>
 </div>
 
 <script>import '../scripts/robot';</script>
@@ -143,10 +151,18 @@ const stage = "this.closest('[data-robot-stage]')";
   .robot-stage__hit:focus-visible .robot-stage__focus { opacity: 1; }
 
   .robot-stage__tag { position: absolute; right: 8%; bottom: 16%; z-index: 3; display: grid; gap: 2px; padding: 10px 14px; border-radius: 4px; background: #0b0d12cc; border: 1px solid var(--line-strong); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); pointer-events: none; }
-  .robot-stage__tag::after { content: ''; position: absolute; inset: -5px; background: var(--hud); --hc: #ff4d62b3; --hl: 8px; background-repeat: no-repeat; pointer-events: none; }
-  .robot-stage__replay { position: absolute; z-index: 3; pointer-events: auto; right: 7%; top: 5%; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 999px; background: #0b0d12b3; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--ink-2); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; transition: border-color 200ms, color 200ms; }
-  .robot-stage__replay[hidden] { display: none; }
-  .robot-stage__replay:hover { border-color: var(--accent); color: var(--ink); }
+  .robot-stage__tag::after, .robot-stage__caption::after { content: ''; position: absolute; inset: -5px; background: var(--hud); --hc: #ff4d62b3; --hl: 8px; background-repeat: no-repeat; pointer-events: none; }
+  /* Top right: Sound (Otto's voice) and Replay intro; 36 px chips with a
+     44 px tap area. */
+  .robot-stage__hud { position: absolute; z-index: 3; right: 7%; top: 5%; display: flex; gap: 8px; pointer-events: none; }
+  .robot-stage__hud :global(.robot-stage__chip) { position: relative; pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 999px; background: #0b0d12b3; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--ink-2); font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; transition: border-color 200ms, color 200ms; }
+  .robot-stage__hud :global(.robot-stage__chip)::before { content: ''; position: absolute; inset: -4px; }
+  .robot-stage__hud :global(.robot-stage__chip[hidden]) { display: none; }
+  .robot-stage__hud :global(.robot-stage__chip:hover) { border-color: var(--accent); color: var(--ink); }
+  /* What Otto says (Sound on): a HUD bubble left of his head, for the
+     line's length. */
+  .robot-stage__caption { position: absolute; z-index: 3; left: 18%; top: 9%; max-width: 15rem; padding: 10px 14px; border: 1px solid #ff4d6259; border-radius: 4px; background: #0b0d12e6; font: 500 12.5px/1.4 var(--font-mono); pointer-events: none; opacity: 0; transition: opacity 260ms; }
+  .robot-stage__caption[data-show] { opacity: 1; }
   .robot-stage__tag b { color: var(--accent); font-weight: 600; font-size: 12px; }
 
   /* The fallback orb sits where the robot's head and chest are. */

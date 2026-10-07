@@ -1,0 +1,19 @@
+---
+/* The Sound switch for Otto's voice (v10; scripts/voice.ts): a speaker icon
+   and "Sound", aria-pressed, default off, hidden until the script runs (no
+   JavaScript, no voice). `lines`: what turning it on here fetches and
+   unlocks. Styled by the caller through `class`. */
+interface Props { class?: string; lines: string }
+const { class: className, lines } = Astro.props;
+---
+<button class:list={['sound', className]} type="button" data-sound-toggle data-sound-lines={lines} aria-pressed="false" hidden>
+  <svg class="sound__icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor" /><path class="sound__on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><path class="sound__off" d="M16 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+  <span class="sound__label">Sound</span>
+</button>
+<style>
+  .sound[hidden] { display: none; }
+  .sound__icon { flex: none; }
+  .sound .sound__on, .sound[aria-pressed='true'] .sound__off { display: none; }
+  .sound[aria-pressed='true'] .sound__on { display: inline; }
+  .sound[aria-pressed='true'] { border-color: #ff4d6299; }
+</style>

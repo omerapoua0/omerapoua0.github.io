@@ -244,6 +244,20 @@ Project concept images and videos must not be described as screenshots of a live
 - Robot media slot: if Omar adds his own robot images or clips to `public/robot/` (for example generated with Higgsfield), they are Omar's supplied content, used under the terms of the service that generated them. They depict a robot, not Omar. Until such files exist, only the placeholder above is shipped.
 - Omar's portrait on About & CV and the lessons page is his real photograph, cropped only; it is not generated or altered.
 
+## v10: Otto's voice (October 2026)
+
+- Otto's four short voice lines on the homepage ("Hi, I'm Otto, Omar's
+  robot. Do you want to see his work?", "Great, let's go and see it!",
+  "Hello! Nice to meet you.", "Thanks for stopping by!") were generated for
+  Omar with Higgsfield (Seed Audio, preset voice "Archie"). They are an
+  AI-generated voice, not a recording of Omar or of any real person; they
+  are Omar's supplied content, used under the terms of the service that
+  generated them, served from Higgsfield's CDN
+  (d8j0ntlcm91z4.cloudfront.net) and not redistributed by this repository.
+  They play only after a visitor turns Sound on (default off), with captions.
+- The Sound switch's speaker icon is an original inline SVG made for this
+  portfolio; no dependency was added.
+
 ## v9: Otto's moves (October 2026)
 
 - The robot is named Otto ("Omar's robot") at Omar's request. Three more

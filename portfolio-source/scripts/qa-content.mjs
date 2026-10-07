@@ -152,12 +152,24 @@ for (const move of ['wave', 'heart']) expect(new RegExp(`data-robot-video="${mov
 // v9 capability tier: set before first paint on every page (Base.astro).
 for (const [name, source] of everyPage) expect(/<head>[\s\S]*d\.dataset\.tier=t[\s\S]*<\/head>/.test(source) && /deviceMemory<=4/.test(source) && /hardwareConcurrency<=4/.test(source) && /saveData/.test(source) && /tier=\(lite\|full\)/.test(source), `${name}: the capability-tier head script is missing`);
 expect(/<video class="robot__video[^"]*"[^>]*muted[^>]*playsinline[^>]*preload="none"/.test(html.index) && html.index.includes(`data-src="${ROBOT_CDN}/user_3Hu8nuHpTz0mXVPyD5jCOMXRDom/hf_20261007_090943_37408964-1dfa-49d9-a00e-9e3274b9c883.mp4"`), 'index: LOOK clip (muted, playsinline, preload=none) missing');
+// v10: Otto's voice. Opt-in (the Sound switches start aria-pressed="false"
+// and hidden until the script runs), four lines as <audio preload="none">
+// with no src (only data-src) until Sound is turned on.
+{
+  const audios = html.index.match(/<audio[^>]*>/g) ?? [];
+  expect(audios.length === 4 && audios.every(tag => /preload="none"/.test(tag) && !/\ssrc=/.test(tag) && /data-src="[^"]+\.wav"/.test(tag)), 'index: the four voice lines must be <audio preload="none"> with data-src only');
+  for (const id of ['2fd4c0cf-c1c4-4195-a9b9-d552108dd7de', '282d86e6-6f10-4c84-a0fe-c5bcfaf0b6da', '737260d3-4257-47ce-8a3b-831f02a0b63b', 'a2c7efb9-f3d1-4682-988f-b8d6108077b0']) expect(html.index.includes(id), `index: voice line ${id} missing`);
+  const toggles = html.index.match(/<button[^>]*data-sound-toggle[^>]*>/g) ?? [];
+  expect(toggles.length === 2 && toggles.every(tag => /aria-pressed="false"/.test(tag) && /\shidden/.test(tag)), 'index: two Sound switches (intro bar, hero), default off, hidden without JavaScript');
+  expect(/data-robot-caption/.test(html.index) && /<p class="robot-stage__caption[^"]*" aria-live="polite"/.test(html.index), 'index: the hero caption bubble (aria-live) missing');
+  expect(!Object.entries(html).some(([name, page]) => name !== 'index' && /<audio/.test(page)), 'Only the homepage carries Otto’s voice');
+}
 // v8 intro: the transform and LOOK clips, both stills, the question, Skip,
 // hidden without JavaScript (display:none unless html[data-intro]), the
 // first-paint session check, and the v7 design #1 media gone everywhere.
 expect(/<div class="intro"[^>]*data-intro[^>]*role="dialog"/.test(html.index), 'index: intro layer missing');
 for (const id of ['0df9aeb7-1ee7-410b-b9d0-dbd0f0a3aa7c_min.webp', '69dabef2-b785-4918-bc7a-1b0cf9704c6f_min.webp', '99e661a7-2a3e-4037-b3b8-deb8ab7062f1.mp4', '37408964-1dfa-49d9-a00e-9e3274b9c883.mp4']) expect(html.index.includes(id), `index: intro media ${id} missing`);
-expect(/Do you want to see his(&nbsp;|\s| )work\?/.test(html.index) && /Yes, show me/.test(html.index) && /Skip intro/.test(html.index) && /Omar’s robot/.test(html.index), 'index: intro question ("Do you want to see his work?"), Yes, Skip or "Omar’s robot" missing');
+expect(/Do you want to see his(&nbsp;|\s| )work\?/.test(html.index) && /Yes, show me/.test(html.index) && /Skip(<span[^>]*>)? intro/.test(html.index) && /Omar’s robot/.test(html.index), 'index: intro question ("Do you want to see his work?"), Yes, Skip or "Omar’s robot" missing');
 expect(!/see the(&nbsp;|\s| )work\?/.test(html.index), 'index: the v8 question wording remains');
 expect(/sessionStorage\.getItem\('omar-intro'\)/.test(html.index), 'index: intro session check missing');
 const css = (await Promise.all((await readdir(path.join(dist, '_astro'))).filter(file => file.endsWith('.css')).map(file => readFile(path.join(dist, '_astro', file), 'utf8')))).join('\n') + Object.values(html).join('\n');

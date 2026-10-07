@@ -1,0 +1,21 @@
+---
+/* Otto's voice lines (v10, opt-in; src/data/robot.ts VOICE): one <audio>
+   per line, preload="none" and no src until the visitor turns Sound on
+   (scripts/voice.ts sets it from data-src). Files in public/robot/
+   (voice-intro.wav, voice-yes.wav, voice-hello.wav, voice-thanks.wav)
+   override the remote ones at build time. Homepage only. */
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { VOICE } from '../data/robot';
+const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
+const lines = (Object.keys(VOICE) as (keyof typeof VOICE)[]).map(name => ({
+  name,
+  src: local(`voice-${name}.wav`) ? `/robot/voice-${name}.wav` : VOICE[name].src,
+  info: JSON.stringify({ duration: VOICE[name].duration, speech: VOICE[name].speech, text: VOICE[name].text }),
+}));
+---
+<div class="voice" aria-hidden="true">
+  {lines.map(line => <audio data-voice-line={line.name} data-src={line.src} data-info={line.info} preload="none"></audio>)}
+</div>
+<script>import '../scripts/voice';</script>
+<style>.voice { display: none; }</style>

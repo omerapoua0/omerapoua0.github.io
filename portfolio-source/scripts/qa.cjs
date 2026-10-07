@@ -22,6 +22,9 @@
  * stand-in clips are VP9 in an MP4 container, which this Chromium (no H.264)
  * accepts for the .mp4 URLs; look-h264.mp4 is real H.264, used to test the
  * "H.264 unsupported" path. Stand-ins are never committed.
+ * v10: Otto's voice lines (WAV on the same CDN) are answered with short
+ * stand-in tones (voice-intro.wav, voice-yes.wav, voice-hello.wav,
+ * voice-thanks.wav, generated with ffmpeg next to the clips).
  */
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
@@ -68,7 +71,15 @@ function prepareRobotMedia() {
       try { ff([...bg(1344, 768, 5.18), '-vf', robotShape(1344, 768), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-an', files.h264]); } catch { /* no libx264: that path is skipped */ }
     } catch (error) { console.warn('Robot stand-ins unavailable (ffmpeg):', error.message.split('\n')[0]); }
   }
-  robotMedia = ['orb', 'still', 'transform', 'look', 'ask', 'wave', 'heart'].every(key => fsSync.existsSync(files[key])) ? { ...files, h264: fsSync.existsSync(files.h264) ? files.h264 : null } : null;
+  // v10 voice stand-ins: 1.2 s stereo 24 kHz tones.
+  const voices = { intro: 'voice-intro.wav', yes: 'voice-yes.wav', hello: 'voice-hello.wav', thanks: 'voice-thanks.wav' };
+  for (const [key, name] of Object.entries(voices)) {
+    files[`voice-${key}`] = path.join(robotDir, name);
+    if (!fsSync.existsSync(files[`voice-${key}`])) {
+      try { require('node:child_process').execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', `sine=frequency=${{ intro: 330, yes: 440, hello: 550, thanks: 660 }[key]}:duration=1.2`, '-ar', '24000', '-ac', '2', files[`voice-${key}`]], { stdio: 'pipe' }); } catch { /* no voice stand-ins: those checks are skipped */ }
+    }
+  }
+  robotMedia = ['orb', 'still', 'transform', 'look', 'ask', 'wave', 'heart'].every(key => fsSync.existsSync(files[key])) ? { ...files, h264: fsSync.existsSync(files.h264) ? files.h264 : null, voice: Object.keys(voices).every(key => fsSync.existsSync(files[`voice-${key}`])) } : null;
 }
 /** Answer the robot CDN with stand-ins. mode: 'play' (default), 'h264' (the
  *  clips are H.264, which this Chromium cannot decode), 'poster404' (the
@@ -84,6 +95,12 @@ async function routeRobot(context, mode = 'play', { posterDelay = 0 } = {}) {
       if (mode === 'poster404') return route.fulfill({ status: 404, body: '' });
       if (posterDelay) await new Promise(resolve => setTimeout(resolve, posterDelay));
       return route.fulfill({ path: /0df9aeb7/.test(url) ? robotMedia.orb : robotMedia.still, contentType: 'image/webp', headers: { 'cache-control': 'no-store' } });
+    }
+    if (/\.wav$/.test(url)) {
+      robotLog.push(url.split('/').pop());
+      const line = /2fd4c0cf/.test(url) ? 'intro' : /282d86e6/.test(url) ? 'yes' : /737260d3/.test(url) ? 'hello' : /a2c7efb9/.test(url) ? 'thanks' : null;
+      if (!line || !robotMedia.voice) return route.fulfill({ status: 404, body: '' });
+      return route.fulfill({ path: robotMedia[`voice-${line}`], contentType: 'audio/wav', headers: { 'accept-ranges': 'bytes', 'cache-control': 'public, max-age=31536000, immutable' } });
     }
     if (mode === 'video404') return route.fulfill({ status: 404, body: '' });
     const file = mode === 'h264' ? robotMedia.h264 : /99e661a7/.test(url) ? robotMedia.transform : /df410d0c/.test(url) ? robotMedia.ask : /0d5a7893/.test(url) ? robotMedia.wave : /86ab53ef/.test(url) ? robotMedia.heart : robotMedia.look;
@@ -850,6 +867,190 @@ async function pixelContrast(page, selectors) {
     await context.close();
   });
 
+  /* v10: Otto's voice (opt-in, default off; scripts/voice.ts). Stand-in tones. */
+  const wavs = () => robotLog.filter(name => /\.wav$/.test(name));
+  const audioState = (page, line) => page.evaluate(name => { const a = document.querySelector(`audio[data-voice-line="${name}"]`); return a ? { src: a.currentSrc, paused: a.paused, t: a.currentTime, played: a.played.length, volume: a.volume, muted: a.muted } : null; }, line);
+  const playedLine = (page, line, timeout = 4000) => page.waitForFunction(name => { const a = document.querySelector(`audio[data-voice-line="${name}"]`); return a && !a.muted && (a.currentTime > .15 || a.ended); }, line, { timeout });
+  await check('voice: default off and nothing fetched on load; turning Sound on in the intro fetches and plays INTRO at once (the question is showing), Yes plays YES over the gate; the choice is remembered for the session; never two lines at once', async () => {
+    if (!robotMedia?.voice) { results.push({ name: 'voice', status: 'skipped', message: 'no stand-in voice' }); return; }
+    robotLog.length = 0;
+    const context = await isolated(browser, { intro: true, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    const errors = watch(page);
+    await page.goto(`${base}/index.html`);
+    await asked(page, 3000);
+    await page.waitForTimeout(600);
+    const toggle = page.locator('.intro__bar [data-sound-toggle]');
+    assert.ok(await toggle.isVisible(), 'the Sound switch is in the intro bar');
+    assert.equal(await toggle.getAttribute('aria-pressed'), 'false', 'default off');
+    assert.equal(await toggle.evaluate(el => el.textContent.trim()), 'Sound');
+    assert.ok((await toggle.boundingBox()).height >= 44, 'a 44 px tap target');
+    assert.deepEqual(wavs(), [], 'no voice line requested on load');
+    assert.ok(await page.evaluate(() => [...document.querySelectorAll('audio[data-voice-line]')].every(a => a.preload === 'none' && !a.currentSrc)), 'preload="none", no source until Sound is on');
+    await toggle.click();
+    assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+    await playedLine(page, 'intro');
+    assert.ok(wavs().some(name => /2fd4c0cf/.test(name)), `INTRO fetched (${wavs()})`);
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('omar-sound')), '1', 'remembered for the session');
+    const introVolume = (await audioState(page, 'intro')).volume;
+    assert.ok(introVolume > .3 && introVolume <= .81, `volume ≈ 0.8 after its fade in (${introVolume})`);
+    await page.click('[data-intro-yes]');
+    await playedLine(page, 'yes');
+    const both = await page.evaluate(() => [...document.querySelectorAll('audio[data-voice-line]')].filter(a => !a.paused && !a.muted && a.volume > .05).length);
+    assert.ok(both <= 1, `one line at a time (${both} playing)`);
+    await introGone(page, 2000);
+    assert.equal(await page.locator('.robot-stage__sound').getAttribute('aria-pressed'), 'true', 'the hero switch shows Sound on');
+    await page.reload();
+    assert.equal(await page.locator('.robot-stage__sound').getAttribute('aria-pressed'), 'true', 'still on after a reload (same session)');
+    assert.deepEqual(errors, []);
+    await context.close();
+  });
+
+  await check('voice: with Sound on, pressing Otto plays HELLO with WAVE and THANKS with HEART, each captioned by his head (aria-live) for the line; LOOK says nothing; Sound off → no line, no caption, nothing fetched', async () => {
+    if (!robotMedia?.voice) { results.push({ name: 'voice hero', status: 'skipped', message: 'no stand-in voice' }); return; }
+    robotLog.length = 0;
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    const errors = watch(page);
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    const stage = '[data-robot-stage]';
+    // Off: a press plays WAVE silently.
+    await page.locator('[data-robot-hi]').click({ force: true });
+    await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'playing', stage, { timeout: 5000 });
+    assert.deepEqual(wavs(), [], 'Sound off: no line fetched');
+    assert.equal(await page.locator('[data-robot-caption]').textContent(), '', 'Sound off: no caption');
+    await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'done', stage, { timeout: 9000 });
+    // On (the hero chip), then HEART → THANKS.
+    const chip = page.locator('.robot-stage__sound');
+    assert.equal(await chip.getAttribute('aria-pressed'), 'false');
+    await chip.click();
+    assert.equal(await chip.getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-robot-hi]').click({ force: true });
+    await playedLine(page, 'thanks');
+    const caption = await page.evaluate(() => { const c = document.querySelector('[data-robot-caption]'); return { text: c.textContent, live: c.getAttribute('aria-live'), shown: c.hasAttribute('data-show') }; });
+    assert.deepEqual(caption, { text: 'Thanks for stopping by!', live: 'polite', shown: true }, 'THANKS captioned');
+    assert.equal(await page.evaluate(s => document.querySelector(s).dataset.move, stage), 'heart');
+    await page.waitForFunction(() => !document.querySelector('[data-robot-caption]').hasAttribute('data-show'), null, { timeout: 5000 });
+    await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'done', stage, { timeout: 9000 });
+    // LOOK: no line.
+    const before = wavs().length;
+    await page.locator('[data-robot-hi]').click({ force: true });
+    await page.waitForFunction(s => document.querySelector(s).dataset.move === 'look', stage, { timeout: 3000 });
+    await page.waitForTimeout(500);
+    assert.equal(wavs().length, before, 'LOOK: no line');
+    assert.ok(!(await page.evaluate(() => document.querySelector('[data-robot-caption]').hasAttribute('data-show'))), 'LOOK: no caption');
+    await page.waitForFunction(s => document.querySelector(s).dataset.greet === 'done', stage, { timeout: 6000 });
+    // WAVE → HELLO.
+    await page.locator('[data-robot-hi]').click({ force: true });
+    await playedLine(page, 'hello');
+    assert.equal(await page.locator('[data-robot-caption]').textContent(), 'Hello! Nice to meet you.');
+    assert.ok(wavs().some(name => /737260d3/.test(name)) && wavs().some(name => /a2c7efb9/.test(name)), `HELLO and THANKS fetched (${wavs()})`);
+    assert.ok(!wavs().some(name => /2fd4c0cf|282d86e6/.test(name)), 'the intro lines were not fetched here');
+    // Off again: the line stops, the caption goes.
+    await chip.click();
+    await page.waitForFunction(() => { const a = document.querySelector('audio[data-voice-line="hello"]'); return (a.paused || a.volume < .05) && !document.querySelector('[data-robot-caption]').hasAttribute('data-show'); }, null, { timeout: 2000 });
+    if (axePath) {
+      await chip.click();
+      await page.addScriptTag({ path: axePath });
+      const violations = await page.evaluate(async () => (await window.axe.run({ include: [['.robot-stage__hud'], ['[data-robot-caption]']] }, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })).violations.map(v => v.id));
+      assert.deepEqual(violations, [], 'axe on the Sound switch and the caption');
+    }
+    assert.deepEqual(errors, []);
+    await context.close();
+  });
+
+  await check('voice: in the intro with motion, INTRO plays ≈ 0.9 s into ASK when Sound was turned on earlier in the session; it also works on the lite tier; a failing line is silent and the captions stay', async () => {
+    if (!robotMedia?.voice) { results.push({ name: 'voice timed', status: 'skipped', message: 'no stand-in voice' }); return; }
+    const context = await isolated(browser, { intro: true, viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
+    await context.addInitScript(() => { try { sessionStorage.setItem('omar-sound', '1'); } catch { /* blocked */ } window.__voiceAt = null; document.addEventListener('playing', event => { const a = event.target; if (a.dataset?.voiceLine === 'intro' && window.__voiceAt === null) window.__voiceAt = document.querySelector('[data-intro-ask]')?.currentTime ?? -1; }, true); });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`);
+    assert.equal(await page.locator('.intro__bar [data-sound-toggle]').getAttribute('aria-pressed'), 'true', 'remembered on');
+    await asked(page, 14000);
+    await page.waitForFunction(() => window.__voiceAt !== null, null, { timeout: 4000 });
+    const at = await page.evaluate(() => window.__voiceAt);
+    assert.ok(at >= .8 && at < 1.6, `INTRO starts ≈ 0.9 s into ASK (${at})`);
+    await context.close();
+    // Lite tier, and a line that fails (404): the question and Yes still work, no error surfaces.
+    const lite = await isolated(browser, { intro: true, device: 'low', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'no-preference' });
+    await lite.route(url => url.hostname === ROBOT_HOST && /\.wav$/.test(url.pathname), route => route.fulfill({ status: 404, body: '' }));
+    const p2 = await lite.newPage();
+    const pageErrors = [];
+    p2.on('pageerror', error => pageErrors.push(error.message));
+    await p2.goto(`${base}/index.html`);
+    assert.equal(await p2.evaluate(() => document.documentElement.dataset.tier), 'lite');
+    await p2.locator('.intro__bar [data-sound-toggle]').click();
+    await asked(p2, 6000);
+    assert.equal(await p2.locator('.intro__bar [data-sound-toggle]').getAttribute('aria-pressed'), 'true');
+    assert.ok(await p2.locator('#intro-q').isVisible(), 'the question (the caption) stays');
+    await p2.click('[data-intro-yes]');
+    await introGone(p2, 3000);
+    assert.deepEqual(pageErrors, [], 'failing audio is silent');
+    await lite.close();
+  });
+
+  /* v10: every screen size. The intro (question, Yes, top bar) and the
+     homepage at phones, foldables, tablets (both orientations), laptops and
+     desktops: no horizontal scroll, the question and Yes on screen and clear
+     of Otto's head (HEAD in src/data/robot.ts, measured on the real frames:
+     the still's helmet and ASK's frontal pose; per line of the question),
+     the speech line below the top bar, 44 px tap targets, the header's
+     Contact usable; axe at a few. Stand-in stills (the frames' geometry is
+     what is checked). */
+  const HEAD = { still: [.485, .03, .74, .52], ask: [.455, .05, .74, .56] };
+  const matrix = [[320, 568], [360, 640], [375, 667], [360, 780], [390, 844], [393, 852], [412, 915], [430, 932], [844, 390], [932, 430], [344, 882], [673, 841], [841, 673], [617, 841], [841, 617], [412, 914], [744, 1133], [1133, 744], [820, 1180], [1180, 820], [1024, 1366], [1366, 1024], [1280, 720], [1366, 768], [1440, 900], [1536, 864], [1920, 1080], [2560, 1440], [1280, 600]];
+  const axeAt = new Set(['320x568', '844x390', '1024x1366', '2560x1440']);
+  for (const [width, height] of matrix) await check(`every screen ${width}×${height}: intro question + Yes on screen and clear of his head (still and ASK), top bar usable, no overflow; homepage hero and header fit`, async () => {
+    const touch = Math.min(width, height) < 900 || (width === 1024 && height === 1366) || (width === 1366 && height === 1024);
+    const context = await isolated(browser, { intro: true, viewport: { width, height }, isMobile: Math.min(width, height) < 600, hasTouch: touch, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`);
+    await asked(page, 3000);
+    await page.waitForTimeout(450);
+    for (const clip of ['still', 'ask']) {
+      if (clip === 'ask') { await page.evaluate(() => { document.querySelector('[data-intro]').dataset.clip = 'ask'; }); await page.waitForTimeout(1600); }
+      const m = await page.evaluate(() => {
+        const box = el => { const r = (typeof el === 'string' ? document.querySelector(el) : el).getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; };
+        const range = document.createRange(); range.selectNodeContents(document.querySelector('#intro-q'));
+        return { frame: box('.intro__frame'), bar: box('.intro__bar'), status: box('.intro__status'), skip: box('.intro__skip'), say: box('.intro__say'), lines: [...range.getClientRects()].map(r => [r.left, r.top, r.right, r.bottom]), q: box('#intro-q'), yes: box('[data-intro-yes]'), contact: box('[data-intro-contact]'), taps: [...document.querySelectorAll('.intro__bar :is(a, button:not([hidden]))')].map(el => Math.round(el.getBoundingClientRect().height)), scroll: document.documentElement.scrollWidth };
+      });
+      const [fl, ft, fr, fb] = m.frame, fw = fr - fl, fh = fb - ft, H = HEAD[clip];
+      const head = [fl + fw * H[0], ft + fh * H[1], fl + fw * H[2], ft + fh * H[3]];
+      const hits = r => !(r[2] <= head[0] + 1 || r[0] >= head[2] - 1 || r[3] <= head[1] + 1 || r[1] >= head[3] - 1);
+      const on = r => r[0] >= -1 && r[1] >= -1 && r[2] <= width + 1 && r[3] <= height + 1;
+      const where = JSON.stringify({ head: head.map(Math.round), say: m.say.map(Math.round), q: m.q.map(Math.round), yes: m.yes.map(Math.round) });
+      assert.ok(m.scroll <= width + 1, `${clip}: no horizontal scroll (${m.scroll})`);
+      assert.ok(on(m.q) && on(m.yes) && on(m.contact) && on(m.say), `${clip}: question, speech line and buttons on screen ${where}`);
+      assert.ok(!m.lines.some(hits) && !hits(m.say) && !hits(m.yes) && !hits(m.contact), `${clip}: nothing over his head ${where}`);
+      assert.ok(m.say[1] >= m.bar[3] - 1, `${clip}: the speech line is below the top bar (${Math.round(m.say[1])} vs ${Math.round(m.bar[3])})`);
+      assert.ok(m.status[2] <= m.skip[0], 'top bar: status and controls do not overlap');
+      assert.ok(m.taps.every(h => h >= 44) && m.yes[3] - m.yes[1] >= 44 && m.contact[3] - m.contact[1] >= 44, `44 px tap targets (${m.taps})`);
+      const visible = (Math.min(width, head[2]) - Math.max(0, head[0])) * (Math.min(height, head[3]) - Math.max(0, head[1])) / ((head[2] - head[0]) * (head[3] - head[1]));
+      assert.ok(visible >= .85, `${clip}: his head is on screen (${visible.toFixed(2)} visible)`);
+    }
+    if (axePath && axeAt.has(`${width}x${height}`)) {
+      await page.addScriptTag({ path: axePath });
+      const violations = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })).violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).slice(0, 3).join(', ')}`));
+      assert.deepEqual(violations, [], 'axe on the intro');
+    }
+    await page.click('[data-intro-skip]');
+    await introGone(page, 1500);
+    await page.waitForTimeout(300);
+    const home = await page.evaluate(() => {
+      const contact = [...document.querySelectorAll('[data-header] a[href="/contact.html"]')].find(el => el.getBoundingClientRect().width > 0)?.getBoundingClientRect();
+      const title = document.querySelector('#hero-title').getBoundingClientRect(), stage = document.querySelector('[data-robot-stage]').getBoundingClientRect();
+      const chips = [...document.querySelectorAll('.robot-stage__hud > :not([hidden])')].map(el => el.getBoundingClientRect());
+      return { scroll: document.documentElement.scrollWidth, contact: contact && [contact.left, contact.right, contact.height], title: [title.left, title.right, title.top], stageH: stage.height, chips: chips.map(r => [r.left, r.right, r.top]) };
+    });
+    assert.ok(home.scroll <= width + 1, `homepage: no horizontal scroll (${home.scroll})`);
+    assert.ok(home.contact && home.contact[0] >= 0 && home.contact[1] <= width && home.contact[2] >= 36, `header Contact usable (${home.contact})`);
+    assert.ok(home.title[0] >= 0 && home.title[1] <= width + 1, `hero title fits (${home.title})`);
+    assert.ok(home.title[2] < height, `the hero title starts on the first screen (${Math.round(home.title[2])})`);
+    assert.ok(home.stageH >= Math.min(width, height) * .4, `Otto is not tiny (${Math.round(home.stageH)} px tall)`);
+    assert.ok(home.chips.every(([l, r, t]) => l >= 0 && r <= width && t >= 0), `Sound / Replay chips on screen (${JSON.stringify(home.chips)})`);
+    await context.close();
+  });
+
   /* v9: the capability tier (Base.astro head script) and the lite tier. */
   const tierOf = page => page.evaluate(() => document.documentElement.dataset.tier);
   await check('tier: capable devices get "full"; ≤ 4 GB memory, ≤ 4 cores, Save-Data or a 3g connection get "lite"; ?tier= overrides it for the session', async () => {
@@ -1045,27 +1246,27 @@ async function pixelContrast(page, selectors) {
         const yes = document.querySelector('[data-intro-yes]').getBoundingClientRect(), contact = document.querySelector('[data-intro-contact]').getBoundingClientRect();
         const frame = document.querySelector('.intro__frame').getBoundingClientRect();
         return { size: parseFloat(cs.fontSize), lines: Math.round(box.height / parseFloat(cs.lineHeight)), top: box.top, left: box.left, right: box.right, bottom: box.bottom,
-          headBottom: frame.top + frame.height * .4, headLeft: frame.left + frame.width * .55,
+          headBottom: frame.top + frame.height * .52, headLeft: frame.left + frame.width * .485,
           yes: { h: yes.height, w: yes.width, fs: parseFloat(getComputedStyle(document.querySelector('[data-intro-yes]')).fontSize), bottom: yes.bottom, right: yes.right }, contact: { h: contact.height, fs: parseFloat(getComputedStyle(document.querySelector('[data-intro-contact]')).fontSize), bottom: contact.bottom, right: contact.right },
           scroll: document.documentElement.scrollWidth, w: innerWidth, h: innerHeight };
       });
       const phone = viewport.width < 600;
-      assert.ok(m.size >= (phone ? (viewport.height < 700 ? 38 : 44) : viewport.width >= 1280 ? 88 : 60), `question font ${m.size}px`);
+      assert.ok(m.size >= (phone ? (viewport.height < 700 ? 34 : 44) : viewport.width >= 1280 ? 88 : 52), `question font ${m.size}px`);
       assert.ok(m.lines >= 2 && m.lines <= (phone ? 3 : 3), `${m.lines} lines`);
       assert.ok(m.right <= m.w - 8 && m.left >= 8 && m.scroll <= m.w + 1, `no overflow (${JSON.stringify(m)})`);
       if (phone) assert.ok(m.top >= m.headBottom - 4, `clear of his head (question top ${Math.round(m.top)} vs head bottom ${Math.round(m.headBottom)})`);
       else assert.ok(m.right <= m.headLeft + 4, `left of his head (question right ${Math.round(m.right)} vs head ${Math.round(m.headLeft)})`);
       assert.ok(m.yes.h >= 60 && m.yes.fs >= 18 && m.yes.h > m.contact.h && m.contact.h >= 56, `Yes is big (${JSON.stringify(m.yes)}), Contact Omar a bit bigger than a normal button (${JSON.stringify(m.contact)})`);
       assert.ok(m.yes.bottom <= m.h && m.contact.bottom <= m.h && m.yes.right <= m.w && m.contact.right <= m.w, 'both buttons on screen');
-      // ASK's framing (data-clip="ask"; he faces you): helmet x 45–75%, y 4–50%
+      // ASK's framing (data-clip="ask"; he faces you): helmet x 45.5–74%, y 5–56%
       // of the frame (measured on the real clip, ≈ 2.1 s to its last frame).
       await page.evaluate(() => { document.querySelector('[data-intro]').dataset.clip = 'ask'; });
       await page.waitForTimeout(1700);
       const a = await page.evaluate(() => { const f = document.querySelector('.intro__frame').getBoundingClientRect(), q = document.querySelector('#intro-q').getBoundingClientRect(), say = document.querySelector('.intro__say').getBoundingClientRect();
-        return { headLeft: f.left + f.width * .45, headBottom: f.top + f.height * .5, q: { right: q.right, left: q.left }, sayTop: say.top, size: parseFloat(getComputedStyle(document.querySelector('#intro-q')).fontSize), scroll: document.documentElement.scrollWidth, w: innerWidth }; });
+        return { headLeft: f.left + f.width * .455, headBottom: f.top + f.height * .56, q: { right: q.right, left: q.left }, sayTop: say.top, size: parseFloat(getComputedStyle(document.querySelector('#intro-q')).fontSize), scroll: document.documentElement.scrollWidth, w: innerWidth }; });
       if (phone) assert.ok(a.sayTop >= a.headBottom - 4, `ASK: the speech line is below his chin (${Math.round(a.sayTop)} vs ${Math.round(a.headBottom)})`);
       else assert.ok(a.q.right <= a.headLeft + 4, `ASK: the question is left of his helmet (${Math.round(a.q.right)} vs ${Math.round(a.headLeft)})`);
-      assert.ok(a.size >= (phone ? (viewport.height < 700 ? 38 : 44) : viewport.width >= 1280 ? 86 : 60) && a.q.left >= 8 && a.scroll <= a.w + 1, `ASK: still big, no overflow (${JSON.stringify(a)})`);
+      assert.ok(a.size >= (phone ? (viewport.height < 700 ? 34 : 44) : viewport.width >= 1280 ? 80 : 52) && a.q.left >= 8 && a.scroll <= a.w + 1, `ASK: still big, no overflow (${JSON.stringify(a)})`);
       await context.close();
     });
   }

@@ -29,11 +29,19 @@
  * the still in place; the tilt, light and button keep working on it. If the
  * still itself failed (the orb fallback shows), a press only flashes the orb.
  *
+ * Voice (v10, scripts/voice.ts; the Sound switch, default off): with Sound
+ * on, a press that plays WAVE says HELLO and HEART says THANKS (LOOK: no
+ * line; never two lines at once; the idle wave stays silent), and the line
+ * shows as a caption bubble by his head for its length (aria-live), even if
+ * the audio fails.
+ *
  * State for CSS and QA on the stage: data-video "on" | "off", data-greet
  * "still" | "playing" | "done" | "failed", data-move (the clip on screen or
  * last played: wave | heart | look), data-moves (the cycle, e.g.
  * "wave heart look"); on each video: data-on while shown.
  */
+import * as voice from './voice';
+
 const stage = document.querySelector<HTMLElement>('[data-robot-stage]');
 const all = stage ? [...stage.querySelectorAll<HTMLVideoElement>('[data-robot-video]')] : [];
 
@@ -47,6 +55,23 @@ if (stage && all.length) {
   const saveData = !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
   const said = stage.querySelector<HTMLElement>('[data-robot-said]');
   const set = (key: 'video' | 'greet' | 'move' | 'moves', value: string) => { stage.dataset[key] = value; };
+  const caption = stage.querySelector<HTMLElement>('[data-robot-caption]');
+  const voiced: Record<string, voice.Line> = { wave: 'hello', heart: 'thanks' };
+  let captionTimer = 0;
+  const hideCaption = () => { window.clearTimeout(captionTimer); caption?.removeAttribute('data-show'); captionTimer = window.setTimeout(() => { if (caption) caption.textContent = ''; }, 300); };
+  /** With Sound on: his line for this move, and its caption. */
+  const speak = (name: string) => {
+    const line = voiced[name];
+    if (!voice.isOn() || !line) { voice.stop(); return; }
+    const meta = voice.info(line);
+    void voice.play(line);
+    if (!caption || !meta) return;
+    window.clearTimeout(captionTimer);
+    caption.textContent = meta.text;
+    caption.setAttribute('data-show', '');
+    captionTimer = window.setTimeout(hideCaption, meta.duration * 1000);
+  };
+  voice.onChange(on => { if (!on) hideCaption(); });
   const lines: Record<string, string> = { wave: 'Otto waves hello.', heart: 'Otto makes a heart with his hands.', look: 'Otto turns and looks at you.' };
 
   // The still: painted into a canvas once decoded (see RobotStage.astro).
@@ -159,6 +184,7 @@ if (stage && all.length) {
     current = move;
     set('move', move.name);
     if (said) said.textContent = lines[move.name] ?? '';
+    if (fromUser) speak(move.name);
     const start = () => {
       if (current !== move) return;
       const { video } = move;

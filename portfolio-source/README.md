@@ -127,6 +127,47 @@ LOOK, the question size and fit at 360/390/1000/1440 for the still and ASK
 framings, and lite LCP/CLS/TBT budgets (homepage with and without the
 intro, /work and /inside/katana).
 
+v10 adds Otto's voice (`.wav` requests answered with short ffmpeg tones,
+`voice-*.wav` in the same folder): default off with nothing fetched on load,
+the intro's Sound switch fetching and playing INTRO (at once while he is
+asking, ≈ 0.9 s into ASK when it was turned on earlier in the session), YES
+on Yes with one line at a time, the choice remembered for the session, the
+hero's HELLO with WAVE and THANKS with HEART captioned by his head
+(aria-live), LOOK silent, Sound off silencing it, the lite tier and a failing
+line staying silent, axe on the switch and caption; and every screen size:
+29 viewports (small and large phones, phones on their side, Galaxy Z Fold
+cover and inner, Pixel Fold, Z Flip, iPad mini/Air/Pro in both
+orientations, laptops from 1280×600 to 2560×1440), each checked for no
+horizontal scroll, the question, speech line and buttons on screen and
+clear of Otto's head (per line of the question, for the still and ASK
+framings; head boxes measured on the real frames), the top bar's 44 px
+targets, the homepage hero, header Contact and HUD chips fitting, with axe
+at 320×568, 844×390, 1024×1366 and 2560×1440.
+
+## Otto's voice and every screen size (v10)
+
+- Voice: four pre-recorded lines (Higgsfield Seed Audio, voice "Archie";
+  `VOICE` in `src/data/robot.ts`, `Voice.astro`, `scripts/voice.ts`). A
+  Sound switch (speaker icon + "Sound", `aria-pressed`) in the intro's top
+  bar and as a HUD chip by Otto in the hero; default off; on is remembered
+  for the session (sessionStorage `omar-sound`). Turning it on is the
+  gesture that unlocks audio; files are `preload="none"` and fetched only
+  then. Short volume fades, volume 0.8, never two lines at once, silent on
+  failure (the captions stay), on the lite tier too and with reduced motion.
+- Screens: the intro has two layouts. Portrait (phones, foldables, upright
+  tablets): his head centred, the frame capped so his helmet fits the
+  width and his chin stays above the copy (`--talk-top`, measured by
+  intro.ts); this also fixes the speech line that sat ≈ 25 px over his chin
+  at 320×568. Landscape (aspect ≥ 5:4, ≥ 600 px wide): the copy column left
+  of his helmet (`--head` .485 still / .45 ASK, the visor tip measured on
+  the real frames), a bottom-anchored compact column on short screens
+  (phones on their side, 1280×600). Top bar and copy respect `env(safe-area-inset-*)`;
+  narrow phones show the Sound icon only and "Skip →" (names unchanged for
+  assistive tech). The homepage hero is side by side on landscape screens
+  ≥ 1000 px, stacked on phones and portrait tablets, two columns on phones
+  and small tablets on their side. The homepage CSS is at its 30 KB gz
+  budget (qa-content): new homepage styles must replace, not add.
+
 ## Performance (v9)
 
 Measured before (v8, c74f8b7 content) and after (v9) on the same machine with

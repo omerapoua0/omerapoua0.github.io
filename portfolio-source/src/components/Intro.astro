@@ -24,7 +24,8 @@
    Largest Contentful Paint, and the hand-overs line up exactly. */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { robot, gestures, FRAME, LOOK, ASK, RING } from '../data/robot';
+import { robot, gestures, FRAME, LOOK, ASK, RING, VOICE_AT, HEAD } from '../data/robot';
+import SoundToggle from './SoundToggle.astro';
 const local = (file: string) => existsSync(path.join(process.cwd(), 'public/robot', file));
 const pick = (file: string, remote: string) => (local(file) ? `/robot/${file}` : remote);
 const fit = (f: { s: number; dx: number; dy: number }) => JSON.stringify(f);
@@ -51,7 +52,7 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
         <source data-src={pick('transform.mp4', robot.transform.mp4)} type="video/mp4" />
       </video>
       {(askMp4 || askWebm) && (
-        <video data-intro-ask data-fit={fit(gestures.ask.fit)} data-say={ASK.say} data-question={ASK.question} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
+        <video data-intro-ask data-fit={fit(gestures.ask.fit)} data-say={ASK.say} data-question={ASK.question} data-voice-at={VOICE_AT} muted playsinline preload="none" tabindex="-1" disablepictureinpicture disableremoteplayback>
           {askWebm && <source data-src={askWebm} type="video/webm" />}
           {askMp4 && <source data-src={askMp4} type="video/mp4" />}
         </video>
@@ -71,8 +72,9 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   <div class="intro__bar">
     <p class="intro__status" aria-hidden="true"><span class="intro__dot"></span><b>Otto</b><span data-intro-status>Online</span></p>
     <div class="intro__skip">
+      <SoundToggle class="intro__link intro__sound" lines="intro yes" />
       <a class="intro__link" href="/contact.html" data-open="Contact">Contact</a>
-      <button class="intro__link intro__link--skip" type="button" data-intro-skip>Skip intro <span aria-hidden="true">→</span></button>
+      <button class="intro__link intro__link--skip" type="button" data-intro-skip>Skip<span class="intro__long"> intro</span> <span aria-hidden="true">→</span></button>
     </div>
   </div>
 
@@ -115,14 +117,29 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
      screens his face stays where it is (centred) and the palm cannot fit
      without shrinking him: there a light runs from him to the question
      instead (the lite tier's hint). --head is
-     the left edge of his helmet in the frame (the three-quarter still: 55%;
+     the left edge of his helmet in the frame (the three-quarter still: its visor tip, 48.5%;
      facing you in ASK: 45%), which the desktop copy keeps clear of. */
-  .intro { --px: .68; --py: .3; --px-ask: var(--px); --px-eff: var(--px); --head: .55; }
+  .intro { --px: .68; --py: .3; --px-ask: var(--px); --px-eff: var(--px); --head: .485; }
   .intro[data-clip='ask'] { --px-eff: var(--px-ask); --head: .45; }
-  @media (min-aspect-ratio: 1/1) { .intro { --px: .7; } }
-  @media (min-width: 900px) and (min-aspect-ratio: 1/1) { .intro { --px-ask: .3; } }
+  @media (min-aspect-ratio: 1/1) { .intro { --px: .62; } }
+  @media (min-aspect-ratio: 5/4) and (min-width: 600px) { .intro { --px-ask: .3; } }
   .intro__frame, .intro__talk { --fw: max(100cqw, 100cqh * 1344 / 752); }
   .intro__frame { --fh: calc(var(--fw) * 752 / 1344); position: absolute; width: var(--fw); height: var(--fh); left: calc((100cqw - var(--fw)) * var(--px)); top: calc((100cqh - var(--fh)) * var(--py)); translate: calc((100cqw - var(--fw)) * (var(--px-eff) - var(--px))) 0; transition: translate 1.4s cubic-bezier(.45, 0, .2, 1); }
+  /* Every screen size (v10). Portrait ("stack": phones, foldables, tablets
+     upright): his head is centred (--hc: its centre in the frame, measured
+     on the real frames; --hc-eff while he faces you in ASK), and the frame
+     is never so big that his helmet is wider than the screen (≤ 210cqw
+     tall) or that his chin (≤ 56% down the frame, ASK) reaches the copy:
+     intro.ts measures the copy's top (--talk-top) and the frame shrinks to
+     keep above it (it always stays wider than the screen); what is left
+     below fades into the dark under the copy. Landscape ("side": phones on
+     their side, tablets, laptops, desktops): the copy column on the left,
+     him on the right, the v8/v9 framing. */
+  .intro { --hc: .615; --hc-eff: var(--hc); }
+  .intro[data-clip='ask'] { --hc-eff: .6; }
+  @media (max-aspect-ratio: 1249/1000), (max-width: 599px) {
+    .intro__frame { --fh: max(56cqw, min(100cqh, 210cqw, (var(--talk-top, 100cqh) - 6px) / .56)); --fw: calc(var(--fh) * 1344 / 752); left: calc(50cqw - var(--hc) * var(--fw)); top: 0; translate: calc((var(--hc) - var(--hc-eff)) * var(--fw)) 0; }
+  }
   .intro__tilt, .intro__breath, .intro__screen, .intro__media, .intro__media > * { position: absolute; inset: 0; width: 100%; height: 100%; }
   .intro__tilt { transform: perspective(1600px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg)); transform-origin: 62% 40%; }
   .intro__breath { transform-origin: 62% 100%; }
@@ -151,7 +168,7 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   /* Legibility under the copy: a dark fall-off at the bottom (phones) or on
      the left (desktop). */
   .intro__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #040506cc 0, transparent 16%, transparent 46%, #040506e6 74%, #040506); }
-  @media (min-width: 900px) {
+  @media (min-aspect-ratio: 5/4) and (min-width: 600px) {
     .intro__shade { background: linear-gradient(180deg, #04050699 0, transparent 18%, transparent 80%, #040506b3); }
     .intro__shade::before, .intro__shade::after { content: ''; position: absolute; inset: 0; transition: opacity 1.2s; }
     .intro__shade::before { background: linear-gradient(90deg, #040506 0, #040506d9 24%, transparent 52%); }
@@ -167,26 +184,41 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   .intro__white { position: absolute; inset: 0; background: radial-gradient(60% 60% at 50% 50%, #fff, #f2f6ff 55%, #e6eeff); opacity: 0; pointer-events: none; }
   .intro[data-stage='white'] .intro__white { opacity: 1; transition: opacity 220ms ease-in; }
 
-  .intro__bar { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(24px, calc(env(safe-area-inset-top) + 12px)) clamp(24px, 4vw, 56px) 0; }
+  .intro__bar { --bx: clamp(24px, 4vw, 56px); position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(24px, calc(env(safe-area-inset-top) + 12px)) max(var(--bx), calc(env(safe-area-inset-right) + 12px)) 0 max(var(--bx), calc(env(safe-area-inset-left) + 12px)); }
   .intro__status { display: inline-flex; align-items: center; gap: 10px; font: 500 11.5px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
   .intro__status b { color: #ff6b7d; font-weight: 600; }
   .intro__status b::after { content: '·'; margin-left: 10px; color: var(--muted); }
   .intro__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 3px var(--red-soft), 0 0 12px var(--red); }
   .intro__skip { display: flex; gap: 8px; }
-  .intro__link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: #0b0d12b3; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--ink); font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-color 200ms, background-color 200ms; }
+  .intro__link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 999px; background: #0b0d12b3; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--ink); font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-color 200ms, background-color 200ms; }
   .intro__status, .intro__link { white-space: nowrap; }
   @media (max-width: 520px) {
-    .intro__bar { padding-inline: 20px; }
-    .intro__link { min-height: 40px; padding: 0 12px; font-size: 11px; }
+    .intro__bar { --bx: 20px; gap: 8px; }
+    .intro__skip { gap: 6px; }
+    .intro__link { padding: 0 12px; font-size: 11px; }
+  }
+  /* Narrow phones: the Sound switch shows its icon (named "Sound" for
+     assistive tech), Skip drops "intro" (still "Skip intro" to them), the
+     status keeps "Otto". */
+  @media (max-width: 440px) {
+    .intro__sound { padding: 0; }
+    .intro__sound .sound__label, .intro__long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .intro .intro__status b::after, .intro .intro__status [data-intro-status] { display: none; }
+  }
+  /* Short screens (phones on their side, short laptop windows): a tighter
+     top bar, no tick ruler. */
+  @media (max-height: 500px) {
+    .intro__bar { padding-top: max(12px, calc(env(safe-area-inset-top) + 8px)); }
+    .intro__ticks { display: none; }
   }
   .intro__link:hover { border-color: var(--accent); background: #12151ccc; }
   .intro__link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
   /* The robot speaks: bottom of the screen on phones, the dark left third on
      desktop. */
-  .intro__talk { position: absolute; left: clamp(20px, 6vw, 96px); right: clamp(20px, 6vw, 96px); bottom: max(48px, calc(env(safe-area-inset-bottom) + 36px)); display: grid; gap: 14px; justify-items: start; }
+  .intro__talk { position: absolute; left: max(clamp(20px, 6vw, 96px), calc(env(safe-area-inset-left) + 16px)); right: max(clamp(20px, 6vw, 96px), calc(env(safe-area-inset-right) + 16px)); bottom: max(48px, calc(env(safe-area-inset-bottom) + 36px)); display: grid; gap: 14px; justify-items: start; }
   /* Desktop: never wider than the room left of his helmet. */
-  @media (min-width: 900px) { .intro__talk { --tl: clamp(20px, 4.5vw, 72px); --tw: min(48vw, 760px, (100cqw - var(--fw)) * var(--px-eff) + var(--fw) * var(--head) - var(--tl) - 24px); left: var(--tl); right: auto; width: var(--tw); bottom: auto; top: 50%; translate: 0 -42%; gap: 18px; } }
+  @media (min-aspect-ratio: 5/4) and (min-width: 600px) { .intro__talk { --tl: max(clamp(20px, 4.5vw, 72px), calc(env(safe-area-inset-left) + 16px)); --tw: min(48vw, 760px, (100cqw - var(--fw)) * var(--px-eff) + var(--fw) * var(--head) - var(--tl) - 24px); left: var(--tl); right: auto; width: var(--tw); bottom: auto; top: 50%; translate: 0 -42%; gap: 18px; } }
   .intro__say { position: relative; display: inline-grid; padding: 10px 14px; border-radius: 4px; border: 1px solid #ff4d6259; background: #0b0d12cc; font: 500 13px/1.4 var(--font-mono); letter-spacing: .04em; color: var(--ink-2); }
   .intro__say::before { content: ''; position: absolute; inset: -4px; background: var(--hud); --hc: #ff4d62b3; --hl: 8px; background-repeat: no-repeat; pointer-events: none; }
   /* The full line reserves the box (no layout shift); the typed copy sits on it. */
@@ -195,9 +227,9 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   /* The question, big (v9): as large as fits in two or three lines on a
      phone without reaching his head (cqw/cqh: the intro is a size
      container), about 1.4× the v8 size on desktop. */
-  .intro__q { font-size: clamp(2.2rem, min(12.4cqw, 6.4cqh), 3.6rem); font-weight: 780; letter-spacing: -.05em; line-height: .93; text-transform: uppercase; text-wrap: balance; text-shadow: 0 2px 30px #040506; }
+  .intro__q { font-size: clamp(2.2rem, min(12.4cqw, 6.4cqh), 5rem); font-weight: 780; letter-spacing: -.05em; line-height: .93; text-transform: uppercase; text-wrap: balance; text-shadow: 0 2px 30px #040506; }
   /* (Three lines need ≈ 6.5em: the size also follows the column.) */
-  @media (min-width: 900px) { .intro__q { font-size: min(clamp(3.4rem, min(1.2rem + 5.3vw, 11.5cqh), 6.4rem), var(--tw) / 6.6); } }
+  @media (min-aspect-ratio: 5/4) and (min-width: 600px) { .intro__q { font-size: min(clamp(2.1rem, min(1.2rem + 5.3vw, 11.5cqh), 6.4rem), var(--tw) / 6.6); } }
   .intro__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; }
   .intro__actions .btn { min-height: 60px; padding: 16px 30px; font-size: 1.0625rem; }
   /* Yes is the one big, glowing answer. Its glow pulses on a pseudo layer
@@ -206,13 +238,21 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   .intro__yes::after { content: ''; position: absolute; inset: -7px; z-index: -2; border-radius: inherit; border: 1px solid #4d84ff80; box-shadow: 0 0 26px 2px #2f6bff73; opacity: .35; pointer-events: none; }
   .intro__yes .arrow { font-size: 1.15em; }
   @media (max-width: 520px) { .intro__actions .btn { flex: 1 1 auto; padding-inline: 22px; } }
-  /* Short phones: a tighter stack, so the speech line stays below his chin. */
+  /* Short landscape (phones on their side, short laptop windows): the copy
+     sits from the bottom up, under the top bar, with smaller buttons. */
+  @media (min-aspect-ratio: 5/4) and (min-width: 600px) and (max-height: 640px) {
+    .intro__talk { top: auto; bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px)); translate: none; gap: 10px; }
+    .intro__say { padding: 6px 12px; font-size: 12px; }
+    .intro__q { font-size: min(max(2rem, 10.5cqh), var(--tw) / 6.6); }
+    .intro__actions { margin-top: 2px; }
+    .intro__actions .btn { min-height: 50px; padding: 12px 24px; font-size: 1rem; }
+    .intro__actions .intro__yes { min-height: 54px; padding: 14px 28px; font-size: 1.0625rem; }
+  }
+  /* Short phones: a tighter stack (the frame also shrinks to keep his chin
+     above it). */
   @media (max-width: 520px) and (max-height: 700px) {
     .intro__talk { gap: 8px; bottom: max(26px, calc(env(safe-area-inset-bottom) + 18px)); }
     .intro__say { padding: 5px 10px; font-size: 12px; }
-    .intro__actions { gap: 10px; margin-top: 2px; }
-    .intro__actions .btn { min-height: 56px; padding-block: 12px; }
-    .intro__actions .intro__yes { min-height: 60px; padding-block: 14px; }
   }
   /* Hidden until he asks. */
   .intro__say, .intro__q, .intro__actions { opacity: 0; translate: 0 14px; visibility: hidden; transition: opacity 600ms var(--ease-out), translate 600ms var(--ease-out), visibility 0s 600ms; }
@@ -228,9 +268,9 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
      hand, in CSS): down to it on phones, leftward on desktop. */
   .intro__hint { position: absolute; left: 30%; bottom: 100%; width: 2px; height: 14cqh; overflow: hidden; opacity: 0; pointer-events: none; background: linear-gradient(#ff4d6200, #ff4d6266); }
   .intro__hint::after { content: ''; position: absolute; left: -2px; right: -2px; top: 0; height: 40%; border-radius: 2px; background: linear-gradient(#e6eeff00, #fff 60%, #ff8a98); box-shadow: 0 0 12px 2px #ff2d46aa; translate: 0 -100%; }
-  @media (min-width: 900px) { .intro__hint { left: 100%; bottom: auto; top: 46%; width: 12cqw; height: 2px; background: linear-gradient(90deg, #ff4d6266, #ff4d6200); } .intro__hint::after { left: auto; right: 0; top: -2px; bottom: -2px; width: 40%; height: auto; background: linear-gradient(270deg, #e6eeff00, #fff 60%, #ff8a98); translate: 100% 0; } }
+  @media (min-aspect-ratio: 5/4) and (min-width: 600px) { .intro__hint { left: 100%; bottom: auto; top: 46%; width: 12cqw; height: 2px; background: linear-gradient(90deg, #ff4d6266, #ff4d6200); } .intro__hint::after { left: auto; right: 0; top: -2px; bottom: -2px; width: 40%; height: auto; background: linear-gradient(270deg, #e6eeff00, #fff 60%, #ff8a98); translate: 100% 0; } }
   .intro[data-path='lite'][data-asked] .intro__hint { opacity: 1; transition: opacity 400ms; }
-  @media (max-width: 899px) and (max-aspect-ratio: 1/1) { .intro[data-clip='ask'][data-asked] .intro__hint { opacity: 1; transition: opacity 400ms; } }
+  @media (max-aspect-ratio: 1249/1000), (max-width: 599px) { .intro[data-clip='ask'][data-asked] .intro__hint { opacity: 1; transition: opacity 400ms; } }
 
   @media (prefers-reduced-motion: no-preference) {
     .intro__status [data-intro-status] { animation: intro-type 900ms steps(12, end) 200ms both; display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom; }
@@ -256,5 +296,5 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   @keyframes intro-hint-y { from { translate: 0 -100%; } to { translate: 0 260%; } }
   @keyframes intro-hint-x { from { translate: 100% 0; } to { translate: -260% 0; } }
   @keyframes intro-yes { from { opacity: .2; scale: 1; } to { opacity: .75; scale: 1.04; } }
-  @media (prefers-reduced-motion: no-preference) and (min-width: 900px) { .intro[data-path='lite'][data-asked] .intro__hint::after { animation-name: intro-hint-x; } }
+  @media (prefers-reduced-motion: no-preference) and (min-aspect-ratio: 5/4) and (min-width: 600px) { .intro[data-path='lite'][data-asked] .intro__hint::after { animation-name: intro-hint-x; } }
 </style>
