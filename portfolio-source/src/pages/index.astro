@@ -13,7 +13,7 @@ import { ROBOT_ORIGIN } from '../data/robot';
       browser session: decided here, before first paint, so neither the
       homepage nor the intro flashes. Only with JavaScript; storage blocked
       means no intro. "Replay intro" in the hero clears the flag. */}
-  <script slot="head" is:inline>(function(){try{if(!sessionStorage.getItem('omar-intro'))document.documentElement.dataset.introOn=''}catch(e){}})();</script>
+  <script slot="head" is:inline>(function(){var t='',inside=false;try{t=(performance.getEntriesByType('navigation')[0]||{}).type||''}catch(e){}try{inside=!!document.referrer&&new URL(document.referrer).origin===location.origin}catch(e){}try{if(sessionStorage.getItem('omar-intro')==='replay')inside=false}catch(e){}if(t!=='back_forward'&&(t==='reload'||!inside))document.documentElement.dataset.introOn=''})();</script>
   <Intro slot="overlay" />
   <HomeHero />
   <HomeSections />

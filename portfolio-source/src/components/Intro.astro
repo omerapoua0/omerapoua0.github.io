@@ -67,6 +67,7 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   <span class="hud intro__hud" aria-hidden="true"></span>
   <span class="ticks intro__ticks" aria-hidden="true"><i></i></span>
   <span class="intro__white" aria-hidden="true"></span>
+  <button class="intro__wake" type="button" data-intro-wake hidden><span class="intro__wake-ring" aria-hidden="true"></span>Tap to wake Otto</button>
 
   <div class="intro__bar">
     <p class="intro__status" aria-hidden="true"><span class="intro__dot"></span><b>Otto</b><span data-intro-status>Online</span></p>
@@ -257,4 +258,12 @@ const askWebm = local('ask.webm') ? '/robot/ask.webm' : undefined;
   @keyframes intro-hint-x { from { translate: 100% 0; } to { translate: -260% 0; } }
   @keyframes intro-yes { from { opacity: .2; scale: 1; } to { opacity: .75; scale: 1.04; } }
   @media (prefers-reduced-motion: no-preference) and (min-width: 900px) { .intro[data-path='lite'][data-asked] .intro__hint::after { animation-name: intro-hint-x; } }
+  /* v9.1: autoplay refused (iOS Low Power Mode): a tap on the orb wakes him. */
+  .intro__wake { position: absolute; left: 50%; top: 58%; translate: -50% 0; z-index: 6; display: inline-flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 22px; border: 1px solid #ffffff3d; border-radius: 999px; background: #07080bcc; color: #f4f6fb; font: 600 15px/1 var(--font-mono, monospace); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 0 1px #ff2d4633, 0 0 40px #ff2d4640; }
+  .intro__wake[hidden] { display: none; }
+  .intro__wake:focus-visible { outline: 2px solid #4d84ff; outline-offset: 4px; }
+  .intro__wake-ring { width: 12px; height: 12px; border-radius: 50%; background: #ff2d46; box-shadow: 0 0 12px #ff4d62; animation: intro-wake 1.6s ease-in-out infinite; }
+  @keyframes intro-wake { 50% { opacity: .35; scale: .7; } }
+  @media (prefers-reduced-motion: reduce) { .intro__wake-ring { animation: none; } }
+  @media (forced-colors: active) { .intro__wake { border-color: ButtonText; } }
 </style>
