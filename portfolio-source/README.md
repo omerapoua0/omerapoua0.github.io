@@ -5,17 +5,28 @@ soft studio greys, white surfaces, black type and one electric-blue accent (#1f4
 Onest display type and JetBrains Mono spec labels. Read [CLAUDE.md](CLAUDE.md) first. The
 previous revision's README is kept as [OMAR-README.md](OMAR-README.md) for history only.
 
+- **v7 (October 2026):** the hero robot is Omar's Higgsfield-generated mascot
+  (AI-generated, not Omar), loaded from Higgsfield's CDN (`src/data/robot.ts`;
+  files in `public/robot/` override it). Every time the homepage opens it
+  turns its head to you and waves once, then holds, breathing, turning toward
+  your pointer; "Say hi to the robot" replays it. The light gate plays its
+  "hands together, light bursts" clip. The Pause motion control was removed
+  at the user's request; `prefers-reduced-motion` is honoured everywhere
+  (poster only, no loops, no scroll effects). Current Digis Squared work:
+  INOS and OctiMind alongside KATANA (technology selection, audits, business
+  and product strategy).
 - **Hero:** who I am in one line, See my work / Book a lesson / Contact me, the
-  robot stage (the photoreal robot drops into `public/robot/`; until then an
-  abstract light sculpture stands in), spec chips that count up, and four big
-  doors underneath: Work, Skills, Lessons, Contact. No chat.
+  robot (abstract CSS orb as its loading/CDN-down fallback), spec chips that
+  count up, and four big doors underneath: Work, Skills, Lessons, Contact. No
+  chat.
 - **The light gate:** choosing a door, card or main call to action plays "the
   robot opens it": two light seams meet like hands, white light bursts open,
   and the next page rises out of the white. Ordinary links get a quick white
-  rise. Reduced motion and Pause motion get a short fade.
+  rise. Reduced motion gets a short fade.
 - **Everywhere:** a Contact pill in the sticky header on every width, a
   ⌘K / Ctrl+K command menu (quick links, pages, case studies, tours, copy email,
-  CV, LinkedIn, GitHub) and a visible Pause motion switch.
+  CV, LinkedIn, GitHub). No Pause motion switch (removed at the user's
+  request); reduced motion is honoured.
 - **Every page:** a studio hero (numbered eyebrow, word-by-word title,
   counting spec chips, drifting light, a watermark word), sliding marquees,
   slides, wipes and scroll-drawn lines, sticky storytelling where it helps
@@ -53,12 +64,22 @@ lockfile stays unchanged; point `NODE_PATH`/`AXE_PATH` at an isolated install.
 `qa.cjs` covers 7 routes and 5 tours × 5 widths, axe WCAG 2.2 AA at 390 and
 1280, links and legacy anchors, no-JS readability (the doors are real links),
 the light gate (leaving page opaque white, arriving page white at first paint
-and revealed within 1.5 s, reduced motion and Pause motion fades, same-page
-doors, bfcache), Pause motion stopping every loop, Contact in one tap from
+and revealed within 1.5 s, the reduced-motion fade, same-page doors, bfcache,
+the robot's open clip), the hero robot (greets once on load, re-entry and
+bfcache; holds the last frame; Say hi by click, keyboard and tap; pointer
+turn; reduced motion / Save-Data poster only; H.264 unsupported, clip 404 and
+poster 404 fallbacks; no layout shift), no Pause control anywhere and reduced
+motion stopping every loop and scroll effect, Contact in one tap from
 every page, the command menu, the project index and matrix, the mobile menu,
 both enquiry journeys, the interior heroes and contact bands, scroll
 reveals finishing visible on every page, the scrollytelling, scroll-spy and
-contact topic shortcuts, gate hops from interior pages, and LCP/CLS.
+contact topic shortcuts, gate hops from interior pages, and LCP/CLS (also
+with the robot poster 2 s late).
+
+The robot's CDN is never contacted by QA: `qa.cjs` serves local stand-ins
+(generated with ffmpeg into `.qa/robot`, or `QA_ROBOT_MEDIA=<dir>` with
+hero.webp, greet.mp4, open.mp4 and optionally greet-h264.mp4). Never commit
+stand-in media.
 
 Build success does not mean publication. Do not deploy without explicit user
 authorisation. Preserve copyright notices, retained credits and personal-data

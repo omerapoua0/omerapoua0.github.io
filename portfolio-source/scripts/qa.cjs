@@ -73,8 +73,16 @@ async function routeRobot(context, mode = 'play', { posterDelay = 0 } = {}) {
       return route.fulfill({ path: robotMedia.poster, contentType: 'image/webp', headers: { 'cache-control': 'no-store' } });
     }
     if (mode === 'video404') return route.fulfill({ status: 404, body: '' });
-    if (mode === 'h264') return robotMedia.h264 ? route.fulfill({ path: robotMedia.h264, contentType: 'video/mp4' }) : route.fulfill({ status: 404, body: '' });
-    return route.fulfill({ path: /4dfd8994/.test(url) ? robotMedia.open : robotMedia.greet, contentType: 'video/mp4' });
+    const file = mode === 'h264' ? robotMedia.h264 : /4dfd8994/.test(url) ? robotMedia.open : robotMedia.greet;
+    if (!file) return route.fulfill({ status: 404, body: '' });
+    // Like the CDN: byte ranges, so the gate can seek the open clip.
+    const body = require('node:fs').readFileSync(file);
+    const range = /bytes=(\d*)-(\d*)/.exec(route.request().headers().range || '');
+    const headers = { 'accept-ranges': 'bytes', 'cache-control': 'public, max-age=31536000, immutable' };
+    if (!range) return route.fulfill({ status: 200, body, contentType: 'video/mp4', headers });
+    const start = range[1] ? Number(range[1]) : Math.max(0, body.length - Number(range[2]));
+    const end = range[1] && range[2] ? Math.min(Number(range[2]), body.length - 1) : body.length - 1;
+    return route.fulfill({ status: 206, body: body.subarray(start, end + 1), contentType: 'video/mp4', headers: { ...headers, 'content-range': `bytes ${start}-${end}/${body.length}` } });
   });
 }
 
@@ -488,6 +496,165 @@ async function pixelContrast(page, selectors) {
      visitor's prefers-reduced-motion is the motion opt-out, and it must stop
      every loop and every scroll-driven effect. Contact is one tap away. */
   const loops = page => page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).map(a => `${a.animationName} on ${a.effect.target?.className?.baseVal ?? a.effect.target?.className}`));
+  /* The hero robot: it greets on every open, holds the last frame, replays on
+     "Say hi", turns toward the pointer, and degrades to the poster (and the
+     poster to the orb) without breaking. */
+  const countPlays = context => context.addInitScript(() => document.addEventListener('play', event => { if (event.target.matches?.('[data-robot-video]')) window.__robotPlays = (window.__robotPlays || 0) + 1; }, true));
+  const robotState = page => page.evaluate(() => {
+    const stage = document.querySelector('[data-robot-stage]'), video = stage.querySelector('[data-robot-video]'), img = stage.querySelector('.robot__poster'), orb = stage.querySelector('[data-orb]');
+    return { poster: stage.dataset.poster, video: stage.dataset.video, greet: stage.dataset.greet, plays: window.__robotPlays || 0, paused: video.paused, t: video.currentTime, duration: video.duration, src: video.currentSrc,
+      still: stage.dataset.still, stillOpacity: Math.max(Number(getComputedStyle(img).opacity), Number(getComputedStyle(stage.querySelector('.robot__still') ?? img).opacity)), mediaOpacity: Number(getComputedStyle(stage.querySelector('.robot-stage__media')).opacity), orbVisible: getComputedStyle(orb).visibility === 'visible' && Number(getComputedStyle(orb).opacity) > .9 };
+  });
+  const greetDone = (page, timeout = 12000) => page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.greet === 'done', null, { timeout });
+
+  await check('robot: poster <img> has intrinsic width/height, sits behind a real "Say hi to the robot" button, and causes no layout shift', async () => {
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+      const context = await isolated(browser, { viewport, reducedMotion: 'no-preference' });
+      await context.addInitScript(() => { window.__shifts = []; new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__shifts.push({ value: entry.value, nodes: entry.sources.map(source => source.node?.className ?? '') }); }).observe({ type: 'layout-shift', buffered: true }); });
+      const page = await context.newPage();
+      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(2000);
+      const info = await page.evaluate(() => {
+        const img = document.querySelector('.robot__poster'), button = document.querySelector('[data-robot-hi]'), stage = document.querySelector('[data-robot-stage]').getBoundingClientRect();
+        return { w: img.getAttribute('width'), h: img.getAttribute('height'), decoding: img.decoding, src: img.getAttribute('src'), tag: button.tagName, type: button.type, name: button.getAttribute('aria-label'), mediaHidden: document.querySelector('.robot-stage__media').getAttribute('aria-hidden'), stage: { w: stage.width, h: stage.height }, shifts: window.__shifts };
+      });
+      assert.equal(info.w, '1344'); assert.equal(info.h, '752'); assert.equal(info.decoding, 'async');
+      assert.match(info.src, /^https:\/\/d8j0ntlcm91z4\.cloudfront\.net\/.+\.webp$/, 'poster from the CDN (src/data/robot.ts)');
+      assert.equal(info.tag, 'BUTTON'); assert.equal(info.type, 'button'); assert.equal(info.name, 'Say hi to the robot');
+      assert.equal(info.mediaHidden, 'true', 'the media are aria-hidden');
+      assert.ok(info.stage.w > viewport.width * .7 && info.stage.h > 250, `the robot is big (${JSON.stringify(info.stage)})`);
+      const robotShift = info.shifts.filter(shift => shift.nodes.some(name => /robot|orb|hero__robot/.test(name)));
+      assert.deepEqual(robotShift, [], `no layout shift from the robot at ${viewport.width}px`);
+      await context.close();
+    }
+  });
+
+  await check('robot: greets once on load (turns, waves), then holds the last frame facing you; "Say hi" (click and keyboard) replays it', async () => {
+    if (!robotMedia) { results.push({ name: 'robot greet', status: 'skipped', message: 'no stand-in media' }); return; }
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
+    await countPlays(context);
+    const page = await context.newPage();
+    const errors = watch(page);
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => ['playing', 'done'].includes(document.querySelector('[data-robot-stage]').dataset.greet), null, { timeout: 8000 });
+    const during = await robotState(page);
+    assert.equal(during.video, 'on', 'the video is shown while it plays');
+    await greetDone(page);
+    await page.waitForTimeout(1200);
+    const held = await robotState(page);
+    assert.equal(held.plays, 1, 'played exactly once');
+    assert.ok(held.paused && held.duration > 4 && held.t >= held.duration - .1, `held on the last frame (${held.t}/${held.duration})`);
+    assert.equal(held.video, 'on', 'the last frame stays on screen');
+    await page.click('[data-robot-hi]');
+    await page.waitForFunction(() => (window.__robotPlays || 0) >= 2, null, { timeout: 4000 });
+    await greetDone(page);
+    await page.locator('.hero__ctas .btn--ghost').focus();
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(350);
+    assert.ok(await page.evaluate(() => document.activeElement?.hasAttribute('data-robot-hi')), 'Tab after the hero CTAs reaches the robot button');
+    assert.ok(await page.locator('.robot-stage__focus').evaluate(el => Number(getComputedStyle(el).opacity) > .9), 'keyboard focus shows the HUD frame');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => (window.__robotPlays || 0) >= 3, null, { timeout: 4000 });
+    await greetDone(page);
+    // It never loops on its own.
+    await page.waitForTimeout(1500);
+    assert.equal((await robotState(page)).plays, 3, 'no extra plays');
+    assert.deepEqual(errors, []);
+    await context.close();
+  });
+
+  await check('robot: greets again when the hero comes back into view, and turns toward the pointer (spring) with a following light', async () => {
+    if (!robotMedia) { results.push({ name: 'robot re-entry', status: 'skipped', message: 'no stand-in media' }); return; }
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' });
+    await countPlays(context);
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await greetDone(page);
+    await page.mouse.move(1400, 200);
+    await page.mouse.move(1420, 210, { steps: 4 });
+    await page.waitForTimeout(900);
+    const tilt = await page.evaluate(() => ({ ry: Number(getComputedStyle(document.querySelector('[data-robot-tilt]')).getPropertyValue('--ry')), pointer: document.querySelector('[data-robot-stage]').hasAttribute('data-pointer') }));
+    assert.ok(tilt.ry > 1 && tilt.pointer, `turned toward a pointer on its right (${JSON.stringify(tilt)})`);
+    await page.mouse.move(200, 400, { steps: 4 });
+    await page.waitForTimeout(900);
+    assert.ok(Number(await page.evaluate(() => getComputedStyle(document.querySelector('[data-robot-tilt]')).getPropertyValue('--ry'))) < -1, 'and toward a pointer on its left');
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight / 2));
+    await page.waitForTimeout(600);
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.waitForFunction(() => (window.__robotPlays || 0) >= 2, null, { timeout: 5000 });
+    await context.close();
+  });
+
+  await check('robot: touch devices get the ambient sway (no pointer tilt) and tap to wave', async () => {
+    if (!robotMedia) return;
+    const context = await isolated(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'no-preference' });
+    await countPlays(context);
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await greetDone(page);
+    assert.ok((await loops(page)).some(name => /robot-sway/.test(name)), 'ambient sway runs');
+    await page.tap('[data-robot-hi]');
+    await page.waitForFunction(() => (window.__robotPlays || 0) >= 2, null, { timeout: 4000 });
+    await context.close();
+  });
+
+  for (const [label, options, init] of [
+    ['reduced motion', { reducedMotion: 'reduce' }, null],
+    ['Save-Data', { reducedMotion: 'no-preference' }, () => Object.defineProperty(Navigator.prototype, 'connection', { configurable: true, get: () => ({ saveData: true }) })],
+  ]) {
+    await check(`robot (${label}): poster only, nothing fetched or played until the visitor presses "Say hi"`, async () => {
+      const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, ...options });
+      if (init) await context.addInitScript(init);
+      await countPlays(context);
+      const page = await context.newPage();
+      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(2500);
+      const still = await robotState(page);
+      assert.equal(still.greet, 'still'); assert.equal(still.plays, 0, 'no autoplay'); assert.equal(still.src, '', 'clip not fetched');
+      assert.equal(still.poster, 'ok'); assert.equal(still.still, 'canvas', 'poster painted'); assert.ok(still.stillOpacity > .99, 'poster shown');
+      if (!robotMedia) return context.close();
+      await page.click('[data-robot-hi]');
+      await page.waitForFunction(() => (window.__robotPlays || 0) >= 1, null, { timeout: 5000 });
+      await greetDone(page);
+      await context.close();
+    });
+  }
+
+  await check('robot: H.264 unsupported or the clip gone → the poster stays and "Say hi" and the tilt still work', async () => {
+    for (const mode of [robotMedia?.h264 ? 'h264' : null, 'video404'].filter(Boolean)) {
+      const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' }, mode);
+      const page = await context.newPage();
+      const errors = watch(page);
+      await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+      await page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.greet === 'failed', null, { timeout: 8000 });
+      await page.waitForTimeout(800); // the orb's fade-out
+      const state = await robotState(page);
+      assert.equal(state.video, 'off', `${mode}: video hidden`);
+      assert.ok(state.stillOpacity > .99 && state.mediaOpacity > .99 && !state.orbVisible, `${mode}: poster stays (${JSON.stringify(state)})`);
+      await page.click('[data-robot-hi]');
+      assert.ok(await page.evaluate(() => document.querySelector('[data-robot-stage]').hasAttribute('data-hi')), `${mode}: the press is acknowledged`);
+      await page.mouse.move(1400, 200); await page.mouse.move(1420, 220, { steps: 3 });
+      await page.waitForTimeout(800);
+      assert.ok(Number(await page.evaluate(() => getComputedStyle(document.querySelector('[data-robot-tilt]')).getPropertyValue('--ry'))) > 1, `${mode}: still turns toward the pointer`);
+      // Only the deliberately missing clip may answer 404.
+      assert.deepEqual(errors.filter(line => !(mode === 'video404' && /^404 .*\.mp4$/.test(line)) && !/Failed to load resource.*404/.test(line)), [], `${mode}: no errors`);
+      await context.close();
+    }
+  });
+
+  await check('robot: poster gone (CDN down) → the abstract orb fallback shows, no broken image', async () => {
+    const context = await isolated(browser, { viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' }, 'poster404');
+    const page = await context.newPage();
+    await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => document.querySelector('[data-robot-stage]').dataset.poster === 'failed', null, { timeout: 5000 });
+    await page.waitForTimeout(800);
+    const state = await robotState(page);
+    assert.ok(state.orbVisible, 'orb visible');
+    assert.ok(state.mediaOpacity < .01, 'no broken poster shown');
+    assert.ok(await page.locator('[data-robot-hi]').isVisible(), 'the button remains');
+    await context.close();
+  });
+
   await check('no Pause control anywhere; with motion every interior page has ambient motion; with reduced motion no loop runs on any page', async () => {
     const on = await isolated(browser, { reducedMotion: 'no-preference', viewport: { width: 1280, height: 900 } });
     const off = await isolated(browser, { reducedMotion: 'reduce', viewport: { width: 1280, height: 900 } });
@@ -970,9 +1137,12 @@ async function pixelContrast(page, selectors) {
   });
 
   /* 9. Performance: LCP/CLS on throttled phone and desktop loads. */
-  for (const [label, viewport, mobile] of [['phone', { width: 390, height: 844 }, true], ['desktop', { width: 1440, height: 900 }, false]]) {
+  // The robot's poster comes from a third-party CDN: a slow CDN must not hold
+  // the LCP back (the h1 is the largest paint; the poster fades in on load).
+  for (const [label, viewport, mobile, posterDelay] of [['phone', { width: 390, height: 844 }, true, 0], ['desktop', { width: 1440, height: 900 }, false, 0], ['phone, robot poster 2 s late', { width: 390, height: 844 }, true, 2000], ['desktop, robot poster 2 s late', { width: 1440, height: 900 }, false, 2000]]) {
     await check(`performance ${label}: LCP <= 2.5s, CLS <= 0.05`, async () => {
       const context = await isolated(browser, { viewport, isMobile: mobile, reducedMotion: 'no-preference' });
+      if (posterDelay) await routeRobot(context, 'play', { posterDelay });
       const page = await context.newPage();
       const cdp = await context.newCDPSession(page);
       await cdp.send('Network.enable');
@@ -980,12 +1150,12 @@ async function pixelContrast(page, selectors) {
       await cdp.send('Emulation.setCPUThrottlingRate', { rate: mobile ? 4 : 1 });
       await page.addInitScript(() => {
         window.__lcp = 0; window.__cls = 0;
-        new PerformanceObserver(list => { for (const entry of list.getEntries()) window.__lcp = entry.startTime; }).observe({ type: 'largest-contentful-paint', buffered: true });
+        new PerformanceObserver(list => { for (const entry of list.getEntries()) { window.__lcp = entry.startTime; window.__lcpEl = `${entry.element?.tagName ?? ''}.${entry.element?.className ?? ''}`.slice(0, 60); } }).observe({ type: 'largest-contentful-paint', buffered: true });
         new PerformanceObserver(list => { for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.__cls += entry.value; }).observe({ type: 'layout-shift', buffered: true });
       });
       await page.goto(`${base}/index.html`, { waitUntil: 'load' });
-      await page.waitForTimeout(2500);
-      const metrics = await page.evaluate(() => ({ lcp: Math.round(window.__lcp), cls: Number(window.__cls.toFixed(3)) }));
+      await page.waitForTimeout(2500 + posterDelay);
+      const metrics = await page.evaluate(() => ({ lcp: Math.round(window.__lcp), element: window.__lcpEl, cls: Number(window.__cls.toFixed(3)) }));
       results.push({ name: `performance ${label} metrics`, status: 'info', message: JSON.stringify(metrics) });
       assert.ok(metrics.lcp <= 2500, `LCP ${metrics.lcp}ms`);
       assert.ok(metrics.cls <= 0.05, `CLS ${metrics.cls}`);

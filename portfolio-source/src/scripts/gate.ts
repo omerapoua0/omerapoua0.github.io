@@ -12,8 +12,8 @@
  * reads sessionStorage omar-gate {t, path, label, m}) and dissolves it.
  * The open starts where the visitor chose: the click point (or the centre of
  * the link, from the keyboard) becomes --gx/--gy for the hands, flare and
- * burst, and the robot in the hero (when on screen) snaps its rings shut and
- * flares (RobotStage [data-opening]).
+ * burst, and the robot in the hero (when on screen) flares (RobotStage
+ * [data-opening]; the fallback orb snaps its rings shut).
  * Timing (full motion): leave ≈ 600 ms (hands 0–270, flare 220–440, burst
  * 260–550, then navigate); arrive: white dissolves 60–480 ms after first paint.
  * Reduced motion: a 160 ms fade out, a 200 ms fade in.
@@ -75,8 +75,12 @@ function warm() {
   if (!video || video.dataset.warm || !clipAllowed()) return;
   video.dataset.warm = '1';
   const sources = [...video.querySelectorAll<HTMLSourceElement>('source[data-src]')];
-  sources.at(-1)?.addEventListener('error', () => { video.dataset.failed = ''; }, { once: true });
-  video.addEventListener('error', () => { video.dataset.failed = ''; }, { once: true });
+  // A <source> error can be a stale one from before the sources had a src
+  // (resource selection reports a missing src as an error): only a video
+  // left with no usable source at all has failed.
+  const fail = () => window.setTimeout(() => { if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) video.dataset.failed = ''; }, 0);
+  sources.at(-1)?.addEventListener('error', fail);
+  video.addEventListener('error', fail);
   video.addEventListener('loadedmetadata', () => {
     const seek = seekOf(video);
     if (seek <= 0) return;

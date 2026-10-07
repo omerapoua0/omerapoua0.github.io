@@ -33,6 +33,27 @@ if (stage && video) {
   const sources = [...video.querySelectorAll<HTMLSourceElement>('source[data-src]')];
   const set = (key: 'video' | 'greet', value: string) => { stage.dataset[key] = value; };
 
+  // The poster: painted into a canvas once decoded (see RobotStage.astro).
+  const img = stage.querySelector<HTMLImageElement>('.robot__poster');
+  const paint = () => {
+    if (!img || stage.dataset.still || !img.naturalWidth) return;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.className = 'robot__still';
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.getContext('2d')!.drawImage(img, 0, 0);
+      img.after(canvas);
+      void canvas.offsetWidth; // start the fade from 0
+      stage.dataset.still = 'canvas';
+    } catch { stage.dataset.still = 'img'; }
+  };
+  if (img) {
+    if (img.complete && img.naturalWidth) void img.decode().then(paint, paint);
+    else img.addEventListener('load', () => void img.decode().then(paint, paint), { once: true });
+  }
+
   let attached = false, failed = false, inView = true, left = false, pending = false, stall = 0, swap = 0;
   set('video', 'off');
   set('greet', auto() ? 'waiting' : 'still');
@@ -54,8 +75,9 @@ if (stage && video) {
   };
   // With <source> children the error fires on the last source, not the
   // video. Before attach() the sources have no src, and the browser's
-  // resource selection reports exactly that as an error: ignore it.
-  const failHard = () => { if (attached) fallBack(true); };
+  // resource selection reports exactly that as an error (possibly late):
+  // only a video left with no usable source, or a media error, has failed.
+  const failHard = () => window.setTimeout(() => { if (attached && (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) fallBack(true); }, 0);
   video.addEventListener('error', failHard);
   sources.at(-1)?.addEventListener('error', failHard);
   video.addEventListener('playing', () => { window.clearTimeout(stall); set('video', 'on'); set('greet', 'playing'); });

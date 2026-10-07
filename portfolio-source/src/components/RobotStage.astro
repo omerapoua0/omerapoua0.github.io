@@ -9,8 +9,9 @@
      light and neon orbit rings, CSS only). It is the fallback: it shows
      while the poster loads and stays if the poster fails (CDN down, URL
      gone); the poster's inline onload/onerror set data-poster on the stage;
-   - the robot (aria-hidden): poster <img> (the first frame of greet) with
-     the greet <video> over it, edges dissolved into the page by a soft
+   - the robot (aria-hidden): poster <img> (the first frame of greet; with
+     JavaScript it is painted into a canvas, see below) with the greet
+     <video> over it, edges dissolved into the page by a soft
      mask, plus three light layers: a pointer-following light, the neon
      rims pulsing, and the top-left beam breathing;
    - a real <button> over the figure, "Say hi to the robot": replays the
@@ -91,9 +92,14 @@ const stage = "this.closest('[data-robot-stage]')";
      robot when a narrower stage crops it (phones): it is anchored right, and
      --canvas-right shifts the crop. */
   .robot__canvas { position: absolute; top: 0; right: var(--canvas-right, 0%); height: 100%; aspect-ratio: 1344 / 752; }
-  .robot__canvas :is(img, video) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .robot__poster { opacity: 0; transition: opacity 700ms var(--ease-out); }
-  .robot-stage[data-poster='ok'] .robot__poster, :global(html:not(.js)) .robot__poster { opacity: 1; }
+  .robot__canvas :is(img, video, canvas) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* With JavaScript, robot.ts paints the decoded poster into a <canvas>
+     (.robot__still) and fades that in: the third-party image is then never a
+     Largest Contentful Paint candidate, so a slow CDN cannot hold the page's
+     LCP back (the headline is). Without JavaScript, or if the canvas cannot
+     be drawn (data-still="img"), the <img> itself shows. */
+  .robot__poster, .robot__still { opacity: 0; transition: opacity 700ms var(--ease-out); }
+  :global(html:not(.js)) .robot__poster, .robot-stage[data-still='img'] .robot__poster, .robot-stage[data-still='canvas'] .robot__still { opacity: 1; }
   /* The video is shown only while it really has frames: robot.ts sets
      data-video="on" on 'playing' (its first frame is the poster, so the cut
      is invisible) and back to "off" to cross-fade to the poster for a replay. */
@@ -121,7 +127,7 @@ const stage = "this.closest('[data-robot-stage]')";
 
   /* The fallback orb sits where the robot's head and chest are. */
   .orb { position: absolute; left: 50%; top: 4%; width: 36%; transition: opacity 600ms var(--ease-out); }
-  .robot-stage[data-poster='ok'] .orb, :global(html:not(.js)) .orb { opacity: 0; visibility: hidden; transition: opacity 600ms var(--ease-out), visibility 0s 600ms; }
+  .robot-stage[data-still] .orb, :global(html:not(.js)) .orb { opacity: 0; visibility: hidden; transition: opacity 600ms var(--ease-out), visibility 0s 600ms; }
   .robot-stage[data-poster='failed'] .robot-stage__media { opacity: 0; }
 
   /* "The robot opens it": when a door is chosen (gate.ts sets data-opening)
@@ -198,7 +204,7 @@ const stage = "this.closest('[data-robot-stage]')";
     .orb__slit::after { animation: orb-scan 4.6s cubic-bezier(.65, 0, .35, 1) infinite alternate; }
     .orb__sweep { animation: orb-sweep 8s cubic-bezier(.45, 0, .25, 1) infinite; }
     /* No loops behind a loaded poster. */
-    .robot-stage[data-poster='ok'] .orb :is(.orb__sphere, .orb__ring i, .orb__sweep), .robot-stage[data-poster='ok'] .orb__slit::after { animation: none; }
+    .robot-stage[data-still] .orb :is(.orb__sphere, .orb__ring i, .orb__sweep), .robot-stage[data-still] .orb__slit::after { animation: none; }
     .robot-stage[data-poster='failed'] :is(.robot__breath, .robot__neon, .robot__beam, .robot__tilt) { animation: none; }
   }
   @keyframes robot-hi { 0% { opacity: .5; } 25% { opacity: 1; filter: brightness(1.8); } 100% { opacity: .5; } }

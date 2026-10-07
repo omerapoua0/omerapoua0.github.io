@@ -13,7 +13,7 @@ Preserve user changes. Do not reset, clean, or delete unrelated work. Inspect
 before editing; use small, reviewable changes. No Supabase or paid service is
 required. This is a static portfolio, not a hosted backend.
 
-## Active architecture (v6 "Neon" dark redesign on the v4/v5 structure, October 2026)
+## Active architecture (v6 "Neon" dark redesign on the v4/v5 structure, October 2026; v7 adds the hero robot)
 
 - Astro 7, TypeScript strict. Node >=22.13; pnpm 11.11.0. React and three.js
   remain declared for lockfile stability, but no page ships a React island or
@@ -40,19 +40,20 @@ required. This is a static portfolio, not a hosted backend.
   `[data-scrub="cover|contain|exit|entry"]` exposes `--p` 0→1 via a CSS view
   timeline (`view(block 0px)`, so scroll-padding doesn't offset it), with
   `scrub.ts` as the IntersectionObserver/rAF fallback. Scrub rules only apply
-  under `html.js:not([data-motion='off'])` + no reduced motion; at rest the
-  page is static and readable. IMPORTANT: write scroll-driven animations as
+  under `html.js` + no reduced motion; at rest the page is static and
+  readable. IMPORTANT: write scroll-driven animations as
   longhands (`animation-name` … `animation-timeline`); the minifier folds an
   `animation` shorthand + timeline into an invalid declaration (qa-content
   checks this).
-- `src/layouts/Base.astro`: metadata, JSON-LD, header, footer, LightGate and
-  the inline head script (restores Pause motion; marks a light-gate arrival).
+- `src/layouts/Base.astro`: metadata, JSON-LD, header, footer, LightGate, a
+  `head` slot (the homepage puts its CDN preconnect there) and the inline
+  head script (marks a light-gate arrival).
   No floating Contact pill: the sticky header's Contact is the one tap
   everywhere (the pill covered copy on phones).
 - **Homepage** (`index.astro`): `HomeHero.astro` inside `.hero-pin`
   (one-line who, uppercase display title with staggered word reveal, See my
-  work / Book a lesson / Contact me, the robot stage, HUD spec chips that count
-  up, Pause motion, sweeping beams, haze, HUD frame + tick ruler, floating spec
+  work / Book a lesson / Contact me, the robot (see "The hero robot" below),
+  HUD spec chips that count up, sweeping beams, haze, HUD frame + tick ruler, floating spec
   labels, pointer-parallax grid, outlined OMAR watermark). Desktop pins the
   hero for ~55vh of scroll: title lines split and slide apart, copy fades,
   the robot scales up and drifts to centre, then it releases; phones get the
@@ -64,7 +65,7 @@ required. This is a static portfolio, not a hosted backend.
   a HUD visual whose neon diagram draws per chapter, and a progress rail),
   selected work as a horizontal gallery (`[data-hgallery]`: pinned and driven
   by vertical scroll on desktop with motion; a native snap scroller on touch,
-  narrow screens, reduced motion and Pause; `scrub.ts` scrolls the page to a
+  narrow screens and reduced motion; `scrub.ts` scrolls the page to a
   card focused by keyboard), skills with evidence (`CapabilityMatrix`),
   lessons, about (statement fills with light), and the contact band. `fx.ts`
   (site-wide): card tilt, magnetic pull on every `.btn` and `[data-magnetic]`,
@@ -119,45 +120,73 @@ required. This is a static portfolio, not a hosted backend.
   (~0.5 s) while `main`'s first blocks stagger in; the header stays put. A door to
   a section of the same page opens, jumps, reveals. bfcache restores are never
   white. There is no cross-document view transition (removed on purpose).
-  Reduced motion / Pause motion: a 160 ms fade out, 200 ms fade in.
+  Reduced motion: a 160 ms fade out, 200 ms fade in.
   `window.__gate(href, mode)` is used by the command menu.
-- **Robot media slot** (`RobotStage.astro`). Omar's photoreal robot is being
-  generated in Higgsfield. To use it, drop these into `public/robot/` and
-  rebuild (the component checks with `existsSync` at build time):
-  - `hero.webp`: 16:9 poster (near-black background; a radial mask
-    dissolves its edges into the page, and it bleeds behind the hero copy);
-  - `greet.mp4` (+ optional `greet.webm`): greeting loop, played by
-    `previews.ts` only while visible, with motion on and no Save-Data;
-  - `open.mp4` (+ optional `open.webm`): hands together → white light; the
-    gate plays it full-bleed for `[data-open]` links instead of the CSS
-    seams: it seeks to `OPEN_SEEK` (LightGate.astro, default 2.4 s, the
-    hands-together moment; seeking needs HTTP range support, which GitHub
-    Pages has), plays 1.2 s, then the white takes over (gate.ts waits for the
-    white to be opaque before navigating). It is loaded and parked on that
-    frame when a `[data-open]` link is hovered or focused (fine pointers
-    only, never with Save-Data); at click time it plays only if it is
-    buffered and parked on the right frame (a host that cannot seek, or a
-    source error, marks it unusable), otherwise the CSS seams play at once,
-    so the clip never delays a door. Layer order: clip < white < HUD. Headless Chromium has no H.264, so add the .webm versions too.
-  With no files, an abstract placeholder renders (a glossy black sphere with
-  red and blue rim light, red/blue neon orbit rings, a visor slit and a
-  sweeping beam; CSS only, marked PLACEHOLDER in code). Never draw a cartoon
-  robot or bring back the old Otto. The video path was verified with
-  temporary stand-ins in a scratch copy only; never commit stand-in media.
+- **The hero robot** (v7, `RobotStage.astro` + `src/scripts/robot.ts`,
+  media and timings in `src/data/robot.ts`). Omar's mascot (not Omar): a
+  glossy black humanoid with a black visor, white eye lights, red neon on its
+  left and blue on its right, generated for Omar with Higgsfield. The poster
+  (1344×752 webp) and two H.264 clips (greet: head turn + wave, 5.04 s; open:
+  hands together → burst of light) are public, immutable files on
+  Higgsfield's CDN (`d8j0ntlcm91z4.cloudfront.net`, range requests OK);
+  visitors' browsers load them from there (the homepage preconnects; gate.ts
+  adds a preconnect on the first pointer move elsewhere). Files in
+  `public/robot/` (hero.webp, greet.mp4/.webm, open.mp4/.webm) override the
+  remote ones at build time (existsSync). Never commit stand-in media.
+  - Layout: desktop, big on the right, its frame bleeding behind the copy,
+    sized so the waving hand clears the copy; phones/tablets, full width
+    above the copy (a taller crop via `--canvas-right`). Edges dissolve via
+    an intersected linear+radial mask and `.hero__robot` is blended with
+    `mix-blend-mode: lighten`, so the media's near-black backdrop gives way to
+    the hero's own beams and glows (no frame edge); the hero grid has a soft
+    hole where the robot stands.
+  - "Interacts whenever you open": robot.ts attaches the clip after the load
+    event and plays greet once from 0 on every load (also via the gate), on a
+    bfcache restore and when the hero re-enters view after leaving it; then it
+    holds the last frame (facing you) with a CSS idle (breathing scale, neon
+    rim and beam pulsing). Fine pointers: spring-smoothed 3D turn toward the
+    pointer (`--rx/--ry`) and a light that follows it; touch: a slow ambient
+    sway. The `<button>` "Say hi to the robot" (cursor label "Say hi"; a HUD
+    focus frame) replays the wave. A replay cross-fades from the held frame
+    to the poster (the first frame) first.
+  - Fallbacks: reduced motion or Save-Data → poster only, the wave plays only
+    when pressed; no H.264 / source error / refused play / stall → the poster
+    stays, the button and tilt keep working; poster fails (CDN down) → the
+    abstract CSS orb (PLACEHOLDER, kept on purpose) shows instead. With JS
+    the decoded poster is painted into a `<canvas>` so the third-party image
+    is never an LCP candidate (the page's LCP stays text); without JS the
+    `<img>` shows. State attributes: `data-poster`, `data-still`,
+    `data-video`, `data-greet`.
+  - Gate: `LightGate.astro` always carries the open clip (`data-seek` =
+    OPEN_SEEK 3.2 s, palms pressed; `data-play` = 1400 ms through the burst,
+    then the gate's white takes over). Warmed and parked on hover/focus of a
+    `[data-open]` link (fine pointers, no Save-Data); it plays only if
+    buffered and parked on that frame, otherwise the CSS seams play. A stale
+    "missing src" source error is ignored (only no usable source or a media
+    error counts). Layer order: clip < white < HUD.
+  - QA: the CDN is unreachable from CI containers; `qa.cjs` answers it with
+    local stand-ins (VP9-in-MP4, which Playwright's Chromium accepts for the
+    .mp4 URLs, plus an H.264 copy for the "unsupported" path) generated with
+    ffmpeg into `.qa/robot` or taken from `QA_ROBOT_MEDIA`, with byte-range
+    support so the gate can seek.
+  Never draw a cartoon robot or bring back the old Otto.
 - Header (`SiteHeader.astro`): dark glass bar, black-orb brand mark, pill
-  nav, ⌘K search, blue Contact pill on every width, mobile sheet (with a Pause
-  motion switch). Footer: dark, with Pause motion; its big CTA is hidden on the homepage (the contact band
+  nav, ⌘K search, blue Contact pill on every width, mobile sheet. Footer:
+  dark; its big CTA is hidden on the homepage (the contact band
   replaces it). `CommandPalette.astro` + `palette.ts`: Quick links, pages,
   work, tours, copy email, CV, LinkedIn, GitHub. No chat or Ask items.
 - Project tours: `src/pages/inside/[id].astro`, static, dark: hero with the
   concept visual, chapter rail (anchor links), five chapters, prev/next tours.
-- `hero-motion.ts` is the "Pause motion" switch (`html[data-motion]`,
-  `omar:motion`, remembered per session). Every infinite loop must pause under
-  `html[data-motion='off']`, and Pause also releases the hero pin, the pinned
-  gallery and every scroll scrub (QA checks `document.getAnimations()` and a
-  dedicated scroll-motion test). Watch selector specificity: a pause rule must
-  beat the rule that starts the animation (`:is()` takes its argument's
-  specificity; pseudo-elements are invalid inside `:is()`).
+- **No Pause motion control** (removed at the user's explicit request, Oct
+  2026: the hero/page-hero/tour/footer/menu switches, `hero-motion.ts`,
+  `html[data-motion]`, `omar:motion` and the `omar-motion` session key are
+  gone; qa-content fails the build output if any returns). Do not re-add it
+  unless the user asks. `prefers-reduced-motion` is the motion opt-out and
+  must stay complete: every infinite loop sits behind
+  `prefers-reduced-motion: no-preference`, and reduced motion also releases
+  the hero pin, the pinned gallery and every scroll scrub, hides the cursor
+  ring, stops count-ups and robot autoplay (QA checks
+  `document.getAnimations()` on every page and a dedicated scroll test).
 - Other: `ProjectIndex`, `CaseStudy`, `ProjectMedia` (duotone plates),
   `CapabilityMatrix`, `Timeline`, `Figure`, `SectionHead`;
   `site.ts` (menu sheet, header shadow, floating pill, reveals, count-up),
@@ -174,8 +203,9 @@ keep its MIT notice in THIRD-PARTY-NOTICES as previously distributed code.
 There is no chat UI anywhere and no "do you want to discover?" copy: copy is
 direct and specific, and contact is always one tap away (header pill on every
 page, floating pill on phones). Doors and cards are real links; everything
-reads without JavaScript (the gate never covers a no-JS page). Keep the visible
-"Pause motion" switch (WCAG 2.2.2), prefers-reduced-motion, first-load JS
+reads without JavaScript (the gate never covers a no-JS page). There is no
+Pause motion switch (the user removed it; reduced motion is honoured
+everywhere), first-load JS
 <= 30KB gz per page, and smooth GPU-friendly motion (transforms/opacity).
 
 The project index must keep server-rendered links that work without JS,
@@ -199,7 +229,13 @@ CV). The user confirmed the tutoring promises shown (enhanced DBS, free 15-minut
 intro call, reply within one working day, parents may sit in). The site links the
 personal GitHub `omerapoua0`; the CV's separate work GitHub stays in the PDF only.
 No phone number on pages. KATANA's Level 4 autonomy is a programme direction, not a
-completed individual achievement. INOS contributions are part of wider R&D.
+completed individual achievement. Current Digis Squared work (user-stated, Oct
+2026): as AI Product Engineer Omar works on INOS and OctiMind together with
+KATANA: technology selection, (technical and security) audits, and business
+and product strategy. His earlier INOS/OctiMind traineeship (Sep 2024 – Mar
+2025) was part of wider R&D; the products are Digis Squared's, built by a
+wider team. No invented metrics, clients or outcomes. The CV PDF predates
+this and is not edited. The hero robot is an AI-generated mascot, not Omar.
 Do not claim trading performance or provide investment recommendations.
 
 Project videos are concept visuals, not actual product recordings. Omar's real
